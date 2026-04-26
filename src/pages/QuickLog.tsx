@@ -459,8 +459,8 @@ const QuickLog = () => {
 
           {moodEditSaved ? (
             <div className="py-6 flex flex-col items-center text-center animate-fade-in-up">
-              <div className="w-16 h-16 rounded-full bg-green-soft grid place-items-center mb-4">
-                <Check size={32} strokeWidth={3} className="text-green-strong" />
+              <div className="w-16 h-16 rounded-full bg-green-recovery/15 grid place-items-center mb-4">
+                <Check size={32} strokeWidth={3} className="text-green-recovery" />
               </div>
               <p className="text-lg font-medium mb-1">Känsla uppdaterad</p>
               <p className="text-sm text-text-secondary">
