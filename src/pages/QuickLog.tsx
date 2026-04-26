@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { AbstractIcon, type IconName } from "@/components/AbstractIcon";
 import { HeroBanner } from "@/components/HeroBanner";
+import { ColorCard } from "@/components/ColorCard";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Check, ChevronRight, Clock, History, Plus, Minus, Trash2 } from "lucide-react";
