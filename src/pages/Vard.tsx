@@ -131,7 +131,7 @@ const Vard = () => {
           className="w-full card-soft p-4 flex items-center gap-3 text-left press-soft animate-fade-in-up"
         >
           <div className="w-11 h-11 rounded-2xl bg-pink-move/15 grid place-items-center">
-            <AbstractIcon name="heart-pulse" size={20} color="hsl(var(--pink-move))" />
+            <AbstractIcon name="pill" size={20} color="hsl(var(--pink-move))" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-[15px] font-extrabold">Läkemedel & biverkningar</div>
