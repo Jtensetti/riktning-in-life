@@ -78,6 +78,7 @@ export const loadActionPreferences = (): ActionPreferences => {
 
 export const saveActionPreferences = (p: ActionPreferences) => {
   localStorage.setItem(ACTION_PREFS_KEY, JSON.stringify(p));
+  void patchUserSettings({ action_prefs: p });
 };
 
 /** Översätt "auto" till en konkret bucket utifrån tid på dygnet. */
