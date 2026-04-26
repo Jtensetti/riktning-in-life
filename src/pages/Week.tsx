@@ -646,83 +646,140 @@ const Week = () => {
           );
         })()}
 
-        {/* Per-dag rader */}
+        {/* Per-dag rader — sorterade så att de mest relevanta dagarna för valt filter
+            hamnar högst. "Idag" hålls alltid kvar i topp som ankare. */}
         <div className="space-y-2">
-          {timeline.slice().reverse().map((d, i) => {
-            const date = new Date(d.iso);
-            const isToday = d.iso === new Date().toISOString().split("T")[0];
-            const dayLabel = isToday ? "Idag" : date.toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "short" });
+          {(() => {
+            const todayIso = new Date().toISOString().split("T")[0];
+            // Beräkna ett relevanspoäng per dag givet aktivt filter.
+            const relevanceFor = (d: typeof timeline[number]): number => {
+              if (historyFilter === "checkins") {
+                if (!d.checkin) return 0;
+                const sleep = d.checkin.sleep_hours ? Number(d.checkin.sleep_hours) * 60 : 0;
+                return 1000 + sleep; // alla check-ins före tomma
+              }
+              if (historyFilter === "exercises") {
+                return d.sess.reduce((s, x) => s + (x.exercises?.duration_minutes ?? 0), 0);
+              }
+              if (historyFilter === "activeTime") {
+                return d.acts.reduce((s, a) => s + (a.duration_minutes ?? 0), 0)
+                  + d.sess.reduce((s, x) => s + (x.exercises?.duration_minutes ?? 0), 0);
+              }
+              // "all" — totalvolym + bonus om check-in finns
+              return d.totalMinutes + (d.checkin ? 10 : 0);
+            };
+            const sorted = timeline
+              .map((d) => ({ d, score: relevanceFor(d), iso: d.iso }))
+              .sort((a, b) => {
+                // Idag alltid först
+                if (a.iso === todayIso) return -1;
+                if (b.iso === todayIso) return 1;
+                // Sedan högst relevans
+                if (b.score !== a.score) return b.score - a.score;
+                // Sista tie-break: nyaste först
+                return b.iso.localeCompare(a.iso);
+              })
+              .map((x) => x.d);
 
-            // Filtrera vad som faktiskt visas per dag enligt valt filter
-            const showActs = historyFilter === "all" || historyFilter === "activeTime";
-            const showSess = historyFilter === "all" || historyFilter === "exercises" || historyFilter === "activeTime";
-            const showCheckin = historyFilter === "all" || historyFilter === "checkins";
+            return sorted.map((d, i) => {
+              const date = new Date(d.iso);
+              const isToday = d.iso === todayIso;
+              const dayLabel = isToday ? "Idag" : date.toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "short" });
 
-            const visibleActs = showActs ? d.acts : [];
-            const visibleSess = showSess ? d.sess : [];
-            const visibleCheckin = showCheckin ? d.checkin : null;
-            const isEmpty = visibleActs.length === 0 && visibleSess.length === 0 && !visibleCheckin;
+              // Filtrera vad som faktiskt visas per dag enligt valt filter
+              const showActs = historyFilter === "all" || historyFilter === "activeTime";
+              const showSess = historyFilter === "all" || historyFilter === "exercises" || historyFilter === "activeTime";
+              const showCheckin = historyFilter === "all" || historyFilter === "checkins";
 
-            const dayMinutes =
-              visibleActs.reduce((s, a) => s + (a.duration_minutes ?? 0), 0)
-              + visibleSess.reduce((s, x) => s + (x.exercises?.duration_minutes ?? 0), 0);
+              const visibleActs = showActs ? d.acts : [];
+              const visibleSess = showSess ? d.sess : [];
+              const visibleCheckin = showCheckin ? d.checkin : null;
+              const isEmpty = visibleActs.length === 0 && visibleSess.length === 0 && !visibleCheckin;
 
-            return (
-              <div
-                key={d.iso}
-                className="card-cream p-3.5 animate-fade-in-up"
-                style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
-              >
-                <div className="flex items-baseline justify-between gap-2 mb-2">
-                  <p className={`text-sm font-extrabold capitalize ${isToday ? "text-orange-deep" : ""}`}>{dayLabel}</p>
-                  {dayMinutes > 0 && (
-                    <p className="text-[11px] font-extrabold text-text-secondary tabular-nums">{dayMinutes} min</p>
-                  )}
-                </div>
+              const dayMinutes =
+                visibleActs.reduce((s, a) => s + (a.duration_minutes ?? 0), 0)
+                + visibleSess.reduce((s, x) => s + (x.exercises?.duration_minutes ?? 0), 0);
 
-                {isEmpty ? (
-                  <p className="text-xs text-text-secondary italic">
-                    {historyFilter === "checkins" ? "Ingen check-in" :
-                     historyFilter === "exercises" ? "Ingen övning" :
-                     historyFilter === "activeTime" ? "Ingen aktiv tid" :
-                     "Ingen aktivitet loggad"}
-                  </p>
-                ) : (
-                  <div className="flex flex-wrap gap-1.5">
-                    {visibleActs.map((a) => (
-                      <span
-                        key={a.id}
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-extrabold ${colorBg(a.color)} shadow-card`}
-                      >
-                        <AbstractIcon name={iconForActivity(a.icon)} size={12} color="currentColor" />
-                        <span className="truncate max-w-[140px]">{a.label}</span>
-                        {a.duration_minutes != null && <span className="opacity-80">· {a.duration_minutes}m</span>}
-                      </span>
-                    ))}
-                    {visibleSess.map((s) => s.exercises && (
-                      <span
-                        key={s.id}
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-extrabold ${colorBg(s.exercises.color)} shadow-card`}
-                      >
-                        <AbstractIcon name="spark" size={12} color="currentColor" />
-                        <span className="truncate max-w-[140px]">{s.exercises.title}</span>
-                        <span className="opacity-80">· {s.exercises.duration_minutes}m</span>
-                      </span>
-                    ))}
-                    {visibleCheckin && (
-                      <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold bg-surface border border-border-soft text-text-secondary">
-                        <AbstractIcon name="pencil-soft" size={12} color="currentColor" />
-                        Check-in
-                        {visibleCheckin.sleep_hours != null && (
-                          <span className="opacity-80">· {Number(visibleCheckin.sleep_hours)}h sömn</span>
-                        )}
-                      </span>
+              // Tomläges-CTA: deep-link till rätt flöde för valt filter.
+              // Visa bara CTA på "Idag" (annars kan man inte logga retroaktivt utan extra friktion).
+              const emptyCta: { label: string; to: string } | null = (() => {
+                if (!isEmpty || !isToday) return null;
+                if (historyFilter === "checkins") return { label: "Logga check-in", to: "/checkin" };
+                if (historyFilter === "exercises") return { label: "Starta en övning", to: "/ovningar" };
+                if (historyFilter === "activeTime") return { label: "Logga aktivitet", to: "/snabblogg" };
+                return { label: "Logga något smått", to: "/snabblogg" };
+              })();
+
+              const emptyText = historyFilter === "checkins" ? "Ingen check-in"
+                : historyFilter === "exercises" ? "Ingen övning"
+                : historyFilter === "activeTime" ? "Ingen aktiv tid"
+                : "Ingen aktivitet loggad";
+
+              return (
+                <div
+                  key={d.iso}
+                  className="card-cream p-3.5 animate-fade-in-up"
+                  style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
+                >
+                  <div className="flex items-baseline justify-between gap-2 mb-2">
+                    <p className={`text-sm font-extrabold capitalize ${isToday ? "text-orange-deep" : ""}`}>{dayLabel}</p>
+                    {dayMinutes > 0 && (
+                      <p className="text-[11px] font-extrabold text-text-secondary tabular-nums">{dayMinutes} min</p>
                     )}
                   </div>
-                )}
-              </div>
-            );
-          })}
+
+                  {isEmpty ? (
+                    emptyCta ? (
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs text-text-secondary">{emptyText} — börja här:</p>
+                        <button
+                          onClick={() => navigate(emptyCta.to)}
+                          className="shrink-0 inline-flex items-center gap-1 rounded-full bg-foreground text-background px-3 py-1.5 text-[11px] font-extrabold press-soft shadow-card"
+                        >
+                          {emptyCta.label}
+                          <ChevronRight size={12} strokeWidth={3} />
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-text-secondary italic">{emptyText}</p>
+                    )
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {visibleActs.map((a) => (
+                        <span
+                          key={a.id}
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-extrabold ${colorBg(a.color)} shadow-card`}
+                        >
+                          <AbstractIcon name={iconForActivity(a.icon)} size={12} color="currentColor" />
+                          <span className="truncate max-w-[140px]">{a.label}</span>
+                          {a.duration_minutes != null && <span className="opacity-80">· {a.duration_minutes}m</span>}
+                        </span>
+                      ))}
+                      {visibleSess.map((s) => s.exercises && (
+                        <span
+                          key={s.id}
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-extrabold ${colorBg(s.exercises.color)} shadow-card`}
+                        >
+                          <AbstractIcon name="spark" size={12} color="currentColor" />
+                          <span className="truncate max-w-[140px]">{s.exercises.title}</span>
+                          <span className="opacity-80">· {s.exercises.duration_minutes}m</span>
+                        </span>
+                      ))}
+                      {visibleCheckin && (
+                        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold bg-surface border border-border-soft text-text-secondary">
+                          <AbstractIcon name="pencil-soft" size={12} color="currentColor" />
+                          Check-in
+                          {visibleCheckin.sleep_hours != null && (
+                            <span className="opacity-80">· {Number(visibleCheckin.sleep_hours)}h sömn</span>
+                          )}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            });
+          })()}
         </div>
       </section>
 
