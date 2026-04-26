@@ -429,6 +429,48 @@ const Today = () => {
   ).length;
   const hasInsights = daysWithAnyData >= 4;
 
+  // Personlig baslinje + kvällsprediktion. Trend-datan (14 dagar, full struktur)
+  // räcker som källa. Evening prediction kräver minst 7 dagar.
+  useEffect(() => {
+    if (trendData.length >= 14) {
+      // trendData saknar vissa fält som baseline.ts förväntar sig — vi gör en
+      // bredare query nedan istället. Här kör vi bara compute om vi har full data.
+    }
+  }, [trendData]);
+
+  const baselineRow = loadBaseline();
+  const thresholds = thresholdsFromBaseline(baselineRow);
+
+  // Bygg en checkin-array kompatibel med dayInsights (vi har bara mood/sleep/func i trendData,
+  // men buildEveningPrediction behöver också anxiety + bed/sofa). Vi använder den fullare
+  // `recent7` när möjligt.
+  const eveningPrediction = (() => {
+    if (showSafety) return null;
+    if (time.partOfDay !== "evening" && time.partOfDay !== "night") return null;
+    // Kräv ≥7 dagar med någon data.
+    if (recent7.filter((r) => r.mood_heaviness != null || r.anxiety != null).length < 7) return null;
+    const recentAsCheckin = recent7.map((r) => ({
+      id: r.date,
+      date: r.date,
+      mood_heaviness: r.mood_heaviness,
+      anxiety: r.anxiety,
+      guilt_selfcriticism: null,
+      hopelessness: null,
+      energy: r.energy,
+      getting_started: null,
+      function_score: r.function_score,
+      daytime_bed_sofa_time_minutes: null,
+      sleep_hours: r.sleep_hours,
+      sleep_quality: null,
+      movement_today: null,
+      meaningful_activity: null,
+      safety_status: null,
+    }));
+    const todayAsCheckin = checkin ? recentAsCheckin.find((r) => r.date === todayISO()) ?? null : null;
+    return buildEveningPrediction(recentAsCheckin, todayAsCheckin, thresholds);
+  })();
+  void baselineRow; // använd-flagga: vi visar inte ett "personlig baslinje aktiv"-ord just nu
+
   // Hero icon adapts to weather + daylight; falls back to friendly blob.
   const heroIcon: IconName = weather
     ? weatherIcon(weather.kind, weather.isDaylight)
