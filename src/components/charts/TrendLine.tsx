@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { toneHsl, chartTokens, prefersReducedMotion, type ChartTone } from "@/lib/chartColors";
+import { AnimatedChart } from "./AnimatedChart";
 
 export type TrendSeries = {
   key: string;
