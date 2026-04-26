@@ -287,7 +287,38 @@ const Today = () => {
         </>
       )}
 
-      {recent.length > 0 && (
+      {hasInsights && !showSafety && (
+        <section className="mb-7">
+          <h3 className="text-xl mb-1">Nya insikter</h3>
+          <p className="text-sm text-text-secondary mb-3">Riktning senaste 7 dagarna</p>
+          <div className="grid grid-cols-3 gap-3">
+            <InsightCard
+              label="Humör"
+              value={moodTrend.value}
+              suffix="/10"
+              invert
+              trend={moodTrend.trend}
+              colorClass="bg-orange-start"
+            />
+            <InsightCard
+              label="Sömn"
+              value={sleepTrend.value}
+              suffix=" h"
+              decimals={1}
+              trend={sleepTrend.trend}
+              colorClass="bg-purple-sleep"
+            />
+            <InsightCard
+              label="Funktion"
+              value={funcTrend.value}
+              suffix="/10"
+              trend={funcTrend.trend}
+              colorClass="bg-green-recovery"
+            />
+          </div>
+        </section>
+      )}
+
         <section className="mb-4">
           <h3 className="text-xl mb-3">Senaste aktivitet</h3>
           <ul className="relative pl-5 space-y-3">
