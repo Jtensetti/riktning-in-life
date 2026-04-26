@@ -1,75 +1,125 @@
+
 ## Mål
 
-Byt ut innehållet i `AbstractIcon` så att den nya, stickerstilade ikonpaketet (`riktning_headspace_icon_pack`) används överallt i appen — utan att något av de ~30 anropsstena (Today, Vard, Settings, QuickLog, Week, HeroBanner, ColorCard m.fl.) behöver röras.
+Polera hela appen så varje yta — kort, listor, charts, pills, knappar — talar samma visuella språk: **flat, abstrakt, färgglatt, kul, enkelt, snyggt.** Vi fortsätter på den nuvarande designen (samma palett, samma radie, samma sticker-ikonpaket), men rensar bort visuella avvikelser och låter ikonpaketet vara stjärnan.
 
-## Vad som ingår i paketet
+Inga nya features, inga nya databaskolumner. Bara konsekvens.
 
-- 63 SVG-filer som **exakt matchar** alla namn i nuvarande `IconName`-union (inget mappingbyte behövs).
-- Stilen: platta runda kvadrat-"klistermärken", `viewBox 0 0 96 96`, mjuka hörn (`rx=26`), inbakade färger (orange/blå/grön/lila/gul/rosa) — Headspace/Riktning-vibe.
-- Färgerna är **inbakade** i varje SVG. Det betyder att `color`/`accent`-props inte längre styr utseendet — vilket är önskvärt eftersom hela poängen med paketet är en konsistent, illustrationslik look.
+## Vad jag hittade vid genomgången
 
-## Approach: inlined SVG, behåll API
+**Två konkurrerande illustrationsspråk.** Det nya sticker-paketet (AbstractIcon, 96×96, platta klistermärken med inbakad färg) lever sida vid sida med det gamla "poster"-paketet i `src/assets/illustrations/*.svg` (handritade ansikten med strokes, viewBox 320×180). Posters används i:
+- `Exercises.tsx` — lista-tumnaglar (80×64) och kategori-knappar (96×64)
+- `Journal.tsx` — i mall-vyn (full-width header)
+- `ExerciseDetail.tsx` — header-illustration
 
-Jag extraherar SVG-strängarna och bygger om `AbstractIcon.tsx` så att:
+Det är inkonsekvent mot referensbilderna (Headspace) där allt är samma flata sticker. Lösning: byt över dessa ytor till sticker-ikoner som dominerande visuellt element.
 
-1. **`IconName`-union behålls oförändrad** → ingen import behöver uppdateras, `src/lib/icons.ts` (mappningen kategori/slug → IconName) fungerar som idag.
-2. **Props behålls oförändrade** (`name`, `size`, `color`, `accent`, övriga SVG-props). `color`/`accent` blir no-ops för det nya paketet (logiskt, eftersom ikonerna är inbakade) men sprids fortfarande till `<svg>` så att `className`, `style`, `aria-*` etc. fungerar. Inga breaking changes.
-3. **Switch-baserad rendering ersätts** av en enkel `ICONS` map: `Record<IconName, ReactElement>` med inlinade `<g>`-noder från det nya paketet. `<svg>`-wrappen sätts av komponenten själv (med rätt `viewBox 0 0 96 96`, `width`/`height` = `size`).
-4. **Inline-läsbarhet vid små storlekar.** Eftersom de nya ikonerna har en färgad bakgrundsplatta blir de tunga vid `size ≤ 20` bredvid text (Week.tsx 12px, BottomNav, Settings 16–18px). Lösning: när `size < 22` renderar vi ikonen utan den fyllda bakgrundsrektangeln (vi droppar första `<rect ... rx=26 fill=...>` i SVG-strängen). Då blir små ikoner till "rena" symboler i sin huvudfärg, stora ikoner blir feta klistermärken — bästa av båda världar.
-5. **`iconStyle.ts` justeras minimalt.** `ICON_VIEWBOX` byts till `"0 0 96 96"` så att framtida tillägg matchar. Övriga regler (linecap, stroke-tokens) lämnas men `validateIconStyle` får ingen ny ansvar; styling sker nu i den fasta SVG-källan.
-6. **Filstorlek.** Totalt ca 35 KB SVG inline → ingenting för en React-bundle. Inga asset-imports, inga nätverksrequests, fungerar i SSR/print/PDF (viktigt för Vård-export).
+**Mall-kort i Journal är för små.** Referensbilden (`IMG_3565.jpeg`) visar Journal-mallar som **2-kolumns färgade rutor** med stort plus-ikon uppe och titel/undertitel nere. Idag är det en lista med 84px höga rader och en pytteliten 48×48 ikon-bricka. Layout-byte gör det direkt mer "Headspace".
 
-Alternativ jag övervägde och valde bort:
-- **Spara SVGs i `src/assets` och `<img src=...>`.** Funkar men ger nätverksrequest per ikon, sämre kontroll på tillgänglighet, och bryter PDF/SSR-renderingen som används i `pdfWidgets.ts`.
-- **`<svg><use href=...>` med en sprite.** Mer komplext för noll vinst när vi ändå inte themar färgerna.
+**Övning-listan ser tung och inkonsekvent ut.** Referensbilden (`IMG_3561.jpeg`) visar listrader som färgade pills med en kompakt sticker till höger — exakt det `ColorCard sm` är byggt för. Idag används en grå `bg-surface`-rad med en illustration-poster i en liten färgad ruta = annan visuell rytm än kategori-knapparna ovanför.
+
+**Kategori-knapparna i Exercises** är redan i rätt riktning men har en illustration-poster (320×180) inklippt i en 96×64 ruta — det blir en miniatyr med text inuti. Sticker-ikonen är gjord för exakt detta — byt till `AbstractIcon` 56–64px så får vi den karakteristiska Headspace-rytmen ("titel till vänster, sticker till höger").
+
+**HeroBanner** har en linear-gradient (3 stop) som faller mot bakgrunden. Referensens header är platt färg + våg-separator. Lätt att platta gradienten till en färg + våg.
+
+**Knappar.** Vi har redan en bra `Button` med `pill-strong` (svart) och `pill-brand` (orange). Men `pill-brand` används nästan ingenstans — primärknappar är överallt svarta. Referensen ("Join in" från `IMG_3547`) använder **brand-färgad** primary för positiva actions, och svart för dämpade/destruktiva. Vi behöver inte ändra varje anrop, bara höja `pill-brand` till en faktiskt använd default på de mest synliga CTA-platserna.
+
+**MechanismCard** använder en liten `bg-orange-start/15` ruta med en 20px ikon — svag mot resten av sticker-paketet. Lätt att höja ikonen till 36px och släppa wash-bakgrunden (samma princip som i AbstractIcon-tröskeln 22px).
+
+**Charts** är redan visuellt eniga (samma palett via `chartColors.ts`, samma marginaler via `chartTheme.ts`). De behöver bara två små polish-grepp för att kännas mer "sticker": tjockare stapel-radius (`radiusTop` 8 → 10) och tjockare linjer (3 → 3.5). Allt går via `chartBarLayout`/`chartLineDot`-tokens, inga komponentändringar.
 
 ## Detaljerade ändringar
 
-### 1. `src/components/AbstractIcon.tsx` (omskrivning)
+### 1. Journal — mall-grid i Headspace-stil
 
-- Behåll fil-headern, `IconName`-union (rad 20–90), `Props`-typen och komponentsignaturen.
-- Ersätt switch-blocket (~rad 129–900) med:
-  - En internal `ICON_BODIES: Record<IconName, ReactNode>` som innehåller de inlinade `<rect>`/`<circle>`/`<path>`/`<line>`-noderna från varje fil i `riktning_headspace_icon_pack/svg/`.
-  - En internal `ICON_BG: Record<IconName, string>` som lagrar bakgrundsfärgen från första `<rect>` (för att kunna utelämnas vid små storlekar).
-  - Renderlogik:
-    ```tsx
-    const showBg = size >= 22;
-    return (
-      <svg width={size} height={size} viewBox="0 0 96 96" aria-hidden {...rest}>
-        {showBg && <rect x="8" y="8" width="80" height="80" rx="26" fill={ICON_BG[name]} />}
-        {ICON_BODIES[name]}
-      </svg>
-    );
-    ```
-- `color`/`accent` props accepteras men används inte (kommentar förklarar varför). `useEffect`+`validateIconStyle` behålls i dev för att fortsatt fånga konstiga storlekar.
+`src/pages/Journal.tsx`:
+- Byt mall-listan från `space-y-3` med 84px-rader till **`grid grid-cols-2 gap-3`** med stora "sticker-kort" (≈148px höga).
+- Plus-ikon (`Plus` från lucide eller `plus-soft` AbstractIcon) uppe i vänstra hörnet, titel + undertitel längst ner — exakt som `IMG_3565.jpeg`.
+- Använd befintliga klassnamn (`bg-yellow-journal`, `bg-orange-start` etc.) så färgerna matchar den uppladdade designen.
+- Behåll `Fri text` (femte mallen) på en egen rad (col-span-1, högerställd) eller låt den ta vänsterspalten på rad 3 — referensen visar vänsterställd, så vi gör det.
+- Drop poster-illustrationen i mall-vyn (`active === templateKey`) — ersätt med en `HeroBanner` med tonen + AbstractIcon, så Journal-mallens redigeringsvy får samma header som Today/Vard.
 
-### 2. `src/lib/iconStyle.ts`
+### 2. Exercises — sticker-konsekvens i alla listor
 
-- Uppdatera `ICON_VIEWBOX` från `"0 0 32 32"` → `"0 0 96 96"`.
-- Justera kommentartexten kort ("Allt ritas i 96×96 viewBox, motiv centrerat runt 48,48").
-- Ta bort regelraden som säger "currentColor som primär fyllnad" eller mjuka upp den till "Två-tons illustrationer i fast palett (se färglistan i README)".
-- `ICON_STROKE`/`ICON_OPACITY` lämnas — referensvärden för framtida tillägg.
+`src/pages/Exercises.tsx`:
+- **Kategori-knappar** (idag rad 113–129): ersätt `<Illustration .../>` (96×64 poster) med `<AbstractIcon name={categoryIcon(name)} size={64} />`. Bygg en liten `categoryIcon()` mapper i samma fil (eller i `src/lib/icons.ts` bredvid existerande mappar) som returnerar ett IconName per kategori — t.ex. "Kom igång" → `play-soft`, "Lugna kroppen" → `lungs-breathe`, "Bryt ältande" → `chat-bubble`, "Sov bättre" → `moon-soft`, "Rör dig mjukt" → `walk-figure`, "Skriv av dig" → `pencil-soft`, "Förbered vårdkontakt" → `stethoscope`.
+- **Lista-rader** (rad 144–169): byt från grå `bg-surface` rad till en färgad pill-rad i kategorins ton, identiskt mönster med referensbilden (`IMG_3561.jpeg`). Återanvänd `ColorCard size="sm"` med `metaLeft={ex.duration_minutes + " min"}`, `showChevron`, `eyebrow={fitsNow ? { label: "PASSAR NU", variant: "strong" } : undefined}`. Gör att hela listan får samma rytm som kategori-knapparna.
+- Sökresultat och filter-vy använder samma rad-komponent.
 
-### 3. Tester
+### 3. ExerciseDetail — header med sticker, inte poster
 
-- Ingen testfil för AbstractIcon finns idag. Lägger ingen ny — `src/test/illustrations.test.ts` täcker redan att SVG-filer är välformade. Befintliga tester (`todayLayout.test.ts` m.fl.) påverkas inte.
+`src/pages/ExerciseDetail.tsx`:
+- Byt header-illustrationen (poster `Illustration name={categoryIll(ex.category)}`) mot en `HeroBanner` med tonen `var(--{color})` och samma `categoryIcon()` som ovan, så detail-vyn matchar listan visuellt.
+- Inga andra ändringar — flow (intro → before → doing → after → done) intakt.
 
-### 4. Inget behov av att ändra
+### 4. ColorCard — låt sticker-ikonen växa
 
-- `src/lib/icons.ts` (kategori-/slug-mappning): namn är identiska.
-- `src/lib/heroVisuals.ts`, `HeroBanner.tsx`, `ColorCard.tsx`, `BottomNav.tsx`, `QuickLogPills.tsx`, `Today.tsx`, `Vard.tsx`, `Week.tsx`, `Settings.tsx`, `Checkin.tsx`, `Journal.tsx`, `Learn.tsx`, `LearnArticle.tsx`, `Exercises.tsx`, `Sequences.tsx`, `QuickLog.tsx`, `MechanismCard.tsx`, `WeatherChip.tsx`, `WeatherPermissionCard.tsx`, `TodayStepCard.tsx`, `TomorrowForecastCard.tsx`, `DayHighlightCards.tsx`, `CrisisPlan.tsx`: allt fortsätter fungera direkt.
-- `src/lib/pdfWidgets.ts` om den serialiserar AbstractIcon — fungerar fortfarande (samma svg-element, andra inre noder).
+`src/components/ColorCard.tsx`:
+- Höj icon-storlekarna en pinne: `sm` 36→44, `md` 44→56, `lg` 56→72. Det gör att kortet faktiskt känns som ett klistermärke med en stor figur, inte ett färgat kort med en pyttig ikon i hörnet (matchar IMG_3548, IMG_3543).
+- Flytta `iconPosition="top-right"` 8px nedåt och 4px utåt så stickern överlappar den nedre högra blob-cirkeln och får mer tyngd.
 
-### 5. Hantering av zip-arkivet
+### 5. Bottom-nav — extra höjd när aktiv
 
-- Jag kopierar **inte** in zip-filen eller råa SVG-filerna i projektet. Allt innehåll inlinas direkt i `AbstractIcon.tsx`. Detta håller `src/assets`-mappen ren och undviker dubbla källor av sanning.
+`src/components/BottomNav.tsx`:
+- Den aktiva ikonen får `size={26}` istället för 22, och cirkelbakgrunden görs en aning tjockare (`opacity 0.18` istället för 0.14). Liten polish, ingen logikändring.
 
-## Verifiering efter implementation
+### 6. MechanismCard — sticker, inte tile-ikon
 
-1. Bygg passerar (`tsc`/`vite`) — `IconName`-union och Props oförändrade.
-2. Visuellt: större ikoner i Today (HeroBanner, ColorCard, hero-sized 56–72px) visas som färgade stickers. Små ikoner i Week-listor, Settings rader, BottomNav (12–20px) visas som rena symboler utan färgplatta.
-3. Vård-PDF-export (om den serialiserar AbstractIcon) renderar fortfarande utan kraschar.
+`src/components/MechanismCard.tsx`:
+- Ta bort `bg-orange-start/15`-rutan. Visa `<AbstractIcon name="spark" size={40} />` direkt — den nya stickern har egen bakgrundsplatta inbyggd, så vi behöver inte dubblera. Konsekvens med resten av paketet.
 
-## Frågor jag inte ställer
+### 7. HeroBanner — flatare topp
 
-- Bakgrundströskeln (22px) väljer jag pragmatiskt utifrån faktiska anropsstorlekar (12, 16, 18, 20 är "inline", 22+ är "kort/hero"). Om du vill ha annan brytpunkt — säg till efter implementation, det är en enradssändring.
+`src/components/HeroBanner.tsx`:
+- Byt `linear-gradient(180deg, hsl(${tone}) 0%, hsl(${tone} / 0.5) 55%, hsl(var(--background) / 0.92) 100%)` mot **flat** `hsl(${tone})`. Vågseparatorn längst ner gör övergången till bakgrunden mjuk, så vi behöver ingen gradient. Resultat: mer Headspace-affischigt, mindre webby.
+
+### 8. Knappar — primary CTA = brand-färg
+
+Inga ändringar i `button.tsx` (varianterna finns redan). Punktade ändringar:
+- `Today.tsx`: ev. CTA "Gör check-in" → `variant="pill-brand"`.
+- `Checkin.tsx`: spara-knappen → `pill-brand`.
+- `Journal.tsx`: spara-knappen (rad 191) → `pill-brand`.
+- `ExerciseDetail.tsx`: "Starta"/"Klar"-knappar → `pill-brand`.
+- Destruktiva och navigations-CTAs (cancel, "Tillbaka") förblir `pill-strong` eller textlänk.
+Liten uppstädning som ger appen en tydlig hierarki: orange = framåt, svart = bekräfta/dämpat.
+
+### 9. Charts — tjockare, mer "sticker"
+
+`src/lib/chartTheme.ts`:
+- `chartBarLayout.radiusTop` 8 → 10 (rundare staplar).
+- `chartBarLayout.categoryGap` ev. justerad så staplarna blir lite tjockare.
+- `chartLineDot` & `chartLineActiveDot` får större radie (4 → 5 / 6 → 7) så hover-prickar känns lika fasta som stickers.
+
+`src/components/charts/MetricLine.tsx`:
+- `strokeWidth={3}` → `strokeWidth={3.5}`.
+
+Allt går via tokens — ingen rör direkt en chart-komponent utan via theme-filen, så förändringen syns i alla 6 chart-primitiver samtidigt.
+
+### 10. Borttag av oanvända poster-illustrationer
+
+När Exercises/Journal/ExerciseDetail inte längre använder `Illustration`-komponenten på de byta ytorna, gå igenom resten av kodbasen (`rg "Illustration name="`) och se vilka som faktiskt används kvar. Sannolikt:
+- `Onboarding.tsx`, `WeeklyReport.tsx`, `Vard.tsx` (PDF-export?) — där är posters fortfarande lämpliga (storyboard-känsla, full-width). Lämna intakt.
+- Övriga: säkerhetsradera oanvända imports.
+
+Inga SVG-filer raderas i denna runda — vi behåller dem för PDF/storyboard. Bara komponentanrop städas.
+
+### 11. AbstractIcon — säkerställ att färg är konsekvent med temat
+
+`src/components/abstractIconData.ts` har inbakade hex-färger (orange/blå/etc.). Vid en snabb verifiering ser de ut att vara nära men inte exakt på våra HSL-tokens. Det är OK — sticker-paketet är *avsiktligt* en fast palett. Men vi gör ett dev-warning: lägg en kort kommentar överst i filen som påminner om att färgerna är inbakade och att man inte ska försöka theme:a dem.
+
+## Verifiering
+
+1. `tsc` passerar — vi rör inga typer.
+2. Visuell smoke-test: öppna Today, Journal, Exercises, ExerciseDetail, Vård. Allt ska kännas som *en familj* — samma sticker-rytm, samma färgade pills, samma rundade hörn, samma chunky-knappar.
+3. Ingen poster-illustration ska längre dyka upp som litet thumbnail — bara som hero på Onboarding/WeeklyReport/Vård.
+4. Befintliga tester (`todayLayout.test.ts`, `illustrations.test.ts`) ska fortfarande passera. Ingen ny test krävs — vi gör layoutskift, inte logikskift.
+
+## Det jag *inte* gör
+
+- Inga nya färger i paletten.
+- Inga nya animationer (befintliga `pop-in`/`float`/`fade-in-up` räcker).
+- Inga schemamigreringar.
+- Ingen icon-pack revision — vi använder de 63 ikoner vi redan har.
+- Ingen grafik genereras — vi använder bara den nya sticker-stilen + befintliga poster-SVGs där de fortfarande passar (Onboarding, rapporter).
+
+Säg till om du vill att jag begränsar scope (t.ex. bara Journal + Exercises) eller kör hela paketet.
