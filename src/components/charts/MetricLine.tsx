@@ -121,6 +121,7 @@ export const MetricLine = ({
           />
         </LineChart>
       </ResponsiveContainer>
-    </div>
+      </div>
+    </AnimatedChart>
   );
 };
