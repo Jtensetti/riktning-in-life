@@ -230,6 +230,8 @@ export const recommendForToday = (
   t: TimeContext,
   w: Weather | null,
   recent: RecentSession[],
+  history?: EffectHistory,
+  forecast?: ForecastSignal,
 ): Pick[] => {
   if (library.length === 0) return [];
 
