@@ -690,7 +690,7 @@ const Week = () => {
       {topActivities.length > 0 && (
         <section className="mb-2">
           <h2 className="text-xl mb-1 flex items-center gap-2">
-            <AbstractIcon name="heart-pulse" size={18} color="hsl(var(--pink-move))" />
+            <AbstractIcon name="heart-care" size={18} color="hsl(var(--pink-move))" />
             Vad lyfte dig?
           </h2>
           <p className="text-xs text-text-secondary mb-3">Aktiviteterna som gjorde störst skillnad denna vecka</p>
