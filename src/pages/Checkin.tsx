@@ -7,6 +7,8 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { useWeather, weatherLabel, type WeatherKind } from "@/lib/weather";
+import { AbstractIcon, weatherIcon, weatherIconColor, weatherIconAccent } from "@/components/AbstractIcon";
 
 const todayISO = () => new Date().toISOString().split("T")[0];
 
@@ -42,6 +44,12 @@ const Checkin = () => {
   const [form, setForm] = useState<Form>(initialForm);
   const [saving, setSaving] = useState(false);
   const [showSafetyDialog, setShowSafetyDialog] = useState(false);
+  const { weather } = useWeather(true);
+  const [weatherOverride, setWeatherOverride] = useState<WeatherKind | null>(null);
+  const [showWeatherPicker, setShowWeatherPicker] = useState(false);
+
+  // Effective weather kind = manual override if set, else autodetected.
+  const effectiveKind: WeatherKind | null = weatherOverride ?? weather?.kind ?? null;
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
@@ -69,9 +77,12 @@ const Checkin = () => {
             safety_status: (data.safety_status as Form["safety_status"]) ?? "none",
             note: data.note ?? "",
           });
+          // Restore prior weather override if user changed it earlier today.
+          const prevKind = (data as any).weather_kind as WeatherKind | null | undefined;
+          if (prevKind && weather && prevKind !== weather.kind) setWeatherOverride(prevKind);
         }
       });
-  }, [user]);
+  }, [user, weather]);
 
   const save = async () => {
     if (!user) return;
@@ -87,7 +98,9 @@ const Checkin = () => {
       medication_taken: form.medication_taken || null,
       movement_today: form.movement_today || null,
       meaningful_activity: form.meaningful_activity || null,
-    }, { onConflict: "user_id,date" });
+      weather_kind: effectiveKind,
+      weather_temp_c: weather ? weather.tempC : null,
+    } as any, { onConflict: "user_id,date" });
     setSaving(false);
     if (error) {
       toast.error("Det gick inte att spara. Försök igen.");
@@ -110,6 +123,56 @@ const Checkin = () => {
         <p className="text-sm text-text-secondary mb-8 animate-fade-in-up" style={{ animationDelay: "var(--stagger-1)" }}>
           Tar under 60 sekunder. Spara dagen som den var.
         </p>
+
+        {effectiveKind && (
+          <div className="card-cream p-4 mb-4 animate-fade-in-up flex items-center gap-3">
+            <div className="shrink-0">
+              <AbstractIcon
+                name={weatherIcon(effectiveKind, weather?.isDaylight ?? true)}
+                size={36}
+                color={weatherIconColor(effectiveKind, weather?.isDaylight ?? true)}
+                accent={weatherIconAccent(effectiveKind)}
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-extrabold uppercase tracking-wide text-text-secondary">Väder just nu</p>
+              <p className="text-sm font-extrabold truncate">
+                {weatherLabel(effectiveKind)}
+                {weather && !weatherOverride ? ` · ${Math.round(weather.tempC)}°` : ""}
+                {weatherOverride ? " · justerat" : ""}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowWeatherPicker(s => !s)}
+              className="text-xs font-extrabold text-orange-deep underline press-soft shrink-0"
+            >
+              {showWeatherPicker ? "Stäng" : "Byt"}
+            </button>
+          </div>
+        )}
+        {showWeatherPicker && (
+          <div className="card-cream p-3 mb-4 animate-fade-in-up grid grid-cols-4 gap-2">
+            {(["clear", "partly", "cloudy", "rain", "snow", "fog", "thunder", "wind"] as WeatherKind[]).map((k) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => { setWeatherOverride(k); setShowWeatherPicker(false); }}
+                className={`rounded-2xl p-2 flex flex-col items-center gap-1 border-2 press-soft ${
+                  effectiveKind === k ? "border-foreground bg-surface-alt" : "border-border-soft bg-surface"
+                }`}
+              >
+                <AbstractIcon
+                  name={weatherIcon(k, true)}
+                  size={28}
+                  color={weatherIconColor(k, true)}
+                  accent={weatherIconAccent(k)}
+                />
+                <span className="text-[10px] font-extrabold leading-tight text-center">{weatherLabel(k)}</span>
+              </button>
+            ))}
+          </div>
+        )}
 
         <SliderField idx={0} label="Tyngd / nedstämdhet" value={form.mood_heaviness} onChange={(v) => setForm(f => ({ ...f, mood_heaviness: v }))} low="Lätt" high="Tungt" />
         <SliderField idx={1} label="Oro / ångest" value={form.anxiety} onChange={(v) => setForm(f => ({ ...f, anxiety: v }))} low="Lugn" high="Hög oro" />

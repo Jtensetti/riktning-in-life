@@ -5,10 +5,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Illustration, colorIll } from "@/components/Illustrations";
-import { AbstractIcon } from "@/components/AbstractIcon";
+import { AbstractIcon, weatherIcon, weatherIconColor, weatherIconAccent, type IconName } from "@/components/AbstractIcon";
 import { HeroBanner } from "@/components/HeroBanner";
+import { WeatherChip } from "@/components/WeatherChip";
+import { WeatherPermissionCard } from "@/components/WeatherPermissionCard";
 import { ChevronRight, Settings as SettingsIcon } from "lucide-react";
 import { isOnboarded } from "@/lib/settings";
+import { getTimeContext, type TimeContext } from "@/lib/timeContext";
+import { useWeather, isOutdoorFriendly, weatherLabel, hasAskedWeatherPermission, isWeatherPermissionGranted, type Weather } from "@/lib/weather";
 
 type Checkin = {
   id: string;
@@ -120,17 +124,63 @@ const formatDate = () => new Date().toLocaleDateString("sv-SE", {
   weekday: "long", day: "numeric", month: "long",
 });
 
-const recommend = (c: Checkin | null) => {
+type Recommendation = { title: string; reason: string; color: string };
+
+const recommend = (c: Checkin | null, t: TimeContext, w: Weather | null): Recommendation => {
+  // Safety net: never recommend morning routines after morning, never outdoor in bad weather/dark.
+  const outdoorOk = isOutdoorFriendly(w);
+  const weatherNote = w ? `Vädret är ${weatherLabel(w.kind).toLowerCase()}` : null;
+
+  // 1. Late night → wind down, never energizing.
+  if (t.partOfDay === "night") {
+    return { title: "Andning för insomning", reason: "Det är sent — landa kroppen mjukt", color: "bg-purple-sleep" };
+  }
+
+  // 2. Evening → no morning routines.
+  if (t.partOfDay === "evening") {
+    if ((c?.anxiety ?? 0) >= 6) return { title: "4 min längre utandning", reason: "Hög oro — lugna kroppen inför kvällen", color: "bg-blue-calm" };
+    if ((c?.sleep_hours ?? 7) < 5) return { title: "Kvällslandning", reason: "För kort sömn igår — förbered en bättre natt", color: "bg-purple-sleep" };
+    return { title: "Skriv tre rader", reason: "Stäng dagen mjukt", color: "bg-yellow-journal" };
+  }
+
+  // 3. Acute states first.
+  if (c) {
+    if ((c.anxiety ?? 0) >= 6) return { title: "4 min längre utandning", reason: "För hög oro", color: "bg-blue-calm" };
+    if ((c.sleep_hours ?? 7) < 5) return { title: "Kvällslandning", reason: "För kort sömn", color: "bg-purple-sleep" };
+  }
+
+  // 4. Daylight + good weather → outdoor walk.
+  if (outdoorOk && (c?.function_score ?? 5) >= 4 && (t.partOfDay === "morning" || t.partOfDay === "midday" || t.partOfDay === "afternoon")) {
+    const sunny = w?.kind === "clear" || w?.kind === "partly";
+    return {
+      title: "15 min dagsljuspromenad",
+      reason: sunny ? "Solen är uppe just nu — ta vara på det" : "Dagsljus räknas även när det är molnigt",
+      color: "bg-pink-move",
+    };
+  }
+
+  // 5. Bad weather or dark → indoor alternatives.
+  if (w && (!w.isDaylight || w.kind === "rain" || w.kind === "snow" || w.kind === "thunder" || w.windMs > 12 || w.tempC < -5)) {
+    if (t.partOfDay === "morning") {
+      return { title: "8 min morgonstart", reason: weatherNote ? `${weatherNote} — börja inomhus` : "Mjuk start inomhus", color: "bg-orange-start" };
+    }
+    return { title: "Mjuk rörelse inomhus", reason: weatherNote ? `${weatherNote} — håll igång ändå` : "Håll kroppen igång", color: "bg-pink-move" };
+  }
+
+  // 6. Morning default.
+  if (t.partOfDay === "morning") {
+    return { title: "8 min morgonstart", reason: "En mjuk start på dagen", color: "bg-orange-start" };
+  }
+
+  // 7. Midday/afternoon default — first checkin missing.
   if (!c) return { title: "8 min morgonstart", reason: "En mjuk start på dagen", color: "bg-orange-start" };
-  if ((c.anxiety ?? 0) >= 6) return { title: "4 min längre utandning", reason: "För hög oro", color: "bg-blue-calm" };
-  if ((c.energy ?? 5) <= 3) return { title: "8 min morgonstart", reason: "För låg energi", color: "bg-orange-start" };
-  if ((c.sleep_hours ?? 7) < 5) return { title: "Kvällslandning", reason: "För kort sömn", color: "bg-purple-sleep" };
   return { title: "15 min dagsljuspromenad", reason: "Stabilt – håll riktningen", color: "bg-pink-move" };
 };
 
 const colorOf = (bg: string) => bg.replace("bg-", "").includes("blue") ? "blue"
   : bg.includes("purple") ? "purple"
   : bg.includes("pink") ? "pink"
+  : bg.includes("yellow") ? "yellow"
   : "orange";
 
 const colorBg = (color: string) => {
@@ -145,6 +195,17 @@ const colorBg = (color: string) => {
   }
 };
 
+// Hero tone for the time of day.
+const heroToneFor = (p: TimeContext["partOfDay"]): string => {
+  switch (p) {
+    case "morning": return "var(--orange-start)";
+    case "midday": return "var(--orange-start)";
+    case "afternoon": return "var(--blue-calm)";
+    case "evening": return "var(--purple-sleep)";
+    case "night": return "var(--purple-sleep)";
+  }
+};
+
 const Today = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -152,6 +213,15 @@ const Today = () => {
   const [recent, setRecent] = useState<RecentSession[]>([]);
   const [trendData, setTrendData] = useState<TrendCheckin[]>([]);
   const [fetching, setFetching] = useState(true);
+  const [time, setTime] = useState<TimeContext>(() => getTimeContext());
+  const { weather, status: weatherStatus, requestLocation } = useWeather(true);
+  const [permissionDismissed, setPermissionDismissed] = useState(false);
+
+  // Refresh time context every minute so partOfDay stays accurate without reload.
+  useEffect(() => {
+    const id = setInterval(() => setTime(getTimeContext()), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     if (loading) return;
@@ -205,7 +275,7 @@ const Today = () => {
 
   const state = stateLabel(checkin);
   const showSafety = checkin?.safety_status === "active_thoughts" || checkin?.safety_status === "acute";
-  const rec = showSafety ? null : recommend(checkin);
+  const rec = showSafety ? null : recommend(checkin, time, weather);
 
   // 7-day insights
   const moodTrend = computeTrend(trendData, c => c.mood_heaviness, true);
@@ -213,12 +283,28 @@ const Today = () => {
   const funcTrend = computeTrend(trendData, c => c.function_score, false);
   const hasInsights = trendData.length >= 2;
 
+  // Hero icon adapts to weather + daylight; falls back to friendly blob.
+  const heroIcon: IconName = weather
+    ? weatherIcon(weather.kind, weather.isDaylight)
+    : (time.partOfDay === "night" || time.partOfDay === "evening" ? "moon-soft" : "blob-smile");
+  const heroIconColor = weather
+    ? weatherIconColor(weather.kind, weather.isDaylight)
+    : (time.partOfDay === "evening" || time.partOfDay === "night"
+        ? "hsl(var(--surface))"
+        : "hsl(var(--orange-deep))");
+  const heroIconAccent = weather ? weatherIconAccent(weather.kind) : undefined;
+
+  // Show permission card only once: not asked, no granted permission, not dismissed this session.
+  const showWeatherPermission =
+    !weather && !hasAskedWeatherPermission() && !isWeatherPermissionGranted() && !permissionDismissed;
+
   return (
     <AppShell>
       <HeroBanner
-        tone="var(--orange-start)"
-        icon="blob-smile"
-        iconColor="hsl(var(--orange-deep))"
+        tone={heroToneFor(time.partOfDay)}
+        icon={heroIcon}
+        iconColor={heroIconColor}
+        iconAccent={heroIconAccent}
         topLeft={
           <button
             onClick={() => navigate("/installningar")}
@@ -228,12 +314,21 @@ const Today = () => {
             <SettingsIcon size={18} className="text-foreground" strokeWidth={2.4} />
           </button>
         }
+        topRight={weather ? <WeatherChip weather={weather} /> : undefined}
       />
 
       <header className="mb-6">
+        <p className="text-sm font-extrabold text-orange-deep mb-1 animate-fade-in-up">{time.greeting}</p>
         <h1 className="text-[32px] leading-[38px]">Idag</h1>
         <p className="text-sm font-semibold text-text-secondary capitalize mt-1">{formatDate()}</p>
       </header>
+
+      {showWeatherPermission && (
+        <WeatherPermissionCard
+          onAllow={() => requestLocation()}
+          onDismiss={() => setPermissionDismissed(true)}
+        />
+      )}
 
       {showSafety && (
         <div className="rounded-3xl border-2 border-red-risk bg-red-bg p-5 mb-7 animate-pop-in">

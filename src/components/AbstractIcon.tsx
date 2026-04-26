@@ -16,7 +16,16 @@ export type IconName =
   | "flag"
   | "eye-closed"
   | "bike"
-  | "bookmark-soft";
+  | "bookmark-soft"
+  | "weather-sun"
+  | "weather-partly"
+  | "weather-cloud"
+  | "weather-rain"
+  | "weather-snow"
+  | "weather-fog"
+  | "weather-thunder"
+  | "weather-wind"
+  | "weather-moon";
 
 interface Props extends Omit<SVGProps<SVGSVGElement>, "color"> {
   name: IconName;
@@ -160,7 +169,158 @@ export const AbstractIcon = ({ name, size = 28, color = "currentColor", accent, 
         </svg>
       );
 
+    case "weather-sun":
+      return (
+        <svg {...common}>
+          <circle cx="16" cy="16" r="6.5" fill={color} />
+          {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => (
+            <rect
+              key={deg}
+              x="15"
+              y="2.5"
+              width="2"
+              height="4.5"
+              rx="1"
+              fill={color}
+              transform={`rotate(${deg} 16 16)`}
+            />
+          ))}
+        </svg>
+      );
+
+    case "weather-partly":
+      return (
+        <svg {...common}>
+          <circle cx="11" cy="11" r="5" fill={color} />
+          {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => (
+            <rect key={deg} x="10.2" y="1.5" width="1.6" height="3" rx="0.8" fill={color} transform={`rotate(${deg} 11 11)`} />
+          ))}
+          <path d="M11 24 a6 6 0 0 1 0 -12 h6 a6 6 0 0 1 6 6 a5 5 0 0 1 -3 9 H12 a4 4 0 0 1 -1 -3 z" fill={a} />
+        </svg>
+      );
+
+    case "weather-cloud":
+      return (
+        <svg {...common}>
+          <path
+            d="M9 22 a6 6 0 0 1 0 -12 a7 7 0 0 1 13 -1 a5 5 0 0 1 1 10 z"
+            fill={color}
+          />
+        </svg>
+      );
+
+    case "weather-rain":
+      return (
+        <svg {...common}>
+          <path
+            d="M9 18 a6 6 0 0 1 0 -12 a7 7 0 0 1 13 -1 a5 5 0 0 1 1 10 z"
+            fill={a}
+          />
+          <path d="M11 22 l-2 5" stroke={color} strokeWidth="2.4" strokeLinecap="round" />
+          <path d="M16 22 l-2 5" stroke={color} strokeWidth="2.4" strokeLinecap="round" />
+          <path d="M21 22 l-2 5" stroke={color} strokeWidth="2.4" strokeLinecap="round" />
+        </svg>
+      );
+
+    case "weather-snow":
+      return (
+        <svg {...common}>
+          <path
+            d="M9 18 a6 6 0 0 1 0 -12 a7 7 0 0 1 13 -1 a5 5 0 0 1 1 10 z"
+            fill={a}
+          />
+          <circle cx="10" cy="24" r="1.6" fill={color} />
+          <circle cx="16" cy="26" r="1.6" fill={color} />
+          <circle cx="22" cy="24" r="1.6" fill={color} />
+        </svg>
+      );
+
+    case "weather-fog":
+      return (
+        <svg {...common}>
+          <path
+            d="M9 16 a6 6 0 0 1 0 -12 a7 7 0 0 1 13 -1 a5 5 0 0 1 1 10 z"
+            fill={color}
+          />
+          <path d="M5 22 h22" stroke={color} strokeWidth="2.2" strokeLinecap="round" opacity="0.7" />
+          <path d="M8 27 h16" stroke={color} strokeWidth="2.2" strokeLinecap="round" opacity="0.5" />
+        </svg>
+      );
+
+    case "weather-thunder":
+      return (
+        <svg {...common}>
+          <path
+            d="M9 18 a6 6 0 0 1 0 -12 a7 7 0 0 1 13 -1 a5 5 0 0 1 1 10 z"
+            fill={color}
+          />
+          <path d="M16 19 L12 26 H16 L14 30 L20 22 H16 L18 19 Z" fill={a} />
+        </svg>
+      );
+
+    case "weather-wind":
+      return (
+        <svg {...common}>
+          <path d="M3 11 h16 a3 3 0 1 0 -3 -3" stroke={color} strokeWidth="2.4" strokeLinecap="round" fill="none" />
+          <path d="M3 17 h22 a3 3 0 1 1 -3 3" stroke={color} strokeWidth="2.4" strokeLinecap="round" fill="none" />
+          <path d="M3 23 h13 a2.5 2.5 0 1 1 -2.5 2.5" stroke={color} strokeWidth="2.4" strokeLinecap="round" fill="none" />
+        </svg>
+      );
+
+    case "weather-moon":
+      return (
+        <svg {...common}>
+          <path
+            d="M22 4 a13 13 0 1 0 6 14 a10 10 0 0 1 -6 -14 z"
+            fill={color}
+          />
+          <circle cx="6" cy="8" r="0.9" fill={color} opacity="0.5" />
+          <circle cx="27" cy="26" r="1.1" fill={color} opacity="0.5" />
+        </svg>
+      );
+
     default:
       return null;
+  }
+};
+
+// Pick the right weather icon based on kind + daylight (sun → moon at night).
+import type { WeatherKind } from "@/lib/weather";
+export const weatherIcon = (kind: WeatherKind, isDaylight: boolean): IconName => {
+  if (!isDaylight && (kind === "clear" || kind === "partly")) return "weather-moon";
+  switch (kind) {
+    case "clear": return "weather-sun";
+    case "partly": return "weather-partly";
+    case "cloudy": return "weather-cloud";
+    case "rain": return "weather-rain";
+    case "snow": return "weather-snow";
+    case "fog": return "weather-fog";
+    case "thunder": return "weather-thunder";
+    case "wind": return "weather-wind";
+  }
+};
+
+// Map a weather kind to one of our brand HSL color tokens (returns the hsl(...) string).
+export const weatherIconColor = (kind: WeatherKind, isDaylight: boolean): string => {
+  if (!isDaylight && (kind === "clear" || kind === "partly")) return "hsl(var(--purple-sleep))";
+  switch (kind) {
+    case "clear": return "hsl(var(--orange-start))";
+    case "partly": return "hsl(var(--orange-start))";
+    case "cloudy": return "hsl(var(--blue-calm))";
+    case "rain": return "hsl(var(--blue-calm))";
+    case "snow": return "hsl(var(--purple-sleep))";
+    case "fog": return "hsl(var(--text-secondary))";
+    case "thunder": return "hsl(var(--blue-calm))";
+    case "wind": return "hsl(var(--blue-calm))";
+  }
+};
+
+export const weatherIconAccent = (kind: WeatherKind): string => {
+  switch (kind) {
+    case "rain": return "hsl(var(--cream-card))";
+    case "snow": return "hsl(var(--cream-card))";
+    case "thunder": return "hsl(var(--yellow-journal))";
+    case "partly": return "hsl(var(--cream-card))";
+    default: return "hsl(var(--cream-card))";
   }
 };
