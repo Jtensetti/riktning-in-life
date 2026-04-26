@@ -21,7 +21,7 @@ export const MechanismCard = ({ mechanism, evidence }: Props) => {
         aria-expanded={open}
       >
         <div className="shrink-0">
-          <AbstractIcon name="spark" size={40} />
+          <AbstractIcon name="spark" size={64} />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-[11px] font-extrabold uppercase tracking-wider text-text-secondary">
