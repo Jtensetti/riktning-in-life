@@ -288,36 +288,55 @@ const Week = () => {
           <p className="text-xs text-text-secondary">Senaste 7 dagar — varje dag berättar något</p>
         </div>
 
-        {/* Staplar-rad */}
-        <div className="card-cream p-4 mb-3 animate-pop-in">
-          <div className="flex items-end justify-between gap-1.5 h-24 mb-2">
-            {timeline.map((d, i) => {
-              const h = d.totalMinutes === 0 ? 6 : Math.max(8, (d.totalMinutes / maxMinutes) * 88);
-              const dominant = d.acts[0]?.color ?? d.sess[0]?.exercises?.color ?? "green";
-              const isEmpty = d.totalMinutes === 0;
-              return (
-                <div key={d.iso} className="flex-1 flex flex-col items-center gap-1.5 min-w-0">
-                  <div className="w-full flex items-end justify-center" style={{ height: 88 }}>
-                    <div
-                      className={`w-full rounded-t-lg ${isEmpty ? "bg-border-soft" : ""} animate-pop-in`}
-                      style={{
-                        height: h,
-                        background: isEmpty ? undefined : colorHsl(dominant),
-                        animationDelay: `${i * 40}ms`,
-                      }}
-                      title={`${d.totalMinutes} min`}
-                    />
-                  </div>
-                  <span className="text-[10px] font-extrabold text-text-secondary uppercase tabular-nums">{dayShort(d.iso)}</span>
-                </div>
-              );
+        <ChartCard
+          title="Aktiv tid"
+          subtitle="Senaste 7 dagar"
+          tone="green"
+          index={0}
+          ariaSummary={`Totalt ${timeline.reduce((s, d) => s + d.totalMinutes, 0)} minuter aktiv tid den här veckan.`}
+          action={
+            <span className="text-[11px] font-extrabold text-text-secondary tabular-nums">
+              {timeline.reduce((s, d) => s + d.totalMinutes, 0)} min totalt
+            </span>
+          }
+          className="mb-3"
+        >
+          <ActivityBars
+            data={timeline.map((d) => ({
+              iso: d.iso,
+              minutes: d.totalMinutes,
+              color: d.acts[0]?.color ?? d.sess[0]?.exercises?.color ?? "green",
+            }))}
+            height={120}
+          />
+        </ChartCard>
+
+        <ChartCard
+          title="Vad gjorde dagen av?"
+          subtitle="Minuter fördelat på sömn, rörelse, mående, återhämtning"
+          tone="orange"
+          index={1}
+          className="mb-3"
+        >
+          <StackedRecovery
+            data={timeline.map<RecoveryDay>((d) => {
+              const sleep = d.checkin?.sleep_hours ? Math.round(Number(d.checkin.sleep_hours) * 60) : 0;
+              const movement = d.acts
+                .filter((a) => a.color === "pink" || a.color === "green")
+                .reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
+              const mood = d.acts
+                .filter((a) => a.color === "orange" || a.color === "yellow")
+                .reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
+              const recovery =
+                d.sess.reduce((s, x) => s + (x.exercises?.duration_minutes ?? 0), 0) +
+                d.acts
+                  .filter((a) => a.color === "blue" || a.color === "purple")
+                  .reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
+              return { iso: d.iso, sleep, movement, mood, recovery };
             })}
-          </div>
-          <div className="flex items-center justify-between text-[11px] font-bold text-text-secondary border-t border-border-soft pt-2">
-            <span>Aktiv tid per dag</span>
-            <span className="tabular-nums">{timeline.reduce((s, d) => s + d.totalMinutes, 0)} min totalt</span>
-          </div>
-        </div>
+            height={150}
+          />
+        </ChartCard>
 
         {/* Per-dag rader */}
         <div className="space-y-2">
