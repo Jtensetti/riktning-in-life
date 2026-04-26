@@ -371,4 +371,48 @@ const Chip = ({ children, onClick }: { children: React.ReactNode; onClick: () =>
   </button>
 );
 
+const InsightCard = ({
+  label,
+  value,
+  suffix,
+  decimals = 0,
+  invert,
+  trend,
+  colorClass,
+}: {
+  label: string;
+  value: number | null;
+  suffix: string;
+  decimals?: number;
+  invert?: boolean;
+  trend: Trend;
+  colorClass: string;
+}) => {
+  const display = value == null ? "—" : value.toFixed(decimals);
+  // Visual: invert means lower=better, so on insight cards we still show the raw average
+  const toneClass =
+    trend.tone === "good"
+      ? "bg-green-recovery/15 text-green-recovery"
+      : trend.tone === "warn"
+        ? "bg-red-bg text-red-risk"
+        : "bg-surface-alt text-text-secondary";
+  const arrow = trend.dir === "up" ? "↑" : trend.dir === "down" ? "↓" : "→";
+  return (
+    <div className={`rounded-3xl ${colorClass} text-white p-4 shadow-soft flex flex-col justify-between min-h-[128px]`}>
+      <div className="text-[12px] font-extrabold uppercase tracking-wide opacity-90">{label}</div>
+      <div className="mt-2">
+        <div className="text-[28px] leading-none font-extrabold">
+          {display}
+          <span className="text-sm opacity-80 font-bold">{suffix}</span>
+        </div>
+        <div className={`mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-extrabold ${toneClass}`}>
+          <span aria-hidden>{arrow}</span>
+          <span>{trend.deltaLabel}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 export default Today;
