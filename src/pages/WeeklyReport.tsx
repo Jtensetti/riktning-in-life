@@ -10,6 +10,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { burdenScore, functionScore, recoveryScore, stabilityScore, splitWeeks, type Checkin, type WeeklyFormScore } from "@/lib/metrics";
+import {
+  PDF_COLORS,
+  drawReportHeader,
+  drawSectionHeader,
+  drawScoreCards,
+  drawSparklineRows,
+  drawHBarChart,
+  drawWeekDots,
+  drawFooter,
+  setPdfText,
+  setPdfDraw,
+  sevenDayLabels,
+  sevenDayDates,
+  seriesFor,
+} from "@/lib/pdfWidgets";
 
 const QUESTIONS_KEY = "riktning_doctor_questions";
 
@@ -168,9 +183,26 @@ const WeeklyReport = () => {
     const doc = new jsPDF({ unit: "pt", format: "a4" });
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
-    const margin = 48;
+    const margin = 40;
     const maxW = pageW - margin * 2;
-    let y = margin;
+    const today = new Date().toISOString().split("T")[0];
+
+    // ----- Header med nyckeltal -----
+    let y = drawReportHeader(
+      doc,
+      {
+        title: "Klinisk veckorapport",
+        subtitle: `Period ${isoDaysAgo(6)} – ${today} · 7 dagar`,
+        meta: `Genererad ${new Date().toLocaleDateString("sv-SE")}`,
+        metrics: [
+          { label: "Riktning", value: fmtScore(summary.direction) },
+          { label: "Funktion", value: fmtScore(summary.fn) },
+          { label: "Återhämtning", value: fmtScore(summary.rec) },
+          { label: "Stabilitet", value: fmtScore(summary.stab) },
+        ],
+      },
+      margin,
+    );
 
     const ensureSpace = (needed: number) => {
       if (y + needed > pageH - margin - 30) {
@@ -178,71 +210,99 @@ const WeeklyReport = () => {
         y = margin;
       }
     };
-    const writeLine = (text: string, opts: { bold?: boolean; size?: number; gap?: number } = {}) => {
+    const writeLine = (text: string, opts: { bold?: boolean; size?: number; gap?: number; muted?: boolean } = {}) => {
       const size = opts.size ?? 10;
       doc.setFont("helvetica", opts.bold ? "bold" : "normal");
       doc.setFontSize(size);
+      setPdfText(doc, opts.muted ? PDF_COLORS.inkSoft : PDF_COLORS.ink);
       const wrapped = doc.splitTextToSize(text, maxW);
       for (const w of wrapped) {
         ensureSpace(size + 4);
         doc.text(w, margin, y);
         y += size + 4;
       }
+      setPdfText(doc, PDF_COLORS.ink);
       if (opts.gap) y += opts.gap;
     };
-    const sectionHeader = (title: string) => {
-      ensureSpace(28);
-      y += 6;
-      doc.setDrawColor(220);
-      doc.line(margin, y, pageW - margin, y);
-      y += 12;
-      writeLine(title, { bold: true, size: 13 });
-      y += 2;
-    };
 
-    // Title
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(20);
-    doc.text("Klinisk veckorapport", margin, y);
-    y += 22;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(110);
-    doc.text(
-      `Period: ${isoDaysAgo(6)} till ${new Date().toISOString().split("T")[0]} · Genererad ${new Date().toLocaleDateString("sv-SE")}`,
-      margin,
+    // ----- Score-kort i rad -----
+    ensureSpace(110);
+    y = drawSectionHeader(doc, "Beräknade scores (0–100)", y, margin);
+    y = drawScoreCards(
+      doc,
+      [
+        { label: "Riktning", value: summary.direction, prev: summary.directionPrev },
+        { label: "Belastning", value: summary.burden.value, color: PDF_COLORS.slate },
+        { label: "Funktion", value: summary.fn },
+        { label: "Återhämtning", value: summary.rec },
+      ],
       y,
+      margin,
     );
-    doc.setTextColor(0);
-    y += 18;
+    if (!summary.burden.withWeekly) {
+      writeLine("Belastningen beräknad utan PHQ-9/GAD-7 (ingen aktuell veckoskattning).", { muted: true, size: 9 });
+    }
 
-    // Beräknade scores
-    sectionHeader("Beräknade scores (0–100)");
-    const deltaStr = (cur: number | null, prev: number | null) => {
-      if (cur == null || prev == null) return "";
-      const d = Math.round(cur - prev);
-      if (d === 0) return " (oförändrad)";
-      return ` (${d > 0 ? "+" : ""}${d} mot förra veckan)`;
-    };
-    writeLine(`Riktning (100 − belastning): ${fmtScore(summary.direction)}${deltaStr(summary.direction, summary.directionPrev)}`);
-    writeLine(`Belastning${summary.burden.withWeekly ? " (inkl. PHQ-9/GAD-7)" : " (utan veckoskattning)"}: ${fmtScore(summary.burden.value)}`);
-    writeLine(`Funktion: ${fmtScore(summary.fn)}`);
-    writeLine(`Återhämtning: ${fmtScore(summary.rec)}`);
-    writeLine(`Stabilitet: ${fmtScore(summary.stab)}`);
+    // ----- Trender (7-dagars sparklines) -----
+    ensureSpace(180);
+    y = drawSectionHeader(doc, "Trender senaste 7 dagar", y, margin);
+    const sleepRow = seriesFor(data.checkins, "sleep_hours");
+    const anxRow = seriesFor(data.checkins, "anxiety");
+    const moodRow = seriesFor(data.checkins, "mood_heaviness");
+    const funcRow = seriesFor(data.checkins, "function_score");
+    const energyRow = seriesFor(data.checkins, "energy");
+    y = drawSparklineRows(
+      doc,
+      [
+        { label: "Sömn (h)", values: sleepRow, domain: [0, 12], suffix: " h", color: PDF_COLORS.purple, threshold: { value: 6 } },
+        { label: "Oro", values: anxRow, domain: [0, 10], suffix: "/10", color: PDF_COLORS.red, threshold: { value: 7 } },
+        { label: "Tyngd", values: moodRow, domain: [0, 10], suffix: "/10", color: PDF_COLORS.slate },
+        { label: "Funktion", values: funcRow, domain: [0, 10], suffix: "/10", color: PDF_COLORS.green },
+        { label: "Energi", values: energyRow, domain: [0, 10], suffix: "/10", color: PDF_COLORS.amber },
+      ],
+      y,
+      margin,
+    );
+    writeLine("Streckad amber-linje = klinisk tröskel (sömn < 6 h, oro ≥ 7).", { muted: true, size: 8 });
 
-    // Sömn
-    sectionHeader("Sömn");
-    writeLine(`Snittlängd: ${fmt(summary.sleepHours, " h")}`);
-    writeLine(`Snittkvalitet: ${fmt(summary.sleepQuality, "/10")}`);
+    // ----- Sömn-detaljer -----
+    ensureSpace(80);
+    y = drawSectionHeader(doc, "Sömn", y, margin);
     const lowSleepDays = summary.week.filter((c) => c.sleep_hours != null && Number(c.sleep_hours) < 6).length;
-    writeLine(`Dagar med < 6 h sömn: ${lowSleepDays}/${summary.week.length}`);
+    writeLine(`Snittlängd: ${fmt(summary.sleepHours, " h")} · snittkvalitet: ${fmt(summary.sleepQuality, "/10")}`);
+    writeLine(`Dagar med < 6 h sömn: ${lowSleepDays} av ${summary.week.length}`);
 
-    // Rörelse & aktivitet
-    sectionHeader("Rörelse & meningsfull aktivitet");
-    writeLine(`Rörelse-dagar (självskattat): ${summary.movementYes} fullt + ${summary.movementLittle} lite av ${summary.week.length}`);
-    writeLine(`Dagar med meningsfull aktivitet: ${summary.meaningfulYes}/${summary.week.length}`);
+    // ----- Rörelse — veckopuls -----
+    ensureSpace(80);
+    y = drawSectionHeader(doc, "Rörelse & meningsfull aktivitet", y, margin);
+    const dayDates = sevenDayDates();
+    const dayLabels = sevenDayLabels();
+    const moveByDate = new Map(summary.week.map((c) => [c.date, c.movement_today]));
+    const meaningfulByDate = new Map(summary.week.map((c) => [c.date, c.meaningful_activity]));
+    y = drawWeekDots(
+      doc,
+      dayDates.map((d, i) => {
+        const m = moveByDate.get(d);
+        return { label: dayLabels[i], level: m === "yes" ? 2 : m === "little" ? 1 : 0 };
+      }),
+      y,
+      margin,
+      "Rörelse per dag",
+    );
+    y = drawWeekDots(
+      doc,
+      dayDates.map((d, i) => {
+        const m = meaningfulByDate.get(d);
+        return { label: dayLabels[i], level: m === "yes" ? 2 : m === "some" ? 1 : 0 };
+      }),
+      y,
+      margin,
+      "Meningsfull aktivitet per dag",
+    );
     writeLine(`Loggade aktiviteter: ${data.activities.length} st · ${summary.totalActMinutes} min totalt`);
-    if (data.activities.length) {
+
+    // ----- Mest hjälpsamma aktiviteter (h-bar) -----
+    if (data.activities.length > 0) {
       const byLabel = new Map<string, { count: number; sumDelta: number }>();
       for (const a of data.activities) {
         const cur = byLabel.get(a.label) ?? { count: 0, sumDelta: 0 };
@@ -252,15 +312,26 @@ const WeeklyReport = () => {
       }
       const top = Array.from(byLabel.entries())
         .map(([label, v]) => ({ label, count: v.count, avgDelta: v.sumDelta / v.count }))
-        .sort((a, b) => b.avgDelta - a.avgDelta || b.count - a.count)
-        .slice(0, 3);
-      for (const t of top) {
-        writeLine(`  • ${t.label} · ${t.count} ggr · snittlyft ${t.avgDelta >= 0 ? "+" : ""}${t.avgDelta.toFixed(1)}`);
-      }
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+      ensureSpace(top.length * 18 + 40);
+      y = drawSectionHeader(doc, "Mest loggade aktiviteter", y, margin);
+      y = drawHBarChart(
+        doc,
+        top.map((t) => ({
+          label: `${t.label} (snittlyft ${t.avgDelta >= 0 ? "+" : ""}${t.avgDelta.toFixed(1)})`,
+          value: t.count,
+          color: t.avgDelta >= 0.5 ? PDF_COLORS.green : t.avgDelta <= -0.5 ? PDF_COLORS.red : PDF_COLORS.blue,
+        })),
+        y,
+        margin,
+        { valueSuffix: " ggr" },
+      );
     }
 
-    // Medicin
-    sectionHeader("Läkemedel");
+    // ----- Medicin -----
+    ensureSpace(80);
+    y = drawSectionHeader(doc, "Läkemedel", y, margin);
     if (data.meds.length === 0) writeLine("Inga registrerade läkemedel.");
     for (const med of data.meds) {
       writeLine(
@@ -270,36 +341,53 @@ const WeeklyReport = () => {
     writeLine(`Följsamhet senaste veckan: ${summary.adherence !== null ? summary.adherence + " %" : "ej loggat"}`);
     writeLine(`Rapporterade biverkningar: ${summary.sideEffects.length ? summary.sideEffects.join(", ") : "inga"}`);
 
-    // Journal
+    // ----- Journal -----
     if (includeJournal) {
-      sectionHeader("Journal (utvalda anteckningar)");
+      ensureSpace(60);
+      y = drawSectionHeader(doc, "Journal (utvalda anteckningar)", y, margin);
       if (data.journals.length === 0) {
         writeLine("Inga markerade anteckningar för perioden.");
       } else {
         for (const e of data.journals.slice(0, 8)) {
           writeLine(`${e.date} · ${e.template_type}${e.title ? ` · ${e.title}` : ""}`, { bold: true });
-          if (e.free_text) writeLine(e.free_text.slice(0, 280));
+          if (e.free_text) writeLine(e.free_text.slice(0, 280), { muted: true });
           y += 2;
         }
       }
     }
 
-    // Säkerhet
-    sectionHeader("Säkerhetssignaler");
-    writeLine(`Passiva dödstankar: ${summary.safety.passive} dagar`);
-    writeLine(`Aktiva tankar: ${summary.safety.active} dagar`);
-    writeLine(`Akuta signaler: ${summary.safety.acute} dagar`);
+    // ----- Säkerhet -----
+    ensureSpace(80);
+    y = drawSectionHeader(doc, "Säkerhetssignaler", y, margin);
+    const safetyTotal = summary.safety.passive + summary.safety.active + summary.safety.acute;
+    if (safetyTotal === 0) {
+      writeLine("Inga rapporterade säkerhetssignaler under perioden.", { muted: true });
+    } else {
+      y = drawHBarChart(
+        doc,
+        [
+          { label: "Passiva dödstankar", value: summary.safety.passive, color: PDF_COLORS.amber },
+          { label: "Aktiva tankar", value: summary.safety.active, color: PDF_COLORS.red },
+          { label: "Akuta signaler", value: summary.safety.acute, color: PDF_COLORS.red },
+        ],
+        y,
+        margin,
+        { valueSuffix: " dgr" },
+      );
+    }
 
-    // Patientens frågor
-    sectionHeader("Patientens frågor till läkaren");
+    // ----- Patientens frågor -----
+    ensureSpace(80);
+    y = drawSectionHeader(doc, "Patientens frågor till läkaren", y, margin);
     if (questions.length === 0) {
-      writeLine("Inga frågor angivna.");
+      writeLine("Inga frågor angivna.", { muted: true });
     } else {
       questions.forEach((q, i) => writeLine(`${i + 1}. ${q}`));
     }
 
-    // Tomma fält för läkaren
-    sectionHeader("Avsnitt för läkaren");
+    // ----- Tomma fält för läkaren -----
+    ensureSpace(120);
+    y = drawSectionHeader(doc, "Avsnitt för läkaren", y, margin);
     const blocks: { title: string; lines: number }[] = [
       { title: "Bedömning", lines: 4 },
       { title: "Plan & åtgärder", lines: 4 },
@@ -307,8 +395,10 @@ const WeeklyReport = () => {
       { title: "Övriga noteringar", lines: 3 },
     ];
     for (const b of blocks) {
+      ensureSpace(b.lines * 18 + 30);
       writeLine(b.title, { bold: true, size: 11 });
-      doc.setDrawColor(200);
+      setPdfDraw(doc, PDF_COLORS.rule);
+      doc.setLineWidth(0.5);
       for (let i = 0; i < b.lines; i++) {
         ensureSpace(20);
         y += 16;
@@ -317,18 +407,10 @@ const WeeklyReport = () => {
       y += 14;
     }
 
-    // Sidnumrering
-    const pageCount = doc.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(120);
-      doc.text(`Sida ${i} / ${pageCount}`, pageW - margin, pageH - 24, { align: "right" });
-      doc.setTextColor(0);
-    }
+    // ----- Footer -----
+    drawFooter(doc, "Riktning · Klinisk veckorapport", margin);
 
-    doc.save(`riktning-veckorapport-${new Date().toISOString().split("T")[0]}.pdf`);
+    doc.save(`riktning-veckorapport-${today}.pdf`);
     toast.success("PDF skapad");
   };
 

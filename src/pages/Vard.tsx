@@ -15,6 +15,21 @@ import { toast } from "sonner";
 import { FORMS, FormType, SIDE_EFFECTS } from "@/lib/forms";
 import { burdenScore, functionScore, recoveryScore, stabilityScore, stabilityLabel, pctChange, splitWeeks, type Checkin, type WeeklyFormScore } from "@/lib/metrics";
 import jsPDF from "jspdf";
+import {
+  PDF_COLORS,
+  drawReportHeader,
+  drawSectionHeader,
+  drawScoreCards,
+  drawSparklineRows,
+  drawHBarChart,
+  drawWeekDots,
+  drawFooter,
+  setPdfText,
+  setPdfDraw,
+  sevenDayLabels,
+  sevenDayDates,
+  seriesFor,
+} from "@/lib/pdfWidgets";
 
 type View = "home" | "form" | "meds" | "med_log" | "report";
 
@@ -473,6 +488,24 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
       .then(({ count }) => setMarkedJournalCount(count ?? 0));
   }, [user, days]);
 
+  // Strukturerad data behövs för visuella PDF-widgets utöver textraderna.
+  const [structured, setStructured] = useState<{
+    checkins: Checkin[];
+    activities: { date: string; label: string; category: string; duration_minutes: number | null; mood_delta: number | null }[];
+    journals: { date: string; template_type: string; title: string | null; free_text: string | null }[];
+    drivers: string[];
+    direction: number | null;
+    directionPrev: number | null;
+    burden: number | null;
+    fn: number | null;
+    rec: number | null;
+    stab: number | null;
+    safetyCounts: { passive: number; active: number; acute: number };
+    adherence: number | null;
+    sideEffects: string[];
+    movementDays: number;
+  } | null>(null);
+
   const generate = async () => {
     if (!user) return;
     setGenerating(true);
@@ -606,6 +639,22 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
     }
 
     setReport(lines.join("\n"));
+    setStructured({
+      checkins: checkinsTyped,
+      activities: acts,
+      journals: j,
+      drivers,
+      direction: directionCur,
+      directionPrev,
+      burden: burdenCur.value,
+      fn: fnCur,
+      rec: recCur,
+      stab: stabCur,
+      safetyCounts,
+      adherence,
+      sideEffects,
+      movementDays,
+    });
     setGenerating(false);
   };
 
@@ -621,57 +670,214 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
   };
 
   const downloadPdf = () => {
-    if (!report) return;
+    if (!report || !structured) return;
     const doc = new jsPDF({ unit: "pt", format: "a4" });
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
-    const margin = 48;
+    const margin = 40;
     const maxW = pageW - margin * 2;
-    let y = margin;
+    const today = new Date().toISOString().split("T")[0];
+    const periodStart = new Date(Date.now() - days * 86400000).toISOString().split("T")[0];
 
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(18);
-    doc.text("Riktning – Klinisk rapport", margin, y);
-    y += 24;
+    const fmtScore = (v: number | null) => (v == null ? "—" : `${Math.round(v)}/100`);
 
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    const SECTION_HEADERS = new Set(["BERÄKNADE SCORES (senaste 7 dagar, 0–100)", "VIKTIGASTE BIDRAGANDE FAKTORER", "SKATTNINGAR", "DAGLIGA MEDELVÄRDEN", "AKTIVITET", "LÄKEMEDEL", "SÄKERHETSSIGNALER", "SAMMANFATTNING", "JOURNAL (utvalda)"]);
+    // ----- Header -----
+    let y = drawReportHeader(
+      doc,
+      {
+        title: "Riktning – Klinisk rapport",
+        subtitle: `Period ${periodStart} – ${today} · ${days} dagar`,
+        meta: `Genererad ${new Date().toLocaleDateString("sv-SE")}`,
+        metrics: [
+          { label: "Riktning", value: fmtScore(structured.direction) },
+          { label: "Funktion", value: fmtScore(structured.fn) },
+          { label: "Återhämtning", value: fmtScore(structured.rec) },
+          { label: "Stabilitet", value: fmtScore(structured.stab) },
+        ],
+      },
+      margin,
+    );
 
-    for (const raw of report.split("\n").slice(2)) {
-      const line = raw === "" ? " " : raw;
-      const isHeader = SECTION_HEADERS.has(line.trim());
-      if (isHeader) {
-        if (y > margin + 20) y += 6;
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(12);
-      } else {
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(10);
+    const ensureSpace = (needed: number) => {
+      if (y + needed > pageH - margin - 30) {
+        doc.addPage();
+        y = margin;
       }
-      const wrapped = doc.splitTextToSize(line, maxW);
+    };
+    const writeLine = (text: string, opts: { bold?: boolean; size?: number; muted?: boolean } = {}) => {
+      const size = opts.size ?? 10;
+      doc.setFont("helvetica", opts.bold ? "bold" : "normal");
+      doc.setFontSize(size);
+      setPdfText(doc, opts.muted ? PDF_COLORS.inkSoft : PDF_COLORS.ink);
+      const wrapped = doc.splitTextToSize(text, maxW);
       for (const w of wrapped) {
-        if (y > pageH - margin - 30) {
-          doc.addPage();
-          y = margin;
-        }
+        ensureSpace(size + 4);
         doc.text(w, margin, y);
-        y += isHeader ? 16 : 14;
+        y += size + 4;
       }
+      setPdfText(doc, PDF_COLORS.ink);
+    };
+
+    // ----- Score-kort -----
+    ensureSpace(110);
+    y = drawSectionHeader(doc, "Beräknade scores (senaste 7 dagar)", y, margin);
+    y = drawScoreCards(
+      doc,
+      [
+        { label: "Riktning", value: structured.direction, prev: structured.directionPrev },
+        { label: "Belastning", value: structured.burden, color: PDF_COLORS.slate },
+        { label: "Funktion", value: structured.fn },
+        { label: "Återhämtning", value: structured.rec },
+      ],
+      y,
+      margin,
+    );
+
+    // ----- Trender (sparklines) -----
+    ensureSpace(180);
+    y = drawSectionHeader(doc, "Trender senaste 7 dagar", y, margin);
+    const recent = structured.checkins.filter((c) => {
+      const cutoff = new Date(Date.now() - 7 * 86400000);
+      return new Date(c.date) >= cutoff;
+    });
+    y = drawSparklineRows(
+      doc,
+      [
+        { label: "Sömn (h)", values: seriesFor(recent, "sleep_hours"), domain: [0, 12], suffix: " h", color: PDF_COLORS.purple, threshold: { value: 6 } },
+        { label: "Oro", values: seriesFor(recent, "anxiety"), domain: [0, 10], suffix: "/10", color: PDF_COLORS.red, threshold: { value: 7 } },
+        { label: "Tyngd", values: seriesFor(recent, "mood_heaviness"), domain: [0, 10], suffix: "/10", color: PDF_COLORS.slate },
+        { label: "Funktion", values: seriesFor(recent, "function_score"), domain: [0, 10], suffix: "/10", color: PDF_COLORS.green },
+        { label: "Energi", values: seriesFor(recent, "energy"), domain: [0, 10], suffix: "/10", color: PDF_COLORS.amber },
+      ],
+      y,
+      margin,
+    );
+    writeLine("Streckad amber-linje = klinisk tröskel (sömn < 6 h, oro ≥ 7).", { muted: true, size: 8 });
+
+    // ----- Bidragande faktorer -----
+    if (structured.drivers.length > 0) {
+      ensureSpace(80);
+      y = drawSectionHeader(doc, "Viktigaste bidragande faktorer", y, margin);
+      structured.drivers.slice(0, 6).forEach((d) => writeLine(`• ${d}`));
     }
 
-    // Page numbers
-    const pageCount = doc.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(120);
-      doc.text(`Sida ${i} / ${pageCount}`, pageW - margin, pageH - 24, { align: "right" });
-      doc.setTextColor(0);
+    // ----- Veckopuls — rörelse -----
+    ensureSpace(80);
+    y = drawSectionHeader(doc, "Rörelse senaste 7 dagar", y, margin);
+    const dayDates = sevenDayDates();
+    const dayLabels = sevenDayLabels();
+    const moveByDate = new Map(structured.checkins.map((c) => [c.date, c.movement_today as string | null]));
+    y = drawWeekDots(
+      doc,
+      dayDates.map((d, i) => {
+        const m = moveByDate.get(d);
+        return { label: dayLabels[i], level: m === "yes" ? 2 : m === "little" ? 1 : 0 };
+      }),
+      y,
+      margin,
+      "Rörelse per dag",
+    );
+
+    // ----- Mest hjälpsamma aktiviteter -----
+    if (structured.activities.length > 0) {
+      const byLabel = new Map<string, { count: number; sumDelta: number }>();
+      for (const a of structured.activities) {
+        const cur = byLabel.get(a.label) ?? { count: 0, sumDelta: 0 };
+        cur.count += 1;
+        cur.sumDelta += Number(a.mood_delta ?? 0);
+        byLabel.set(a.label, cur);
+      }
+      const top = Array.from(byLabel.entries())
+        .map(([label, v]) => ({ label, count: v.count, avgDelta: v.sumDelta / v.count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+      ensureSpace(top.length * 18 + 40);
+      y = drawSectionHeader(doc, "Mest loggade aktiviteter", y, margin);
+      y = drawHBarChart(
+        doc,
+        top.map((t) => ({
+          label: `${t.label} (snittlyft ${t.avgDelta >= 0 ? "+" : ""}${t.avgDelta.toFixed(1)})`,
+          value: t.count,
+          color: t.avgDelta >= 0.5 ? PDF_COLORS.green : t.avgDelta <= -0.5 ? PDF_COLORS.red : PDF_COLORS.blue,
+        })),
+        y,
+        margin,
+        { valueSuffix: " ggr" },
+      );
     }
 
-    doc.save(`riktning-rapport-${new Date().toISOString().split("T")[0]}.pdf`);
+    // ----- Säkerhet -----
+    const safetyTotal = structured.safetyCounts.passive + structured.safetyCounts.active + structured.safetyCounts.acute;
+    if (safetyTotal > 0) {
+      ensureSpace(70);
+      y = drawSectionHeader(doc, "Säkerhetssignaler", y, margin);
+      y = drawHBarChart(
+        doc,
+        [
+          { label: "Passiva dödstankar", value: structured.safetyCounts.passive, color: PDF_COLORS.amber },
+          { label: "Aktiva tankar", value: structured.safetyCounts.active, color: PDF_COLORS.red },
+          { label: "Akuta signaler", value: structured.safetyCounts.acute, color: PDF_COLORS.red },
+        ],
+        y,
+        margin,
+        { valueSuffix: " dgr" },
+      );
+    }
+
+    // ----- Kompletterande textinnehåll (skattningar, läkemedel, journal) -----
+    ensureSpace(40);
+    y = drawSectionHeader(doc, "Detaljer", y, margin);
+    const SECTION_HEADERS = new Set([
+      "BERÄKNADE SCORES (senaste 7 dagar, 0–100)",
+      "VIKTIGASTE BIDRAGANDE FAKTORER",
+      "SKATTNINGAR",
+      "DAGLIGA MEDELVÄRDEN",
+      "AKTIVITET",
+      "LÄKEMEDEL",
+      "SÄKERHETSSIGNALER",
+      "SAMMANFATTNING",
+      "JOURNAL (utvalda)",
+    ]);
+    // Visa endast sektioner som inte redan har grafiska widgets ovan.
+    const TEXT_ONLY = new Set(["SKATTNINGAR", "DAGLIGA MEDELVÄRDEN", "LÄKEMEDEL", "SAMMANFATTNING", "JOURNAL (utvalda)"]);
+    let inIncluded = false;
+    for (const raw of report.split("\n").slice(2)) {
+      const line = raw.trim();
+      if (SECTION_HEADERS.has(line)) {
+        inIncluded = TEXT_ONLY.has(line);
+        if (inIncluded) {
+          ensureSpace(28);
+          writeLine(line, { bold: true, size: 11 });
+        }
+        continue;
+      }
+      if (!inIncluded) continue;
+      writeLine(raw === "" ? " " : raw);
+    }
+
+    // ----- Avsnitt för läkaren -----
+    ensureSpace(120);
+    y = drawSectionHeader(doc, "Avsnitt för läkaren", y, margin);
+    const blocks: { title: string; lines: number }[] = [
+      { title: "Bedömning", lines: 4 },
+      { title: "Plan & åtgärder", lines: 4 },
+      { title: "Nästa steg / uppföljning", lines: 3 },
+    ];
+    for (const b of blocks) {
+      ensureSpace(b.lines * 18 + 30);
+      writeLine(b.title, { bold: true, size: 11 });
+      setPdfDraw(doc, PDF_COLORS.rule);
+      doc.setLineWidth(0.5);
+      for (let i = 0; i < b.lines; i++) {
+        ensureSpace(20);
+        y += 16;
+        doc.line(margin, y, pageW - margin, y);
+      }
+      y += 14;
+    }
+
+    drawFooter(doc, "Riktning · Klinisk rapport", margin);
+    doc.save(`riktning-rapport-${today}.pdf`);
   };
 
   const copy = async () => {
