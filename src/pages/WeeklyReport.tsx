@@ -266,6 +266,64 @@ const WeeklyReport = () => {
       writeLine("Belastningen beräknad utan PHQ-9/GAD-7 (ingen aktuell veckoskattning).", { muted: true, size: 9 });
     }
 
+    // ----- Sammanfattningsblock: sömn / rörelse / journal / medicin -----
+    const fmtTrend = (cur: number | null, prev: number | null, unit: string, decimals = 1) => {
+      if (cur == null || prev == null) return undefined;
+      const diff = cur - prev;
+      const dir: "up" | "down" | "flat" = Math.abs(diff) < 0.05 ? "flat" : diff > 0 ? "up" : "down";
+      const sign = diff > 0 ? "+" : "";
+      return { dir, text: `${sign}${diff.toFixed(decimals)}${unit} vs forra veckan` };
+    };
+    const fmtTrendInt = (cur: number, prev: number, unit: string) => {
+      const diff = cur - prev;
+      const dir: "up" | "down" | "flat" = diff === 0 ? "flat" : diff > 0 ? "up" : "down";
+      const sign = diff > 0 ? "+" : "";
+      return { dir, text: `${sign}${diff}${unit} vs forra veckan` };
+    };
+    const movementDays = summary.movementYes + summary.movementLittle;
+    const movementDaysPrev = summary.movementYesPrev + summary.movementLittlePrev;
+    const medsTotal = data.meds.filter((m) => m.active).length;
+
+    ensureSpace(110);
+    y = drawSectionHeader(doc, "Sammanfattning veckan", y, margin);
+    y = drawSummaryBlock(
+      doc,
+      [
+        {
+          label: "Sömn",
+          value: summary.sleepHours == null ? "—" : `${summary.sleepHours.toFixed(1)} h`,
+          sub: `${summary.lowSleepNights} natt${summary.lowSleepNights === 1 ? "" : "er"} under 6 h · kvalitet ${summary.sleepQuality == null ? "—" : summary.sleepQuality.toFixed(1) + "/10"}`,
+          trend: fmtTrend(summary.sleepHours, summary.sleepHoursPrev, " h"),
+          color: PDF_COLORS.purple,
+        },
+        {
+          label: "Rörelse",
+          value: `${movementDays} / 7 dgr`,
+          sub: `${summary.movementYes} full · ${summary.movementLittle} lite · ${summary.totalActMinutes} min loggat`,
+          trend: fmtTrendInt(movementDays, movementDaysPrev, " dgr"),
+          color: PDF_COLORS.green,
+        },
+        {
+          label: "Journal",
+          value: `${summary.journalCount} st`,
+          sub: `${summary.journalDays} dag${summary.journalDays === 1 ? "" : "ar"} med anteckning · ${summary.meaningfulYes} meningsfull aktivitet`,
+          color: PDF_COLORS.blue,
+        },
+        {
+          label: "Medicin",
+          value: summary.adherence == null ? "—" : `${summary.adherence}%`,
+          sub: `${medsTotal} aktiv${medsTotal === 1 ? "" : "a"} · ${summary.sideEffects.length === 0 ? "inga biverkningar" : `${summary.sideEffects.length} biverkning${summary.sideEffects.length === 1 ? "" : "ar"}`}`,
+          trend:
+            summary.adherence != null && summary.adherencePrev != null
+              ? fmtTrendInt(summary.adherence, summary.adherencePrev, " %")
+              : undefined,
+          color: PDF_COLORS.amber,
+        },
+      ],
+      y,
+      margin,
+    );
+
     // ----- Trender (7-dagars sparklines) -----
     ensureSpace(180);
     y = drawSectionHeader(doc, "Trender senaste 7 dagar", y, margin);
