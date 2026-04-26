@@ -1,7 +1,9 @@
 import { useMemo } from "react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { toneHsl, chartTokens, prefersReducedMotion, type ChartTone } from "@/lib/chartColors";
+import { BarChart, Bar, ResponsiveContainer, Cell } from "recharts";
+import { toneHsl, chartTokens, type ChartTone } from "@/lib/chartColors";
+import { chartAnimation, chartBarLayout, chartHeights, chartMargins } from "@/lib/chartTheme";
 import { AnimatedChart, buildChartSignature } from "./AnimatedChart";
+import { ThemedTooltip, ThemedXAxis, ThemedYAxis } from "./ChartPrimitives";
 
 export type MetricBarPoint = {
   /** Visningsetikett (kort, t.ex. veckodag eller kategori). */
@@ -37,15 +39,13 @@ interface Props {
 export const MetricBars = ({
   data,
   defaultTone = "orange",
-  height = 128,
+  height = chartHeights.compact,
   emptyMin = 4,
   valueFormatter = (v) => `${v}`,
   valueLabel = "Värde",
   showYAxis = false,
   yMax,
 }: Props) => {
-  const reduced = prefersReducedMotion();
-
   const rows = useMemo(
     () =>
       data.map((d, i) => ({
@@ -64,58 +64,30 @@ export const MetricBars = ({
     <AnimatedChart signature={sig}>
       <div style={{ height }} role="img" aria-label={valueLabel}>
         <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={rows} margin={{ top: 6, right: 0, bottom: 0, left: showYAxis ? -8 : 0 }} barCategoryGap="22%">
-          <XAxis
-            dataKey="label"
-            tickLine={false}
-            axisLine={false}
-            interval={0}
-            tick={{ fill: chartTokens.axisText, fontSize: 11, fontWeight: 800 }}
-            height={20}
-          />
-          {showYAxis ? (
-            <YAxis
-              domain={[0, computedMax]}
-              tickLine={false}
-              axisLine={false}
-              width={28}
-              tick={{ fill: chartTokens.axisText, fontSize: 10, fontWeight: 700 }}
-            />
-          ) : (
-            <YAxis hide domain={[0, Math.max(computedMax, emptyMin * 4)]} />
-          )}
-          <Tooltip
-            cursor={{ fill: "transparent" }}
-            contentStyle={{
-              borderRadius: 14,
-              border: `1px solid ${chartTokens.tooltipBorder}`,
-              background: chartTokens.tooltipBg,
-              boxShadow: "0 8px 24px hsl(240 4% 19% / 0.08)",
-              fontSize: 12,
-              fontWeight: 700,
-              padding: "6px 10px",
-            }}
-            formatter={(_, __, item) => {
-              const d = item.payload as (typeof rows)[number];
-              return [d.isEmpty ? "—" : valueFormatter(d.value), valueLabel];
-            }}
-          />
-          <Bar
-            dataKey="displayValue"
-            radius={[12, 12, 4, 4]}
-            isAnimationActive={!reduced}
-            animationDuration={650}
-            animationEasing="ease-out"
+          <BarChart
+            data={rows}
+            margin={showYAxis ? chartMargins.barsWithY : chartMargins.bars}
+            barCategoryGap={chartBarLayout.categoryGap}
           >
-            {rows.map((d, i) => (
-              <Cell
-                key={i}
-                fill={d.isEmpty ? chartTokens.emptyBar : toneHsl(d.tone ?? defaultTone)}
-              />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
+            <ThemedXAxis />
+            <ThemedYAxis
+              hide={!showYAxis}
+              domain={showYAxis ? [0, computedMax] : [0, Math.max(computedMax, emptyMin * 4)]}
+            />
+            <ThemedTooltip
+              variant="bar"
+              formatter={(_, __, item) => {
+                const d = item.payload as (typeof rows)[number];
+                return [d.isEmpty ? "—" : valueFormatter(d.value), valueLabel];
+              }}
+            />
+            <Bar dataKey="displayValue" radius={chartBarLayout.radiusTop} {...chartAnimation("bar")}>
+              {rows.map((d, i) => (
+                <Cell key={i} fill={d.isEmpty ? chartTokens.emptyBar : toneHsl(d.tone ?? defaultTone)} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
       </div>
     </AnimatedChart>
   );

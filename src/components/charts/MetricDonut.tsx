@@ -1,7 +1,9 @@
 import { useMemo } from "react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { toneHsl, chartTokens, prefersReducedMotion, toneSoftBg, type ChartTone } from "@/lib/chartColors";
+import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+import { toneHsl, toneSoftBg, type ChartTone } from "@/lib/chartColors";
+import { chartAnimation, chartHeights } from "@/lib/chartTheme";
 import { AnimatedChart, buildChartSignature } from "./AnimatedChart";
+import { ThemedTooltip } from "./ChartPrimitives";
 
 export type MetricSlice = {
   label: string;
@@ -30,13 +32,12 @@ interface DonutProps {
  */
 export const MetricDonut = ({
   data,
-  size = 160,
+  size = chartHeights.standard,
   innerPct = 62,
   centerValue,
   centerSubtitle,
   valueFormatter = (v) => `${v}`,
 }: DonutProps) => {
-  const reduced = prefersReducedMotion();
   const inner = (size / 2) * (innerPct / 100);
   const outer = size / 2 - 2;
 
@@ -44,59 +45,49 @@ export const MetricDonut = ({
   const sig = buildChartSignature(data, `${size}-${innerPct}`);
 
   return (
-    <AnimatedChart signature={sig} className="relative" >
+    <AnimatedChart signature={sig} className="relative">
       <div className="relative" style={{ width: size, height: size }} role="img" aria-label="Fördelning">
         <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
-          <Tooltip
-            contentStyle={{
-              borderRadius: 14,
-              border: `1px solid ${chartTokens.tooltipBorder}`,
-              background: chartTokens.tooltipBg,
-              boxShadow: "0 8px 24px hsl(240 4% 19% / 0.08)",
-              fontSize: 12,
-              fontWeight: 700,
-              padding: "6px 10px",
-            }}
-            formatter={(value, _name, item) => {
-              const d = item.payload as MetricSlice;
-              const pct = total > 0 ? Math.round((Number(value) / total) * 100) : 0;
-              return [`${valueFormatter(Number(value))} · ${pct}%`, d.label];
-            }}
-          />
-          <Pie
-            data={data}
-            dataKey="value"
-            nameKey="label"
-            innerRadius={inner}
-            outerRadius={outer}
-            paddingAngle={data.length > 1 ? 2 : 0}
-            stroke="none"
-            isAnimationActive={!reduced}
-            animationDuration={700}
-            animationEasing="ease-out"
-          >
-            {data.map((d, i) => (
-              <Cell key={d.key ?? i} fill={toneHsl(d.tone)} />
-            ))}
-          </Pie>
-        </PieChart>
-      </ResponsiveContainer>
+          <PieChart>
+            <ThemedTooltip
+              variant="bar"
+              formatter={(value, _name, item) => {
+                const d = item.payload as MetricSlice;
+                const pct = total > 0 ? Math.round((Number(value) / total) * 100) : 0;
+                return [`${valueFormatter(Number(value))} · ${pct}%`, d.label];
+              }}
+            />
+            <Pie
+              data={data}
+              dataKey="value"
+              nameKey="label"
+              innerRadius={inner}
+              outerRadius={outer}
+              paddingAngle={data.length > 1 ? 2 : 0}
+              stroke="none"
+              {...chartAnimation("donut")}
+            >
+              {data.map((d, i) => (
+                <Cell key={d.key ?? i} fill={toneHsl(d.tone)} />
+              ))}
+            </Pie>
+          </PieChart>
+        </ResponsiveContainer>
 
-      {(centerValue != null || centerSubtitle) && (
-        <div className="absolute inset-0 grid place-items-center pointer-events-none text-center">
-          <div>
-            {centerValue != null && (
-              <p className="text-2xl font-extrabold leading-none tabular-nums">{centerValue}</p>
-            )}
-            {centerSubtitle && (
-              <p className="text-[10px] font-extrabold uppercase tracking-wider text-text-secondary mt-1">
-                {centerSubtitle}
-              </p>
-            )}
+        {(centerValue != null || centerSubtitle) && (
+          <div className="absolute inset-0 grid place-items-center pointer-events-none text-center">
+            <div>
+              {centerValue != null && (
+                <p className="text-2xl font-extrabold leading-none tabular-nums">{centerValue}</p>
+              )}
+              {centerSubtitle && (
+                <p className="text-[10px] font-extrabold uppercase tracking-wider text-text-secondary mt-1">
+                  {centerSubtitle}
+                </p>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
       </div>
     </AnimatedChart>
   );
@@ -134,11 +125,7 @@ export const MetricPills = ({
             key={d.key ?? i}
             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 ${toneSoftBg(d.tone as ChartTone)}`}
           >
-            <span
-              aria-hidden
-              className="w-2 h-2 rounded-full shrink-0"
-              style={{ background: toneHsl(d.tone) }}
-            />
+            <span aria-hidden className="w-2 h-2 rounded-full shrink-0" style={{ background: toneHsl(d.tone) }} />
             <span className="text-[11px] font-extrabold leading-none">{d.label}</span>
             <span className="text-[11px] font-bold leading-none tabular-nums opacity-80">{display}</span>
           </li>
