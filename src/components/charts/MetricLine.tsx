@@ -3,6 +3,7 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
 import { toneHsl, chartTokens, prefersReducedMotion, type ChartTone } from "@/lib/chartColors";
+import { AnimatedChart, buildChartSignature } from "./AnimatedChart";
 
 export type MetricLinePoint = {
   /** Visningsetikett på X-axeln (kort). */
