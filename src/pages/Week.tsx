@@ -85,6 +85,7 @@ const Week = () => {
   const [activities, setActivities] = useState<ActivityLite[]>([]);
   const [exercises, setExercises] = useState<ExerciseLite[]>([]);
   const [fetching, setFetching] = useState(true);
+  const [historyFilter, setHistoryFilter] = useState<"all" | "checkins" | "exercises" | "activeTime">("all");
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
