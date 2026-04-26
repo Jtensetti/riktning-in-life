@@ -136,7 +136,7 @@ const Week = () => {
       const since30 = isoDaysAgo(29);
       const sinceTs = new Date(Date.now() - 30 * 86_400_000).toISOString();
 
-      const [checkinsRes, formsRes, sessRes, actsRes, exRes] = await Promise.all([
+      const [checkinsRes, formsRes, sessRes, actsRes, exRes, actsAllRes, sessAllRes] = await Promise.all([
         supabase
           .from("daily_checkins")
           .select("id,date,mood_heaviness,anxiety,guilt_selfcriticism,hopelessness,energy,getting_started,function_score,daytime_bed_sofa_time_minutes,sleep_hours,sleep_quality,movement_today,meaningful_activity,safety_status")
@@ -156,6 +156,14 @@ const Week = () => {
         supabase
           .from("exercises")
           .select("id,title,category,duration_minutes,color"),
+        supabase
+          .from("activity_logs")
+          .select("activity_slug,label,icon,color,mood_delta")
+          .eq("user_id", user.id).gte("date", since30),
+        supabase
+          .from("exercise_sessions")
+          .select("mood_before,mood_after,anxiety_before,anxiety_after,exercises(title,category,color)")
+          .eq("user_id", user.id).gte("created_at", sinceTs),
       ]);
 
       setCheckins((checkinsRes.data ?? []) as Checkin[]);
