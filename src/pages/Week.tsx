@@ -395,8 +395,22 @@ const Week = () => {
         iconAccent="hsl(var(--yellow-journal))"
       />
 
-      <h1 className="text-[32px] leading-[38px] mb-1">Vecka</h1>
-      <p className="text-sm text-text-secondary mb-6">Riktning, actions, återhämtning — på en skärm.</p>
+      <h1 className="text-[32px] leading-[38px] mb-1">Insikter</h1>
+      <p className="text-sm text-text-secondary mb-5">Riktning, actions, återhämtning — på en skärm.</p>
+
+      <button
+        onClick={() => navigate("/rapport/vecka")}
+        className="w-full card-soft p-4 mb-6 flex items-center gap-3 text-left press-soft animate-fade-in-up"
+      >
+        <div className="w-11 h-11 rounded-2xl bg-blue-calm/15 grid place-items-center shrink-0">
+          <AbstractIcon name="bookmark-soft" size={20} color="hsl(var(--blue-calm))" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-[15px] font-extrabold">Klinisk veckorapport</div>
+          <div className="text-xs text-text-secondary">Senaste 7 dagar som PDF — sömn, rörelse, journal, medicin.</div>
+        </div>
+        <ChevronRight size={18} className="text-text-secondary shrink-0" />
+      </button>
 
       {!baselineComplete && (
         <div className="card-cream p-4 mb-6 flex items-center gap-3 animate-pop-in">
