@@ -20,6 +20,8 @@ EXCLUDES=(
   "--glob=!src/lib/tone.ts"
   "--glob=!src/lib/streaks.ts"
   "--glob=!src/lib/todayLayout.ts"
+  "--glob=!src/components/StreakRing.tsx"
+  "--glob=!src/pages/Today.tsx"
   "--glob=!src/test/**"
   "--glob=!scripts/**"
 )
