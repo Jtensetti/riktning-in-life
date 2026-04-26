@@ -12,6 +12,10 @@ import {
   pctChange, splitWeeks, isoDaysAgo, generateInsights, type Checkin, type WeeklyFormScore,
 } from "@/lib/metrics";
 import { buildPriorities, type Priority } from "@/lib/priorities";
+import { ChartCard } from "@/components/charts/ChartCard";
+import { ActivityBars } from "@/components/charts/ActivityBars";
+import { StackedRecovery, type RecoveryDay } from "@/components/charts/StackedRecovery";
+import { Sparkline } from "@/components/charts/Sparkline";
 
 type ExerciseLite = { id: string; title: string; category: string; duration_minutes: number; color: string };
 type SessionLite = {
@@ -284,36 +288,55 @@ const Week = () => {
           <p className="text-xs text-text-secondary">Senaste 7 dagar — varje dag berättar något</p>
         </div>
 
-        {/* Staplar-rad */}
-        <div className="card-cream p-4 mb-3 animate-pop-in">
-          <div className="flex items-end justify-between gap-1.5 h-24 mb-2">
-            {timeline.map((d, i) => {
-              const h = d.totalMinutes === 0 ? 6 : Math.max(8, (d.totalMinutes / maxMinutes) * 88);
-              const dominant = d.acts[0]?.color ?? d.sess[0]?.exercises?.color ?? "green";
-              const isEmpty = d.totalMinutes === 0;
-              return (
-                <div key={d.iso} className="flex-1 flex flex-col items-center gap-1.5 min-w-0">
-                  <div className="w-full flex items-end justify-center" style={{ height: 88 }}>
-                    <div
-                      className={`w-full rounded-t-lg ${isEmpty ? "bg-border-soft" : ""} animate-pop-in`}
-                      style={{
-                        height: h,
-                        background: isEmpty ? undefined : colorHsl(dominant),
-                        animationDelay: `${i * 40}ms`,
-                      }}
-                      title={`${d.totalMinutes} min`}
-                    />
-                  </div>
-                  <span className="text-[10px] font-extrabold text-text-secondary uppercase tabular-nums">{dayShort(d.iso)}</span>
-                </div>
-              );
+        <ChartCard
+          title="Aktiv tid"
+          subtitle="Senaste 7 dagar"
+          tone="green"
+          index={0}
+          ariaSummary={`Totalt ${timeline.reduce((s, d) => s + d.totalMinutes, 0)} minuter aktiv tid den här veckan.`}
+          action={
+            <span className="text-[11px] font-extrabold text-text-secondary tabular-nums">
+              {timeline.reduce((s, d) => s + d.totalMinutes, 0)} min totalt
+            </span>
+          }
+          className="mb-3"
+        >
+          <ActivityBars
+            data={timeline.map((d) => ({
+              iso: d.iso,
+              minutes: d.totalMinutes,
+              color: d.acts[0]?.color ?? d.sess[0]?.exercises?.color ?? "green",
+            }))}
+            height={120}
+          />
+        </ChartCard>
+
+        <ChartCard
+          title="Vad gjorde dagen av?"
+          subtitle="Minuter fördelat på sömn, rörelse, mående, återhämtning"
+          tone="orange"
+          index={1}
+          className="mb-3"
+        >
+          <StackedRecovery
+            data={timeline.map<RecoveryDay>((d) => {
+              const sleep = d.checkin?.sleep_hours ? Math.round(Number(d.checkin.sleep_hours) * 60) : 0;
+              const movement = d.acts
+                .filter((a) => a.color === "pink" || a.color === "green")
+                .reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
+              const mood = d.acts
+                .filter((a) => a.color === "orange" || a.color === "yellow")
+                .reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
+              const recovery =
+                d.sess.reduce((s, x) => s + (x.exercises?.duration_minutes ?? 0), 0) +
+                d.acts
+                  .filter((a) => a.color === "blue" || a.color === "purple")
+                  .reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
+              return { iso: d.iso, sleep, movement, mood, recovery };
             })}
-          </div>
-          <div className="flex items-center justify-between text-[11px] font-bold text-text-secondary border-t border-border-soft pt-2">
-            <span>Aktiv tid per dag</span>
-            <span className="tabular-nums">{timeline.reduce((s, d) => s + d.totalMinutes, 0)} min totalt</span>
-          </div>
-        </div>
+            height={150}
+          />
+        </ChartCard>
 
         {/* Per-dag rader */}
         <div className="space-y-2">
@@ -379,11 +402,17 @@ const Week = () => {
           <h2 className="text-xl mb-1">Jämfört med förra veckan</h2>
           <p className="text-xs text-text-secondary mb-3">Riktning över tid — inte dagsbetyg</p>
           <div className="grid grid-cols-2 gap-3">
-            <MetricCard title="Belastning" current={burdenC.value} prev={burdenP.value} invert
+            <MetricCard title="Belastning" current={burdenC.value} prev={burdenP.value} invert tone="orange"
+              spark={current.map((c) => (c.mood_heaviness == null ? null : c.mood_heaviness * 10))}
               note={burdenC.withWeekly ? undefined : "utan veckoskattning"} gated={!baselineComplete} />
-            <MetricCard title="Funktion" current={fnC} prev={fnP} gated={!baselineComplete} />
-            <MetricCard title="Återhämtning" current={recC} prev={recP} gated={!baselineComplete} />
-            <MetricCard title="Stabilitet" current={stabC} prev={stabP} hideChange
+            <MetricCard title="Funktion" current={fnC} prev={fnP} tone="green"
+              spark={current.map((c) => (c.function_score == null ? null : c.function_score * 10))}
+              gated={!baselineComplete} />
+            <MetricCard title="Återhämtning" current={recC} prev={recP} tone="purple"
+              spark={current.map((c) => (c.sleep_hours == null ? null : Number(c.sleep_hours) * 10))}
+              gated={!baselineComplete} />
+            <MetricCard title="Stabilitet" current={stabC} prev={stabP} hideChange tone="blue"
+              spark={current.map((c) => (c.anxiety == null ? null : 100 - c.anxiety * 10))}
               labelOverride={stabilityLabel(stabC, stabP)} gated={!baselineComplete} />
           </div>
         </section>
@@ -466,7 +495,7 @@ const PriorityCard = ({ p, rank }: { p: Priority; rank: number }) => {
 };
 
 const MetricCard = ({
-  title, current, prev, invert, note, hideChange, labelOverride, gated,
+  title, current, prev, invert, note, hideChange, labelOverride, gated, tone, spark,
 }: {
   title: string;
   current: number | null;
@@ -476,15 +505,22 @@ const MetricCard = ({
   hideChange?: boolean;
   labelOverride?: string;
   gated?: boolean;
+  tone?: "orange" | "blue" | "yellow" | "purple" | "pink" | "green";
+  spark?: (number | null)[];
 }) => {
   const c = current == null ? null : Math.round(current);
   const change = pctChange(current, prev);
   const positive = change == null ? null : (invert ? change < 0 : change > 0);
 
   return (
-    <div className="card-cream p-4">
+    <div className="card-cream p-4 relative overflow-hidden">
       <p className="text-[11px] font-bold text-text-secondary uppercase tracking-wider mb-1">{title}</p>
-      <p className={`text-3xl font-extrabold leading-none mb-2 ${gated ? "text-text-secondary" : ""}`}>{c ?? "—"}</p>
+      <div className="flex items-end justify-between gap-2 mb-2">
+        <p className={`text-3xl font-extrabold leading-none ${gated ? "text-text-secondary" : ""}`}>{c ?? "—"}</p>
+        {!gated && spark && spark.some((v) => v != null) && (
+          <Sparkline values={spark} tone={tone ?? "orange"} width={56} height={22} />
+        )}
+      </div>
       {labelOverride ? (
         <div className="text-xs font-bold text-text-secondary">{labelOverride}</div>
       ) : hideChange || gated ? (
