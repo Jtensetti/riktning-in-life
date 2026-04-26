@@ -639,6 +639,22 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
     }
 
     setReport(lines.join("\n"));
+    setStructured({
+      checkins: checkinsTyped,
+      activities: acts,
+      journals: j,
+      drivers,
+      direction: directionCur,
+      directionPrev,
+      burden: burdenCur.value,
+      fn: fnCur,
+      rec: recCur,
+      stab: stabCur,
+      safetyCounts,
+      adherence,
+      sideEffects,
+      movementDays,
+    });
     setGenerating(false);
   };
 
