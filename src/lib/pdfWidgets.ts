@@ -178,27 +178,27 @@ export const drawScoreCards = (
     doc.setFont("helvetica", "bold");
     doc.setFontSize(20);
     const valueText = c.value == null ? "—" : `${Math.round(c.value)}`;
+    const valueW = doc.getTextWidth(valueText);
     doc.text(valueText, x + 10, y + 42);
 
-    // Suffix
+    // Suffix — mätt mot 20pt-fonten ovan, sätts EFTER för att inte krocka
     if (c.value != null) {
       setText(doc, PDF_COLORS.inkSoft);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
       const suffix = c.suffix ?? "/100";
-      const valueW = doc.getTextWidth(valueText);
-      doc.text(suffix, x + 10 + valueW + 3, y + 42);
+      doc.text(suffix, x + 12 + valueW, y + 42);
     }
 
-    // Delta
+    // Delta — använd ASCII-säkra symboler eftersom Helvetica saknar ▲▼
     if (c.value != null && c.prev != null) {
       const d = Math.round(c.value - c.prev);
-      const sym = d > 0 ? "▲" : d < 0 ? "▼" : "·";
-      const txt = d === 0 ? "oförändrat" : `${sym} ${Math.abs(d)} mot förra`;
+      const sym = d > 0 ? "+" : d < 0 ? "-" : "=";
+      const txt = d === 0 ? "oforandrat" : `${sym}${Math.abs(d)} mot forra`;
       setText(doc, d === 0 ? PDF_COLORS.inkMuted : d > 0 ? PDF_COLORS.green : PDF_COLORS.red);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(8);
-      doc.text(txt, x + 10, y + 56);
+      doc.text(txt, x + 10, y + 58);
     }
 
     // Mini progress-bar
