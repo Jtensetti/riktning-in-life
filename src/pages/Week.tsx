@@ -792,4 +792,38 @@ const MetricCard = ({
   );
 };
 
+type PrefOption = { key: string; label: string };
+
+/** Liten segmenterad rad för en enskild preferens. Stilen matchar history-filtret. */
+const PrefRow = ({
+  label, value, options, onChange,
+}: {
+  label: string;
+  value: string;
+  options: PrefOption[];
+  onChange: (key: string) => void;
+}) => (
+  <div className="flex items-center gap-2">
+    <span className="text-[11px] font-extrabold uppercase tracking-wider text-text-secondary w-12 shrink-0">{label}</span>
+    <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-1.5">
+      {options.map((o) => {
+        const active = value === o.key;
+        return (
+          <button
+            key={o.key}
+            role="radio"
+            aria-checked={active}
+            onClick={() => onChange(o.key)}
+            className={`px-2.5 py-1 rounded-full text-[12px] font-extrabold press-soft transition-colors ${
+              active ? "bg-foreground text-background" : "bg-surface-alt text-text-secondary hover:text-foreground"
+            }`}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  </div>
+);
+
 export default Week;
