@@ -10,7 +10,7 @@ import { HeroBanner } from "@/components/HeroBanner";
 import { WeatherChip } from "@/components/WeatherChip";
 import { WeatherPermissionCard } from "@/components/WeatherPermissionCard";
 import { ChevronRight, Settings as SettingsIcon } from "lucide-react";
-import { isOnboarded } from "@/lib/settings";
+import { useUserSettings } from "@/hooks/useUserSettings";
 import { getTimeContext, type TimeContext } from "@/lib/timeContext";
 import { useWeather, isOutdoorFriendly, weatherLabel, hasAskedWeatherPermission, isWeatherPermissionGranted, isWeatherPermissionDismissed, dismissWeatherPermission, type Weather } from "@/lib/weather";
 import { ForYouCarousel } from "@/components/ForYouCarousel";
