@@ -1,4 +1,5 @@
 import { AbstractIcon, type IconName } from "./AbstractIcon";
+import { floatDurationFor, type HeroMood } from "@/lib/heroVisuals";
 
 /**
  * Standardiserad hero/header-gradient med flytande abstrakt ikon.
@@ -10,7 +11,7 @@ import { AbstractIcon, type IconName } from "./AbstractIcon";
  * - radius: 36px nedre hörn
  * - blob top-6, centrerad, 72px
  * - vågseparator: 60px
- * - animationstiming: float 4s
+ * - animationstiming: float — styrs av `mood` (calm=6s, neutral=4s, lively=3s)
  */
 export interface HeroBannerProps {
   /** HSL-värde, t.ex. "var(--orange-start)" eller "var(--blue-calm)" */
@@ -23,6 +24,8 @@ export interface HeroBannerProps {
   topRight?: React.ReactNode;
   /** Lekfulla bakgrundscirklar à la Headspace. Subtila, opacity 0.12. */
   pattern?: boolean;
+  /** Animationstempo för flyt-ikonen — speglar dagens energi. */
+  mood?: HeroMood;
 }
 
 export const HeroBanner = ({
@@ -33,7 +36,9 @@ export const HeroBanner = ({
   topLeft,
   topRight,
   pattern = false,
+  mood = "neutral",
 }: HeroBannerProps) => {
+  const floatSec = floatDurationFor(mood);
   return (
     <div
       className="-mx-6 -mt-8 mb-6 relative overflow-hidden rounded-b-[36px]"
