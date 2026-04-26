@@ -194,24 +194,35 @@ export const recommendForToday = (
 
   const evening = t.partOfDay === "evening" || t.partOfDay === "night";
 
-  const pickFor = (slot: Slot): Pick | null => {
+  // HÅRD REGEL: Övningar som gjorts inom de senaste 2 dagarna är helt blockerade.
+  // Efter 2 dagar släpps de fria igen (men får fortfarande mjuk repetitionsstraff i scoreExercise).
+  const COOLDOWN_DAYS = 2;
+  const blocked = new Set<string>();
+  for (const r of recent) {
+    if (!r.exercise_id) continue;
+    if (daysSince(r.created_at) < COOLDOWN_DAYS) blocked.add(r.exercise_id);
+  }
+
+  const pickFor = (slot: Slot, used: Set<string>): Pick | null => {
     let candidates = library.filter(ex => slotForCategory(ex.category) === slot);
 
     if (slot === "land") {
-      // "Minsta möjliga" — kort
       candidates = library.filter(ex => ex.duration_minutes <= LAND_MAX_MIN);
-      // Föredra inte rena Kom igång-övningar på kvällen
       if (evening) candidates = candidates.filter(ex => ex.category !== "Kom igång");
     }
 
     if (slot === "lift" && evening) {
-      // Inga energihöjande kvällstid — välj sociala mikrosteg eller skriv av dig istället
       candidates = library.filter(ex => ex.category === "Sociala mikrosteg" || ex.category === "Skriv av dig");
     }
 
-    if (candidates.length === 0) return null;
+    // Filtrera bort blockerade och redan använda i denna runda
+    let pool = candidates.filter(ex => !blocked.has(ex.id) && !used.has(ex.id));
 
-    const scored = candidates
+    // Säkerhetsnät: om cooldown skulle tömma poolen helt — släpp blocket men inte "used"
+    if (pool.length === 0) pool = candidates.filter(ex => !used.has(ex.id));
+    if (pool.length === 0) return null;
+
+    const scored = pool
       .map(ex => ({ ex, score: scoreExercise(ex, c, t, w, recent) }))
       .sort((a, b) => b.score - a.score);
 
@@ -228,28 +239,10 @@ export const recommendForToday = (
   const picks: Pick[] = [];
   const used = new Set<string>();
   for (const slot of ["calm", "lift", "land"] as Slot[]) {
-    const p = pickFor(slot);
-    if (p && !used.has(p.exercise.id)) {
+    const p = pickFor(slot, used);
+    if (p) {
       picks.push(p);
       used.add(p.exercise.id);
-    } else if (p) {
-      // Ta nästa bästa som inte använts
-      const slotCands = library
-        .filter(ex => !used.has(ex.id))
-        .filter(ex => slot === "land" ? ex.duration_minutes <= LAND_MAX_MIN : slotForCategory(ex.category) === slot)
-        .map(ex => ({ ex, score: scoreExercise(ex, c, t, w, recent) }))
-        .sort((a, b) => b.score - a.score);
-      if (slotCands.length > 0) {
-        const fallback = slotCands[0];
-        picks.push({
-          slot,
-          exercise: fallback.ex,
-          reasonShort: slotReasonShort(slot, fallback.ex, c, t, w),
-          reasonLong: slotReasonLong(slot, fallback.ex, c, t, w),
-          fitScore: fallback.score,
-        });
-        used.add(fallback.ex.id);
-      }
     }
   }
 
