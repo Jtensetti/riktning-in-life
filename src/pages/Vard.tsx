@@ -796,7 +796,7 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
       y = drawHBarChart(
         doc,
         top.map((t) => ({
-          label: `${t.label} (Δ ${t.avgDelta >= 0 ? "+" : ""}${t.avgDelta.toFixed(1)})`,
+          label: `${t.label} (snittlyft ${t.avgDelta >= 0 ? "+" : ""}${t.avgDelta.toFixed(1)})`,
           value: t.count,
           color: t.avgDelta >= 0.5 ? PDF_COLORS.green : t.avgDelta <= -0.5 ? PDF_COLORS.red : PDF_COLORS.blue,
         })),
