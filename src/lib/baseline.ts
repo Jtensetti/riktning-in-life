@@ -7,6 +7,7 @@
 // varje render.
 
 import type { Checkin } from "./metrics";
+import { patchUserSettings } from "./userSettingsSync";
 
 export type PersonalBaseline = {
   /** ISO-datum när baslinjen senast uppdaterades. */
