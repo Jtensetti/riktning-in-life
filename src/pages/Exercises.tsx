@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Search, ChevronRight } from "lucide-react";
 import { Illustration, categoryIll } from "@/components/Illustrations";
 import { AbstractIcon } from "@/components/AbstractIcon";
+import { getTimeContext } from "@/lib/timeContext";
+import { useWeather, isOutdoorFriendly } from "@/lib/weather";
 
 type Exercise = {
   id: string;
@@ -46,6 +48,8 @@ const Exercises = () => {
   const [list, setList] = useState<Exercise[]>([]);
   const [q, setQ] = useState("");
   const [active, setActive] = useState<string | null>(null);
+  const time = useMemo(() => getTimeContext(), []);
+  const { weather } = useWeather(true);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
@@ -58,13 +62,31 @@ const Exercises = () => {
     });
   }, [user]);
 
+  // Decide whether an exercise category fits the current moment.
+  const fitsNow = (category: string): boolean => {
+    const outdoor = isOutdoorFriendly(weather);
+    if (time.partOfDay === "night") return category === "Sov bättre" || category === "Lugna kroppen";
+    if (time.partOfDay === "evening") return category === "Sov bättre" || category === "Lugna kroppen" || category === "Skriv av dig";
+    if (time.partOfDay === "morning") return category === "Kom igång" || (outdoor && category === "Rör dig mjukt");
+    // midday / afternoon
+    if (weather && (weather.kind === "rain" || weather.kind === "snow" || weather.kind === "thunder")) {
+      return category === "Lugna kroppen" || category === "Bryt ältande" || category === "Skriv av dig";
+    }
+    if (outdoor) return category === "Rör dig mjukt" || category === "Kom igång";
+    return category === "Lugna kroppen" || category === "Bryt ältande";
+  };
+
   const filtered = useMemo(() => {
-    return list.filter((e) => {
+    const items = list.filter((e) => {
       if (active && e.category !== active) return false;
       if (q && !`${e.title} ${e.category} ${e.description}`.toLowerCase().includes(q.toLowerCase())) return false;
       return true;
     });
-  }, [list, q, active]);
+    if (q || active) return items;
+    // Sort recommended-now first when browsing all.
+    return [...items].sort((a, b) => Number(fitsNow(b.category)) - Number(fitsNow(a.category)));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [list, q, active, weather, time]);
 
   return (
     <AppShell>
