@@ -476,12 +476,13 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
     setGenerating(true);
     const since = new Date(Date.now() - days * 86400000).toISOString().split("T")[0];
 
-    const [checkins, forms, meds, medLogs, journals] = await Promise.all([
+    const [checkins, forms, meds, medLogs, journals, activities] = await Promise.all([
       supabase.from("daily_checkins").select("*").eq("user_id", user.id).gte("date", since).order("date"),
       supabase.from("weekly_forms").select("*").eq("user_id", user.id).gte("date", since).order("date"),
       supabase.from("medications").select("*").eq("user_id", user.id),
       supabase.from("medication_logs").select("*").eq("user_id", user.id).gte("date", since),
       includeJournal ? supabase.from("journal_entries").select("*").eq("user_id", user.id).eq("include_in_report", true).gte("date", since) : Promise.resolve({ data: [] as any[] }),
+      supabase.from("activity_logs").select("date,label,category,duration_minutes,mood_delta").eq("user_id", user.id).gte("date", since).order("date"),
     ]);
 
     const c = checkins.data ?? [];
@@ -489,6 +490,7 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
     const m = (meds.data ?? []) as any[];
     const ml = (medLogs.data ?? []) as any[];
     const j = (journals.data ?? []) as any[];
+    const acts = (activities.data ?? []) as any[];
 
     const avg = (arr: any[], k: string) => {
       const xs = arr.map(r => r[k]).filter((v): v is number => typeof v === "number");
