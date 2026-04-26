@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-labelledby="title desc">
+<title>Baseline calendar</title>
+<desc>Original geometric illustration for the Riktning recovery app.</desc>
+<style>
+  .stroke{fill:none;stroke:#2E2E32;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+  .stroke-soft{fill:none;stroke:#6F6A65;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+  .face{fill:none;stroke:#2E2E32;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+  .shadow{fill:#2E2E32;opacity:.08}
+</style>
+
+<rect x="62" y="34" width="196" height="120" rx="28" fill="#FFFDF9" stroke="#E8E1D9" stroke-width="4"/>
+<rect x="62" y="34" width="196" height="34" rx="18" fill="#FF7A1A"/>
+<path d="M97 26 v24" stroke="#2E2E32" stroke-width="6" stroke-linecap="round" opacity=".55"/>
+<path d="M223 26 v24" stroke="#2E2E32" stroke-width="6" stroke-linecap="round" opacity=".55"/>
+<g fill="#058C4C">
+  <circle cx="98" cy="88" r="8"/><circle cx="129" cy="88" r="8"/><circle cx="160" cy="88" r="8"/><circle cx="191" cy="88" r="8"/><circle cx="222" cy="88" r="8"/>
+  <circle cx="98" cy="118" r="8"/><circle cx="129" cy="118" r="8"/><circle cx="160" cy="118" r="8"/><circle cx="191" cy="118" r="8"/><circle cx="222" cy="118" r="8"/>
+</g>
+<g fill="#FFC928">
+  <circle cx="98" cy="148" r="8"/><circle cx="129" cy="148" r="8"/><circle cx="160" cy="148" r="8"/><circle cx="191" cy="148" r="8"/>
+</g>
+<circle cx="242" cy="55" r="18" fill="#FFC928"/>
+<path d="M234 52 q6 7 12 0" class="face"/>
+<path d="M250 52 q6 7 12 0" class="face"/>
+
+</svg>

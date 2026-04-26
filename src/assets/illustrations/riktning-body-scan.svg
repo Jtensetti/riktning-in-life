@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-labelledby="title desc">
+<title>Body scan</title>
+<desc>Original geometric illustration for the Riktning recovery app.</desc>
+<style>
+  .stroke{fill:none;stroke:#2E2E32;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+  .stroke-soft{fill:none;stroke:#6F6A65;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+  .face{fill:none;stroke:#2E2E32;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+  .shadow{fill:#2E2E32;opacity:.08}
+</style>
+
+<circle cx="160" cy="52" r="28" fill="#1677F2"/>
+<path d="M150 50 q7 8 14 0" fill="none" stroke="#FFFDF9" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M170 50 q7 8 14 0" fill="none" stroke="#FFFDF9" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="122" y="78" width="76" height="70" rx="34" fill="#1677F2" opacity=".86"/>
+<path d="M122 98 C97 103 82 123 77 151" class="stroke" opacity=".65"/>
+<path d="M198 98 C223 103 238 123 243 151" class="stroke" opacity=".65"/>
+<circle cx="160" cy="112" r="18" fill="#FFC928" opacity=".88"/>
+<circle cx="160" cy="112" r="36" fill="#FFC928" opacity=".18"/>
+<path d="M139 147 L128 166" class="stroke" opacity=".65"/>
+<path d="M181 147 L192 166" class="stroke" opacity=".65"/>
+<circle cx="83" cy="75" r="9" fill="#C6539A" opacity=".6"/>
+<circle cx="240" cy="76" r="9" fill="#C6539A" opacity=".6"/>
+<path d="M60 113 c14-11 28-11 42 0" class="stroke-soft" opacity=".35"/>
+<path d="M218 113 c14-11 28-11 42 0" class="stroke-soft" opacity=".35"/>
+
+</svg>

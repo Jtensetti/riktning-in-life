@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-labelledby="title desc">
+<title>Reusable card pattern</title>
+<desc>Original geometric illustration for the Riktning recovery app.</desc>
+<style>
+  .stroke{fill:none;stroke:#2E2E32;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+  .stroke-soft{fill:none;stroke:#6F6A65;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+  .face{fill:none;stroke:#2E2E32;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+  .shadow{fill:#2E2E32;opacity:.08}
+</style>
+
+<rect x="0" y="0" width="320" height="180" rx="28" fill="#FF7A1A"/>
+<circle cx="250" cy="75" r="76" fill="#FFC928" opacity=".55"/>
+<circle cx="84" cy="146" r="70" fill="#FFFDF9" opacity=".18"/>
+<path d="M220 31 c12 10 24 10 36 0" class="face" opacity=".42"/>
+<path d="M245 32 c12 10 24 10 36 0" class="face" opacity=".42"/>
+<circle cx="42" cy="56" r="8" fill="#FFFDF9" opacity=".55"/>
+<circle cx="289" cy="139" r="6" fill="#FFFDF9" opacity=".55"/>
+<path d="M37 118 C72 93 108 93 144 118" fill="none" stroke="#FFFDF9" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity=".30"/>
+
+</svg>

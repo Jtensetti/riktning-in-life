@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-labelledby="title desc">
+<title>Thought loop</title>
+<desc>Original geometric illustration for the Riktning recovery app.</desc>
+<style>
+  .stroke{fill:none;stroke:#2E2E32;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+  .stroke-soft{fill:none;stroke:#6F6A65;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+  .face{fill:none;stroke:#2E2E32;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+  .shadow{fill:#2E2E32;opacity:.08}
+</style>
+
+<rect x="42" y="40" width="236" height="100" rx="34" fill="#FFC928" opacity=".92"/>
+<path d="M96 102 C74 79 91 51 124 54 C149 56 158 78 146 95 C136 109 116 111 104 99" fill="none" stroke="#FF7A1A" stroke-width="9" stroke-linecap="round"/>
+<path d="M106 99 l-16 1 5-15" fill="none" stroke="#FF7A1A" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="202" cy="88" r="33" fill="#FFFDF9"/>
+<path d="M190 84 q8 9 16 0" class="face"/>
+<path d="M212 84 q8 9 16 0" class="face"/>
+<rect x="174" y="118" width="58" height="10" rx="5" fill="#FF7A1A" opacity=".65"/>
+<circle cx="249" cy="62" r="7" fill="#FF7A1A" opacity=".5"/>
+<circle cx="69" cy="125" r="7" fill="#FFFDF9" opacity=".7"/>
+<path d="M204 41 c8-7 16-7 24 0" class="stroke-soft" opacity=".35"/>
+
+</svg>

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-labelledby="title desc">
+<title>Soft movement</title>
+<desc>Original geometric illustration for the Riktning recovery app.</desc>
+<style>
+  .stroke{fill:none;stroke:#2E2E32;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+  .stroke-soft{fill:none;stroke:#6F6A65;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+  .face{fill:none;stroke:#2E2E32;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+  .shadow{fill:#2E2E32;opacity:.08}
+</style>
+
+<path d="M38 132 C86 72 131 82 168 114 C199 141 235 146 282 98" fill="none" stroke="#058C4C" stroke-width="16" stroke-linecap="round" opacity=".25"/>
+<path d="M42 131 C88 93 126 91 160 118 C194 146 235 148 278 113" fill="none" stroke="#C6539A" stroke-width="12" stroke-linecap="round" opacity=".9"/>
+<circle cx="142" cy="72" r="27" fill="#C6539A"/>
+<path d="M132 69 q7 8 14 0" class="face"/>
+<path d="M152 69 q7 8 14 0" class="face"/>
+<path d="M140 99 L120 126" class="stroke"/>
+<path d="M152 100 L181 127" class="stroke"/>
+<path d="M134 97 L104 93" class="stroke"/>
+<path d="M158 97 L193 86" class="stroke"/>
+<circle cx="73" cy="123" r="10" fill="#FFC928"/>
+<circle cx="241" cy="112" r="13" fill="#058C4C"/>
+<path d="M242 41 c8 6 16 6 24 0" class="stroke-soft" opacity=".35"/>
+<path d="M53 70 c10 8 20 8 30 0" class="stroke-soft" opacity=".35"/>
+
+</svg>

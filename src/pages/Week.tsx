@@ -1,0 +1,220 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { AppShell } from "@/components/AppShell";
+import { Illustration } from "@/components/Illustrations";
+import { ArrowDown, ArrowUp, Minus } from "lucide-react";
+import {
+  burdenScore, functionScore, recoveryScore, stabilityScore,
+  pctChange, splitWeeks, isoDaysAgo, type Checkin,
+} from "@/lib/metrics";
+import {
+  ResponsiveContainer, AreaChart, Area, XAxis, Tooltip,
+} from "recharts";
+
+const Week = () => {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  const [checkins, setCheckins] = useState<Checkin[]>([]);
+  const [fetching, setFetching] = useState(true);
+
+  useEffect(() => {
+    if (!loading && !user) navigate("/auth");
+  }, [user, loading, navigate]);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("daily_checkins")
+      .select("id,date,mood_heaviness,anxiety,guilt_selfcriticism,hopelessness,energy,getting_started,function_score,daytime_bed_sofa_time_minutes,sleep_hours,sleep_quality,movement_today,meaningful_activity,safety_status")
+      .eq("user_id", user.id)
+      .gte("date", isoDaysAgo(20))
+      .order("date", { ascending: true })
+      .then(({ data }) => {
+        setCheckins((data ?? []) as Checkin[]);
+        setFetching(false);
+      });
+  }, [user]);
+
+  if (loading || fetching) {
+    return <AppShell><div className="h-40 rounded-3xl bg-surface-alt animate-pulse" /></AppShell>;
+  }
+
+  const total = checkins.length;
+  const baselineComplete = total >= 14;
+  const { current, previous } = splitWeeks(checkins);
+
+  const burdenC = burdenScore(current);
+  const burdenP = burdenScore(previous);
+  const fnC = functionScore(current);
+  const fnP = functionScore(previous);
+  const recC = recoveryScore(current);
+  const recP = recoveryScore(previous);
+  const stabC = stabilityScore(current);
+
+  // Build chart data per day for current period
+  const chartData = current.map((c) => ({
+    day: c.date.slice(8, 10),
+    Belastning: Math.round(burdenScore([c]) ?? 0),
+    Funktion: Math.round(functionScore([c]) ?? 0),
+  }));
+
+  const avgSleep = (() => {
+    const v = current.map(c => c.sleep_hours == null ? null : Number(c.sleep_hours)).filter((x): x is number => x != null);
+    return v.length ? (v.reduce((s, x) => s + x, 0) / v.length) : null;
+  })();
+
+  const movementDays = current.filter(c => c.movement_today === "yes" || c.movement_today === "little").length;
+
+  // Insights
+  const insights: string[] = [];
+  // movement → next-day anxiety
+  if (current.length >= 4) {
+    const moveDayAnxAfter: number[] = [];
+    const noMoveDayAnxAfter: number[] = [];
+    for (let i = 0; i < current.length - 1; i++) {
+      const moved = current[i].movement_today === "yes";
+      const nextAnx = current[i + 1].anxiety;
+      if (nextAnx == null) continue;
+      if (moved) moveDayAnxAfter.push(nextAnx);
+      else noMoveDayAnxAfter.push(nextAnx);
+    }
+    if (moveDayAnxAfter.length && noMoveDayAnxAfter.length) {
+      const a1 = moveDayAnxAfter.reduce((s, x) => s + x, 0) / moveDayAnxAfter.length;
+      const a2 = noMoveDayAnxAfter.reduce((s, x) => s + x, 0) / noMoveDayAnxAfter.length;
+      if (a2 - a1 >= 1) insights.push("Dagar med rörelse följs ofta av lägre oro.");
+    }
+  }
+  if (avgSleep != null && avgSleep < 5) {
+    insights.push("Sömnen är låg den här veckan – det påverkar oftast både oro och funktion.");
+  }
+  if (fnC != null && burdenC != null && fnP != null && burdenP != null
+    && fnC > fnP && burdenC >= burdenP - 5) {
+    insights.push("Funktion rör sig uppåt även om måendet släpar.");
+  }
+
+  return (
+    <AppShell>
+      <h1 className="text-[32px] leading-[38px] mb-1">Vecka</h1>
+      <p className="text-sm text-text-secondary mb-6">Riktning över tid – inte dagsbetyg.</p>
+
+      {!baselineComplete && (
+        <div className="card-cream p-4 mb-6 flex items-center gap-3">
+          <Illustration name="baseline" className="w-24 h-auto rounded-xl shrink-0" />
+          <div>
+            <p className="text-sm font-extrabold mb-1">Baslinje byggs</p>
+            <p className="text-xs text-text-secondary">Dag {total} av 14. Första 14 dagarna lär appen ditt normalläge.</p>
+          </div>
+        </div>
+      )}
+
+      {current.length === 0 ? (
+        <div className="card-cream p-8 text-center">
+          <p className="text-base font-extrabold mb-2">Inga loggar än</p>
+          <p className="text-sm text-text-secondary">Logga några dagar i Idag, så fylls vecka-vyn.</p>
+        </div>
+      ) : (
+        <>
+          <h2 className="text-xl mb-3">Jämfört med förra veckan</h2>
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            <MetricCard title="Belastning" current={burdenC} prev={burdenP} invert />
+            <MetricCard title="Funktion" current={fnC} prev={fnP} />
+            <MetricCard title="Återhämtning" current={recC} prev={recP} />
+            <MetricCard title="Stabilitet" current={stabC} prev={null} />
+          </div>
+
+          <div className="card-soft p-4 mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-base font-extrabold">Senaste 7 dagar</h3>
+              <Illustration name="week" className="w-16 h-auto" />
+            </div>
+            <div className="h-44 -mx-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData} margin={{ top: 8, right: 8, bottom: 0, left: 8 }}>
+                  <defs>
+                    <linearGradient id="gFn" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="hsl(var(--green-recovery))" stopOpacity={0.5} />
+                      <stop offset="100%" stopColor="hsl(var(--green-recovery))" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="gBr" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="hsl(var(--orange-start))" stopOpacity={0.4} />
+                      <stop offset="100%" stopColor="hsl(var(--orange-start))" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="day" tickLine={false} axisLine={false} fontSize={11} stroke="hsl(var(--text-secondary))" />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: 16, border: "1px solid hsl(var(--border-soft))",
+                      background: "hsl(var(--surface))", fontSize: 12,
+                    }}
+                    cursor={{ stroke: "hsl(var(--border-soft))", strokeWidth: 1 }}
+                  />
+                  <Area type="monotone" dataKey="Funktion" stroke="hsl(var(--green-recovery))" strokeWidth={3} fill="url(#gFn)" />
+                  <Area type="monotone" dataKey="Belastning" stroke="hsl(var(--orange-start))" strokeWidth={3} fill="url(#gBr)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex gap-4 text-xs font-bold mt-2 px-2">
+              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-green-recovery" />Funktion</span>
+              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-orange-start" />Belastning</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            <div className="card-cream p-4">
+              <p className="text-[11px] font-bold text-text-secondary uppercase tracking-wider mb-1">Sömn / natt</p>
+              <p className="text-2xl font-extrabold">{avgSleep != null ? `${avgSleep.toFixed(1)} h` : "—"}</p>
+            </div>
+            <div className="card-cream p-4">
+              <p className="text-[11px] font-bold text-text-secondary uppercase tracking-wider mb-1">Rörelsedagar</p>
+              <p className="text-2xl font-extrabold">{movementDays} / {current.length}</p>
+            </div>
+          </div>
+
+          {insights.length > 0 && (
+            <>
+              <h2 className="text-xl mb-3">Mönster vi ser</h2>
+              <div className="space-y-3">
+                {insights.map((s, i) => (
+                  <div key={i} className="card-cream p-4 flex gap-3 items-start">
+                    <span className="w-2 h-2 rounded-full bg-orange-start mt-2 shrink-0" />
+                    <p className="text-sm font-semibold leading-snug">{s}</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </>
+      )}
+    </AppShell>
+  );
+};
+
+const MetricCard = ({ title, current, prev, invert }: { title: string; current: number | null; prev: number | null; invert?: boolean }) => {
+  const c = current == null ? null : Math.round(current);
+  const change = pctChange(current, prev);
+  const positive = change == null ? null : (invert ? change < 0 : change > 0);
+
+  return (
+    <div className="card-cream p-4">
+      <p className="text-[11px] font-bold text-text-secondary uppercase tracking-wider mb-1">{title}</p>
+      <p className="text-3xl font-extrabold leading-none mb-2">{c ?? "—"}</p>
+      <div className="flex items-center gap-1 text-xs font-bold">
+        {change == null ? (
+          <span className="text-text-secondary"><Minus size={12} className="inline" /> ingen jmf</span>
+        ) : positive ? (
+          <span className="text-green-recovery flex items-center gap-1">
+            <ArrowUp size={12} /> {Math.abs(Math.round(change))}%
+          </span>
+        ) : (
+          <span className="text-orange-deep flex items-center gap-1">
+            <ArrowDown size={12} /> {Math.abs(Math.round(change))}%
+          </span>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Week;

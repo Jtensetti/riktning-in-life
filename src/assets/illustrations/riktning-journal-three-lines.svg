@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-labelledby="title desc">
+<title>Three line journal</title>
+<desc>Original geometric illustration for the Riktning recovery app.</desc>
+<style>
+  .stroke{fill:none;stroke:#2E2E32;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+  .stroke-soft{fill:none;stroke:#6F6A65;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+  .face{fill:none;stroke:#2E2E32;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+  .shadow{fill:#2E2E32;opacity:.08}
+</style>
+
+<rect x="62" y="38" width="156" height="108" rx="22" fill="#FFC928"/>
+<rect x="80" y="58" width="120" height="12" rx="6" fill="#FFFDF9" opacity=".82"/>
+<rect x="80" y="82" width="96" height="12" rx="6" fill="#FFFDF9" opacity=".82"/>
+<rect x="80" y="106" width="110" height="12" rx="6" fill="#FFFDF9" opacity=".82"/>
+<path d="M210 117 L253 74 C260 67 272 67 279 74 C286 81 286 93 279 100 L236 143 Z" fill="#FF7A1A"/>
+<path d="M236 143 L217 151 L225 132 Z" fill="#2E2E32" opacity=".65"/>
+<circle cx="226" cy="54" r="25" fill="#FF7A1A"/>
+<path d="M216 50 q7 8 14 0" class="face"/>
+<path d="M236 50 q7 8 14 0" class="face"/>
+<circle cx="48" cy="112" r="10" fill="#1677F2" opacity=".5"/>
+<path d="M43 63 c12-10 24-10 36 0" class="stroke-soft" opacity=".35"/>
+
+</svg>

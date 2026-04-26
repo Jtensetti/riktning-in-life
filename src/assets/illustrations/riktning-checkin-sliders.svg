@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-labelledby="title desc">
+<title>Check-in sliders</title>
+<desc>Original geometric illustration for the Riktning recovery app.</desc>
+<style>
+  .stroke{fill:none;stroke:#2E2E32;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+  .stroke-soft{fill:none;stroke:#6F6A65;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+  .face{fill:none;stroke:#2E2E32;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+  .shadow{fill:#2E2E32;opacity:.08}
+</style>
+
+<rect x="46" y="36" width="228" height="108" rx="30" fill="#FFFDF9" stroke="#E8E1D9" stroke-width="4"/>
+<path d="M84 70 h152" class="stroke-soft" opacity=".35"/>
+<path d="M84 96 h152" class="stroke-soft" opacity=".35"/>
+<path d="M84 122 h152" class="stroke-soft" opacity=".35"/>
+<circle cx="139" cy="70" r="16" fill="#FF7A1A"/>
+<circle cx="201" cy="96" r="16" fill="#1677F2"/>
+<circle cx="118" cy="122" r="16" fill="#058C4C"/>
+<path d="M132 68 q6 7 12 0" class="face"/>
+<path d="M195 94 q6 7 12 0" fill="none" stroke="#FFFDF9" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M111 120 q6 7 12 0" fill="none" stroke="#FFFDF9" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="62" cy="70" r="7" fill="#FF7A1A" opacity=".35"/>
+<circle cx="258" cy="122" r="7" fill="#058C4C" opacity=".35"/>
+
+</svg>

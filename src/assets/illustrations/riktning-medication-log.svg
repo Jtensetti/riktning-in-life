@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-labelledby="title desc">
+<title>Medication log</title>
+<desc>Original geometric illustration for the Riktning recovery app.</desc>
+<style>
+  .stroke{fill:none;stroke:#2E2E32;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+  .stroke-soft{fill:none;stroke:#6F6A65;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+  .face{fill:none;stroke:#2E2E32;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+  .shadow{fill:#2E2E32;opacity:.08}
+</style>
+
+<rect x="54" y="46" width="98" height="86" rx="24" fill="#FFFDF9" stroke="#E8E1D9" stroke-width="4"/>
+<path d="M76 70 h54" class="stroke-soft" opacity=".55"/>
+<circle cx="82" cy="94" r="6" fill="#058C4C"/>
+<circle cx="104" cy="94" r="6" fill="#058C4C" opacity=".5"/>
+<circle cx="126" cy="94" r="6" fill="#058C4C" opacity=".5"/>
+<circle cx="82" cy="115" r="6" fill="#058C4C" opacity=".5"/>
+<circle cx="104" cy="115" r="6" fill="#058C4C"/>
+<circle cx="126" cy="115" r="6" fill="#058C4C" opacity=".5"/>
+<g transform="translate(172 58) rotate(-28 46 29)">
+  <rect x="0" y="0" width="92" height="58" rx="29" fill="#1677F2"/>
+  <path d="M46 0 v58" stroke="#FFFDF9" stroke-width="5" opacity=".95"/>
+  <path d="M13 29 h23" stroke="#FFFDF9" stroke-width="5" stroke-linecap="round" opacity=".65"/>
+</g>
+<g transform="translate(172 102) rotate(23 44 24)">
+  <rect x="0" y="0" width="88" height="48" rx="24" fill="#C6539A" opacity=".92"/>
+  <path d="M44 0 v48" stroke="#FFFDF9" stroke-width="5" opacity=".85"/>
+</g>
+<circle cx="246" cy="53" r="14" fill="#FFC928"/>
+
+</svg>

@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { SunBlob } from "@/components/Illustrations";
+import { Illustration } from "@/components/Illustrations";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -28,9 +28,9 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <main className="flex-1 max-w-md w-full mx-auto px-6 pt-12 flex flex-col">
-        <div className="flex items-center justify-center mb-6">
-          <SunBlob className="w-32 h-32" />
+      <main className="flex-1 max-w-md w-full mx-auto px-6 pt-10 flex flex-col">
+        <div className="mb-6">
+          <Illustration name="start" className="w-full h-auto" />
         </div>
         <h1 className="text-[32px] leading-[38px] text-foreground text-center mb-3">Riktning</h1>
         <p className="text-base text-text-secondary text-center mb-10">

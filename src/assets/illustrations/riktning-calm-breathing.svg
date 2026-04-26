@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-labelledby="title desc">
+<title>Calm breathing</title>
+<desc>Original geometric illustration for the Riktning recovery app.</desc>
+<style>
+  .stroke{fill:none;stroke:#2E2E32;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+  .stroke-soft{fill:none;stroke:#6F6A65;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+  .face{fill:none;stroke:#2E2E32;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+  .shadow{fill:#2E2E32;opacity:.08}
+</style>
+
+<circle cx="160" cy="90" r="78" fill="#1677F2" opacity=".10"/>
+<circle cx="160" cy="90" r="56" fill="#1677F2" opacity=".18"/>
+<circle cx="160" cy="90" r="36" fill="#1677F2" opacity=".95"/>
+<path d="M142 86 q8 9 16 0" fill="none" stroke="#FFFDF9" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M164 86 q8 9 16 0" fill="none" stroke="#FFFDF9" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M70 52 C100 28 132 28 160 52 C188 76 220 76 250 52" class="stroke-soft" opacity=".45"/>
+<path d="M52 122 C88 98 124 98 160 122 C196 146 232 146 268 122" class="stroke-soft" opacity=".45"/>
+<circle cx="82" cy="88" r="12" fill="#2157D6" opacity=".35"/>
+<circle cx="239" cy="88" r="12" fill="#2157D6" opacity=".35"/>
+<path d="M54 89 H90" class="stroke-soft" opacity=".35"/>
+<path d="M230 89 H266" class="stroke-soft" opacity=".35"/>
+
+</svg>

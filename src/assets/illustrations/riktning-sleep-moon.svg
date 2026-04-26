@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-labelledby="title desc">
+<title>Sleep moon</title>
+<desc>Original geometric illustration for the Riktning recovery app.</desc>
+<style>
+  .stroke{fill:none;stroke:#2E2E32;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+  .stroke-soft{fill:none;stroke:#6F6A65;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+  .face{fill:none;stroke:#2E2E32;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+  .shadow{fill:#2E2E32;opacity:.08}
+</style>
+
+<rect x="30" y="24" width="260" height="132" rx="34" fill="#3B1B73"/>
+<circle cx="232" cy="70" r="42" fill="#FFC928"/>
+<circle cx="248" cy="58" r="42" fill="#3B1B73"/>
+<path d="M79 119 C96 88 133 81 162 103 C186 121 211 118 235 99 C232 136 203 154 159 154 H93 C79 154 69 141 75 128 Z" fill="#1677F2" opacity=".85"/>
+<path d="M113 106 q8 9 16 0" fill="none" stroke="#FFFDF9" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M136 106 q8 9 16 0" fill="none" stroke="#FFFDF9" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="73" cy="59" r="5" fill="#FFFDF9" opacity=".65"/>
+<circle cx="111" cy="45" r="3" fill="#FFFDF9" opacity=".55"/>
+<path d="M263 123 l7 8 10-4-7 9 6 9-10-5-8 8 2-11-9-5 11-2z" fill="#FFFDF9" opacity=".75"/>
+<path d="M102 132 C126 142 169 143 201 130" fill="none" stroke="#FFFDF9" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity=".55"/>
+
+</svg>
