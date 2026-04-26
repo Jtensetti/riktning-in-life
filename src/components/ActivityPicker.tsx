@@ -4,6 +4,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { AbstractIcon, type IconName } from "./AbstractIcon";
+import { useRecentActivities } from "@/hooks/useRecentActivities";
 import { Search, Plus, Minus, Check, Star } from "lucide-react";
 
 export type CatalogItem = {
