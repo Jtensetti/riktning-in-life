@@ -1,112 +1,65 @@
+## Mål
+Göra appen **lugnare, mer kort-driven och mer färgrik** — bort från dashboard-känslan med många små ikoner, mätare och chart-kort på rad. En skärm = en känsla, inte en kontrollpanel.
 
-# Enklare app, rakare språk, rena källor
+## Designprinciper (nya, gäller hela appen)
+1. **Ett stort kort > fyra små.** Hellre ett 1-kolumns hjältekort som tar hela bredden än 2×2 grid med småmetriker.
+2. **Färg bär hierarkin, inte ikonen.** Färgade ytor (hela kortets bakgrund) får göra jobbet. Ikoner används bara där de tillför mening — aldrig som dekorativ "chip-prick" bredvid varje rad.
+3. **Typografi bär informationen.** Stora siffror/ord (text-[40-56px]) ersätter små metric-bricks med mini-ikoner.
+4. **Max 1 ikon per kort.** Och då stor (32–40 px), inte 16–22 px.
+5. **Luft.** Mer vertikal padding (p-6/p-7) i kort, mer mellanrum mellan sektioner (mb-8/mb-10), färre rader per skärm.
+6. **Inga lucide-ikoner i listrader.** ChevronRight som "klickbar"-signal får finnas, men inga dekorativa Cog/Heart/Clock i rader.
 
-Målet: appen ska kännas som någon som håller i din hand — inte ett formulär. Och varje referens vi visar ska gå att lita på.
+## Skärm-för-skärm
 
----
+### 1. Today (`src/pages/Today.tsx`) — största förändringen
+**Bort:** små metrik-kort (Burden/Function/Recovery/Risk-rutorna), StreakRing-ringen i headern, ForecastEvidenceStrip, EveningPredictionCard som extra block, mini-ikon bredvid väder-chip.
 
-## 1. Rakare språk genom hela appen
+**Kvar/förstärkt:**
+- **Hero-kort i full bredd** överst: stor färgad yta i dagens ton (morgon=orange, kväll=lila), enda rubrik "God morgon, [namn]" + en mening om hur du har det. Ingen ikon, bara färg + typografi.
+- **Dagens enda rekommendation som stort kort** (full bredd, p-7, 56px-rubrik). Ersätter dagens metric-grid.
+- **For You-carousell** kvar (du gillade den) men kort blir större och färre ikoner per kort.
+- **QuickLogPills** kvar men blir text-pills utan ikoner.
+- Ta bort "Dagens steg"-kortet om checkin redan finns — visa istället ett mjukt status-kort i en lugn färg.
 
-Idag blandas tre röster: klinisk ("Tyngd / nedstämdhet", "Funktion", "Säkerhet"), terapeutisk ("Spara dagen som den var") och teknisk ("Bygger baslinje", "PHQ-9, GAD-7, WHO-5"). Vi enar tonen runt **rak svenska — du-form, korta meningar, ingen jargong i UI**.
+### 2. Insikter / Week (`src/pages/Week.tsx`)
+**Bort:** stack av 4–5 chart-kort på rad (ChartCard × ActivityBars × StackedRecovery × Sparkline × WeekDirectionChart).
 
-**Specifika ord vi byter ut (UI-strängar, ej databasfält):**
+**Nytt:**
+- **Ett stort "Riktning"-kort** överst (full bredd, färgad bakgrund) med en enda stor siffra (0–100) + en mening: "Senaste veckan rör sig åt rätt håll".
+- **En enda graf** (WeekDirectionChart) under, som ett stort kort.
+- **Två insikt-kort** i lugna kreamfärger med textuell insikt ("Du sov bättre på dagar du rörde dig" etc.) — ingen graf, bara typografi.
+- Övriga charts flyttas till en separat **"Visa detaljer"-vy** (collapsible eller egen route `/insikter/detaljer`) så huvudvyn andas.
+- Kliniskt-rapport-kortet flyttas längst ner som en lugn länk, inte en featured CTA.
 
-| Idag | Föreslås |
-|---|---|
-| "Logga dagen" / "Spara dagen som den var" | "Hur var idag?" |
-| "Tyngd / nedstämdhet" | "Hur tungt känns det?" |
-| "Oro / ångest" | "Hur orolig är du?" |
-| "Skuld / självkritik" | "Är du hård mot dig själv?" |
-| "Funktion" | "Hur mycket orkar du?" |
-| "Komma igång" | "Hur lätt går det att starta?" |
-| "Säkerhet" + 4 knappar | "Är du trygg just nu?" + Ja / Tunga tankar / Behöver hjälp nu |
-| "Bygger baslinje" | "Lär känna dig — dag X av 14" |
-| "PHQ-9, GAD-7, WHO-5" (i Onboarding/Mer) | "Korta veckoformulär från vården" |
-| "Veckoformulär" toggle | "Påminn mig en gång i veckan" |
-| "Aktiviteter loggat" | "Saker du gjort idag" |
-| "Mående loggat" toast | "Sparat" |
-| "Det här räcker idag" (Today whisper) | Behåller — den fungerar |
+### 3. Explore (`src/pages/Explore.tsx`)
+- Carousell med övningar: gör korten större (w-[80%] istället för 72%), ta bort kategori-eyebrow-pillen — kategorin syns i färgen.
+- Rutiner & Lär dig-rader: **ta bort de små 12×12 ikonrutorna** till vänster. Hela kortet får istället bakgrundsfärg från rutinen och en stor siffra/symbol om någon (t.ex. "AM" / "PM" / läs-minuter som stor text).
 
-Ändringarna görs som ren copy-update i:
-`Checkin.tsx`, `Onboarding.tsx`, `QuickLog.tsx` (mallarnas blurb), `More.tsx`, `Vard.tsx` (knappar mot formulär), `Today.tsx` (state-rubriker).
+### 4. More (`src/pages/More.tsx`)
+- Krisplan-kortet får vara stort & röd-tonat — det är bra som det är.
+- Ta bort Settings-cog-ikonen i Inställningar-raden. Listan blir ren typografi + chevron.
+- "Om Riktning" får vara en mjuk crémeruta utan ikon.
 
-Inga schemafält byter namn — vi rör bara texten användaren ser.
+### 5. AppShell / global
+- Bottom-nav: behåll men gör ikonerna något mindre (20px) och låt aktiv flik markeras med färgad pill bakom labeln istället för stor ikon-cirkel — labeln blir hjälte.
 
-## 2. Mer guidning, mindre formulär — Check-in delas i steg
+## Konkret arbete
+1. **Today.tsx**: ta bort metric-grid, StreakRing-i-header, ForecastEvidenceStrip; ersätt med ett stort hero-statuskort + ett stort rekommendation-kort. Behåll carousell + QuickLogPills.
+2. **Week.tsx**: kollapsa charts till 1 huvudgraf + 2 textinsikt-kort; flytta resten till expanderbar sektion.
+3. **Explore.tsx**: ta bort små ikonrutor i Rutiner/Lär dig-rader, gör hela kortet färgat, större typografi.
+4. **More.tsx**: städa Row-komponenten, ta bort dekorativa ikoner.
+5. **QuickLogPills**: text-only variant.
+6. **BottomNav**: aktiv-state via färgad pill bakom label, mindre ikoner.
+7. **index.css**: lägg till en `.card-hero` utility (p-7, rounded-[28px], stor färg) och `.card-quiet` (kreamruta, bara typografi).
 
-Idag är `/checkin` **9 reglage + 4 segment + textfält + säkerhetspanel** på en lång sida. Det ÄR ett formulär. Vi gör om till en **3-stegs samtalston** med samma data men en fråga åt gången:
+## Vad jag *inte* ändrar
+- Färgpaletten (orange/blå/lila/grön/gul/rosa) — den är redan stark.
+- Sitemap/navigation — den är nyligen omstrukturerad.
+- Datalagret (Supabase, baseline, sync) — bara presentations-lagret rörs.
+- AbstractIcon-paketet — bara *användningen* glesas ut.
 
-- **Steg 1 — "Hur är kroppen?"** sömn (timmar + kvalitet), rörelse, energi
-- **Steg 2 — "Hur är huvudet?"** tyngd, oro, självkritik, hopplöshet
-- **Steg 3 — "Hur går dagen?"** orka/komma igång, vad du gjort (ActivityPicker), trygghet, ev. anteckning
+## Risk
+- Insikter-vyn tappar djup om man bara vill se rena charts — därför läggs detaljvyn som expanderbar/separat route, inget data försvinner.
+- Användare som vant sig vid metric-grid på Today kan sakna siffrorna. Lösning: dom finns kvar i Insikter, bara ett swipe bort.
 
-Stegen visar 2–3 reglage var, en stor rubrik på frågespråk, "Hoppa"-knapp om något inte är relevant, och en mjuk progressindikator. Spara sker först i sista steget — ingen risk för halva svar.
-
-Snabbloggens 4-knappsläge på `/snabblogg` finns kvar oförändrat för dem som bara vill nudda en sak.
-
-## 3. Onboarding blir kortare och varmare
-
-Idag: 4 steg, varav steg 2 är en tung textbjölke om baslinje. Vi:
-- Slår ihop intro (steg 0+1) → en sida: **"Det här är Riktning. En lugn plats för att se hur du har det över tid."**
-- Gör steg 2 (medicin) helt valfritt, mindre formell — "Tar du någon medicin? Du kan lägga till senare."
-- Gör steg 3 (påminnelser) till **en enda fråga**: "Vill du att jag pinglar dig en gång om dagen?" Ja/Nej/Senare.
-
-3 steg istället för 4. Samma data sparas.
-
-## 4. Källor: rensa svaga referenser, behåll de starka
-
-Här gör jag konkret klinisk research. Av nuvarande källor:
-
-**Behåller (peer-reviewed eller myndighet — håller kliniskt):**
-- NICE NG222, NICE CG113, Socialstyrelsen, Folkhälsomyndigheten, AASM
-- Cuijpers BA-meta (2007), Dimidjian BA (2006), Cooney Cochrane exercise (2013), Schuch (2018)
-- Cochrane CBT-I, Irwin CBT-I (2017), Morin & Espie
-- Zaccaro breathing review (2018), Brown & Gerbarg (2005), cyclic sighing Cell Reports (2022)
-- Holt-Lunstad social meta (2010), Neff/Germer self-compassion, MacBeth & Gumley meta
-- Stanley & Brown Safety Planning (2012)
-- Borkovec worry-time (1983), Beck Cognitive Therapy (1979), Hayes ACT (2012)
-- Kabat-Zinn MBSR, Hölzel mindfulness brain (2011)
-- JAMA Psychiatry physical activity (Pearce et al. 2022), JAMA loneliness meta
-
-**Tar bort (populärvetenskap / självhjälp / TED — inte klinisk källa):**
-- Walker — *Why We Sleep* (boken, ej studierna bakom)
-- *Atomic Habits* / James Clear, Fogg *Tiny Habits*
-- *The Happiness Trap*, Russ Harris (intro-bok, inte studie)
-- Emily Esfahani Smith TED-talk
-- Wood & Neal habit research → ersätts med Lally et al. 2010 (faktisk peer-reviewed habit-studie) eller tas bort
-- Wegner *ironic processes* → behåller (är peer-reviewed Psych Review)
-- Beck Institute (organisation, inte källa) → tas bort, behåll Beck 1979
-
-**Princip i koden:** Hellre **inga referenser** än en svag. `MechanismCard` ska inte rendera "Stöd i forskningen"-rubriken alls om listan är tom efter rensning. Samma för `LearnArticle` och `WeeklyReport` PDF.
-
-Rensningen sker som **en migration** som uppdaterar `exercises.evidence_json` och `learn_articles.sources_json` enligt listan ovan. Inga rader tas bort — bara svaga referenser filtreras ut. Där en artikel/övning blir helt utan källa lägger jag till en ärlig text: "Bygger på klinisk erfarenhet och praxis — inte på en specifik studie."
-
-## 5. Mer guidning på Today
-
-Två små tillägg som tar bort gissning:
-- **När check-in saknas:** byt rubrik från "Inget loggat idag" till en mjuk fråga + tydligare CTA: *"Hur har du det? — Ta 60 sekunder"*.
-- **Efter spara:** liten tackrad i toast: *"Tack. Det här hjälper dig se mönster."* (en mening, ingen pop-up).
-
-## Filer som ändras
-
-**Copy + flow:**
-- `src/pages/Checkin.tsx` — delas i 3 steg, ny copy
-- `src/pages/Onboarding.tsx` — 4 → 3 steg, ny copy
-- `src/pages/QuickLog.tsx` — varmare blurb i mallar
-- `src/pages/Today.tsx` — mjukare state-rubriker, tackrad efter check-in
-- `src/pages/More.tsx`, `src/pages/Vard.tsx` — formulärnamn på svenska i UI
-
-**Källrensning:**
-- `src/components/MechanismCard.tsx` — dölj rubrik om tom
-- `src/pages/LearnArticle.tsx` — dölj källblock om tomt + "bygger på klinisk praxis"-fallback
-- Ny migration: `update_evidence_sources_clean` (uppdaterar JSON-fält)
-
-**Inget av detta rör databasen-schema, RLS, eller integrationer.**
-
-## Vad jag *inte* gör i denna runda
-
-- Rör inte navbar/sitemap igen — den landade i förra rundan.
-- Ändrar inga datamodeller eller fältnamn — bara texten användaren läser.
-- Lägger inte till nya frågor i check-in. Färre, men bättre presenterade.
-
-Säg till om du vill kika på copy-listan i detalj eller om något av stegen ska delas annorlunda innan jag bygger.
+Säg till om du vill att jag drar igång hela rensningen, eller börjar med bara **Today + BottomNav** först som en första våg så vi kan se känslan innan resten städas.

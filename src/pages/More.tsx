@@ -2,9 +2,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { HeroBanner } from "@/components/HeroBanner";
-import { AbstractIcon } from "@/components/AbstractIcon";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, LogOut, Settings as SettingsIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, LogOut } from "lucide-react";
 
 const More = () => {
   const navigate = useNavigate();
@@ -15,42 +14,40 @@ const More = () => {
       <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm font-bold text-text-secondary mb-4 press-soft">
         <ChevronLeft size={18} /> Tillbaka
       </button>
-      <header className="mb-6">
+      <header className="mb-8">
         <h1 className="text-[32px] leading-[38px] mb-1">Mer</h1>
-        <p className="text-sm text-text-secondary">Stöd, kopplingar och konto.</p>
+        <p className="text-sm text-text-secondary">Stöd och konto.</p>
       </header>
 
-      <section className="mb-7">
+      {/* Krisplan — stort, lugnt rött hjältekort. Enda ikon-bilden på sidan. */}
+      <section className="mb-8">
         <button
           onClick={() => navigate("/krisplan")}
-          className="w-full rounded-3xl bg-red-bg border-2 border-red-risk/30 p-4 text-left press-soft animate-pop-in flex items-center gap-3"
+          className="relative overflow-hidden w-full bg-red-bg border-2 border-red-risk/30 card-hero press-soft animate-pop-in"
         >
-          <div className="w-12 h-12 rounded-2xl bg-red-risk/15 grid place-items-center shrink-0">
-            <AbstractIcon name="shield-soft" size={22} color="hsl(var(--red-risk))" />
+          <span aria-hidden className="pointer-events-none absolute -bottom-10 -right-10 w-40 h-40 rounded-full bg-red-risk/10" />
+          <div className="relative z-[1] flex items-end justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-extrabold uppercase tracking-wider text-red-risk mb-2">När det blir svårt</p>
+              <h2 className="text-2xl leading-[28px] font-extrabold mb-2">Min krisplan</h2>
+              <p className="text-sm text-foreground/70">Förbered i lugnt läge — använd när det behövs.</p>
+            </div>
+            <ChevronRight size={22} className="shrink-0 text-red-risk" />
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-extrabold uppercase tracking-wider text-red-risk mb-0.5">När det blir svårt</p>
-            <p className="text-[15px] font-extrabold">Min krisplan</p>
-            <p className="text-xs text-text-secondary">Förbered i lugnt läge — använd när det behövs.</p>
-          </div>
-          <ChevronRight size={18} className="text-text-secondary shrink-0" />
         </button>
       </section>
 
-      <section className="mb-7 space-y-3">
+      <section className="mb-8 space-y-3">
         <Row
-          icon={<SettingsIcon size={18} />}
-          iconBg="bg-blue-calm/15"
-          iconColor="text-blue-calm"
           label="Inställningar"
           sub="Konto, påminnelser, plats och data"
           onClick={() => navigate("/installningar")}
         />
       </section>
 
-      <section className="mb-7">
+      <section className="mb-8">
         <h2 className="text-lg font-extrabold mb-3">Om Riktning</h2>
-        <div className="card-cream p-4 mb-3">
+        <div className="card-quiet mb-3">
           <p className="text-sm leading-relaxed text-foreground/80">
             Riktning är inte ett medicintekniskt verktyg och ersätter inte vård eller behandling. Vid akut fara, ring 112 eller besök psykiatrisk akutmottagning.
           </p>
@@ -71,15 +68,14 @@ const More = () => {
 };
 
 const Row = ({
-  icon, iconBg, iconColor, label, sub, onClick,
+  label, sub, onClick,
 }: {
-  icon: React.ReactNode; iconBg: string; iconColor: string; label: string; sub: string; onClick: () => void;
+  label: string; sub: string; onClick: () => void;
 }) => (
-  <button onClick={onClick} className="w-full card-soft p-4 flex items-center gap-3 text-left press-soft">
-    <div className={`w-11 h-11 rounded-2xl ${iconBg} ${iconColor} grid place-items-center shrink-0`}>{icon}</div>
+  <button onClick={onClick} className="w-full card-soft px-5 py-5 flex items-center gap-3 text-left press-soft">
     <div className="flex-1 min-w-0">
-      <p className="text-[15px] font-extrabold">{label}</p>
-      <p className="text-xs text-text-secondary">{sub}</p>
+      <p className="text-[16px] font-extrabold leading-tight">{label}</p>
+      <p className="text-xs text-text-secondary mt-0.5">{sub}</p>
     </div>
     <ChevronRight size={18} className="text-text-secondary shrink-0" />
   </button>

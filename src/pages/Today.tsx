@@ -614,16 +614,11 @@ const Today = () => {
       </div>
     ),
     returneeNote: () => (
-      <div key="returneeNote" className="card-cream p-4 mb-5 flex items-start gap-3 animate-fade-in-up">
-        <div className="shrink-0 w-10 h-10 rounded-2xl bg-orange-start/15 grid place-items-center">
-          <AbstractIcon name="blob-smile" size={20} color="hsl(var(--orange-deep))" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[15px] font-extrabold leading-snug">Välkommen tillbaka</p>
-          <p className="text-xs text-text-secondary leading-snug mt-0.5">
-            Vi börjar mjukt. En liten logg räcker för idag.
-          </p>
-        </div>
+      <div key="returneeNote" className="card-quiet mb-6 animate-fade-in-up">
+        <p className="text-[15px] font-extrabold leading-snug">Välkommen tillbaka</p>
+        <p className="text-sm text-text-secondary leading-snug mt-1">
+          Vi börjar mjukt. En liten logg räcker för idag.
+        </p>
       </div>
     ),
     streak: () => <StreakRing key="streak" counts={streakCounts} className="mb-5" />,
@@ -661,32 +656,26 @@ const Today = () => {
         )}
       </section>
     ),
-    state: () => (
-      <section key="state" className="card-cream p-5 mb-7 animate-pop-in">
-        <div className="flex items-start gap-3 mb-4">
-          <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-extrabold uppercase tracking-wider text-text-secondary mb-1">{phrases.whisper}</p>
-            <h2 className="text-2xl mb-1">{state.title}</h2>
-            <p className="text-sm text-text-secondary">{state.sub}</p>
-          </div>
-          <div className="shrink-0 -mr-1 -mt-1">
-            <AbstractIcon name="blob-smile" size={68} color="hsl(var(--orange-start))" />
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-2 mb-5">
-          <Pill label="Belastning" value={burdenLabel(checkin)} />
-          <Pill label="Funktion" value={fnLabel(checkin)} />
-          <Pill label="Återhämtning" value={recoveryLabel(checkin)} />
-          <Pill label="Risk" value={riskLabel(checkin)} accent={!!checkin?.safety_status && checkin.safety_status !== "none"} />
-        </div>
-        <Button
-          onClick={() => navigate("/checkin")}
-          className="w-full h-12 rounded-full bg-foreground hover:bg-foreground/90 text-background font-extrabold text-[17px] press-soft"
-        >
-          {checkin ? phrases.ctaUpdate : phrases.ctaLog}
-        </Button>
-      </section>
-    ),
+    state: () => {
+      // Färgton följer dagens del — orange för morgon/midday, blå eftermiddag, lila kväll/natt.
+      const accent =
+        time.partOfDay === "morning" || time.partOfDay === "midday" ? "text-orange-deep"
+          : time.partOfDay === "afternoon" ? "text-blue-calm"
+            : "text-purple-sleep";
+      return (
+        <section key="state" className="card-quiet mb-8 animate-pop-in">
+          <p className={`text-[11px] font-extrabold uppercase tracking-wider mb-3 ${accent}`}>{phrases.whisper}</p>
+          <h2 className="text-[34px] leading-[38px] font-extrabold mb-3">{state.title}</h2>
+          <p className="text-base text-text-secondary leading-snug mb-6">{state.sub}</p>
+          <Button
+            onClick={() => navigate("/checkin")}
+            className="w-full h-12 rounded-full bg-foreground hover:bg-foreground/90 text-background font-extrabold text-[15px] press-soft"
+          >
+            {checkin ? phrases.ctaUpdate : phrases.ctaLog}
+          </Button>
+        </section>
+      );
+    },
     quickStarts: () => (
       <div key="quickStarts" className="mb-7 animate-fade-in-up">
         <p className="text-xs font-extrabold uppercase tracking-wider text-text-secondary mb-2 px-1">
@@ -700,14 +689,10 @@ const Today = () => {
       </div>
     ),
     baselineProgress: () => (
-      <div key="baselineProgress" className="card-cream p-3 mb-5 flex items-center gap-3 animate-fade-in-up">
-        <div className="shrink-0 w-9 h-9 rounded-2xl bg-blue-calm/15 grid place-items-center">
-          <AbstractIcon name="bookmark-soft" size={16} color="hsl(var(--blue-calm))" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[13px] font-extrabold leading-tight">Baslinje byggs · dag {baselineDays} av {BASELINE_MIN_DAYS}</p>
-          <p className="text-[11px] text-text-secondary leading-snug">Vi visar riktning när baslinjen finns.</p>
-        </div>
+      <div key="baselineProgress" className="card-quiet mb-6 animate-fade-in-up">
+        <p className="text-[11px] font-extrabold uppercase tracking-wider text-blue-calm mb-1">Bygger baslinje</p>
+        <p className="text-base font-extrabold leading-tight">Dag {baselineDays} av {BASELINE_MIN_DAYS}</p>
+        <p className="text-xs text-text-secondary leading-snug mt-1">Vi visar riktning när baslinjen finns.</p>
       </div>
     ),
     quickLog: () => (

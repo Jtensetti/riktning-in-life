@@ -4,9 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { HeroBanner } from "@/components/HeroBanner";
-import { AbstractIcon } from "@/components/AbstractIcon";
 import { ColorCard, type CardTone } from "@/components/ColorCard";
-import { ChevronRight, Clock } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 
 type Exercise = { id: string; title: string; category: string; duration_minutes: number; color: string };
 type Sequence = { slug: string; title: string; description: string; color: string };
@@ -63,18 +62,15 @@ const Explore = () => {
         icon="spark"
         iconColor="hsl(var(--surface))"
       />
-      <header className="mb-6">
+      <header className="mb-8">
         <h1 className="text-[32px] leading-[38px] mb-1">Utforska</h1>
-        <p className="text-sm text-text-secondary">Övningar, rutiner och korta texter att lära dig av.</p>
+        <p className="text-sm text-text-secondary">Övningar, rutiner och korta texter.</p>
       </header>
 
-      {/* Övningar */}
-      <section className="mb-8 -mx-6">
-        <div className="px-6 mb-3 flex items-baseline justify-between">
-          <div>
-            <h3 className="text-xl">Övningar</h3>
-            <p className="text-sm text-text-secondary">Korta, riktade verktyg</p>
-          </div>
+      {/* Övningar — carousell, större kort, kategori syns i färgen */}
+      <section className="mb-10 -mx-6">
+        <div className="px-6 mb-4 flex items-baseline justify-between">
+          <h3 className="text-xl">Övningar</h3>
           <button onClick={() => navigate("/ovningar")} className="text-xs font-extrabold text-orange-deep press-soft">Se alla</button>
         </div>
         <div className="overflow-x-auto scrollbar-hide snap-x snap-mandatory flex gap-3 px-6 pb-3 -mb-3">
@@ -86,10 +82,10 @@ const Explore = () => {
               index={i}
               onClick={() => navigate(`/ovningar/${e.id}`)}
               ariaLabel={`${e.title}, ${e.duration_minutes} minuter`}
-              className="shrink-0 w-[72%] snap-start"
-              eyebrow={[{ label: e.category, variant: "soft" }]}
+              className="shrink-0 w-[80%] snap-start"
               lead={{ value: e.duration_minutes, unit: "min" }}
               title={e.title}
+              metaLeft={e.category}
               showChevron
             />
           ))}
@@ -99,13 +95,10 @@ const Explore = () => {
         </div>
       </section>
 
-      {/* Rutiner */}
-      <section className="mb-8">
-        <div className="mb-3 flex items-baseline justify-between">
-          <div>
-            <h3 className="text-xl">Rutiner</h3>
-            <p className="text-sm text-text-secondary">Färdiga paket för morgon, dag och kväll</p>
-          </div>
+      {/* Rutiner — stora färgade hjältekort, ingen ikon-tile */}
+      <section className="mb-10">
+        <div className="mb-4 flex items-baseline justify-between">
+          <h3 className="text-xl">Rutiner</h3>
           <button onClick={() => navigate("/rutiner")} className="text-xs font-extrabold text-orange-deep press-soft">Se alla</button>
         </div>
         <div className="space-y-3">
@@ -113,29 +106,27 @@ const Explore = () => {
             <button
               key={s.slug}
               onClick={() => navigate("/rutiner")}
-              className={`w-full ${colorBg(s.color)} ${colorText(s.color)} rounded-3xl p-4 text-left shadow-soft press-soft animate-pop-in flex items-center gap-3`}
+              className={`relative overflow-hidden w-full ${colorBg(s.color)} ${colorText(s.color)} card-hero press-soft animate-pop-in`}
               style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
             >
-              <div className={`shrink-0 w-12 h-12 grid place-items-center rounded-2xl ${s.color === "yellow" ? "bg-foreground/10" : "bg-white/20"}`}>
-                <AbstractIcon name="play-soft-circle" size={22} color="currentColor" />
+              <span aria-hidden className="pointer-events-none absolute -bottom-12 -right-12 w-44 h-44 rounded-full bg-white/10" />
+              <div className="relative z-[1] flex items-end justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-extrabold uppercase tracking-wider opacity-80 mb-2">Rutin</p>
+                  <h4 className="text-2xl leading-[28px] font-extrabold mb-2">{s.title}</h4>
+                  <p className="text-sm opacity-90 line-clamp-2">{s.description}</p>
+                </div>
+                <ChevronRight size={22} className="shrink-0 opacity-90" />
               </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="text-[16px] leading-tight font-extrabold mb-0.5">{s.title}</h4>
-                <p className="text-xs opacity-90 line-clamp-2">{s.description}</p>
-              </div>
-              <ChevronRight size={18} className="shrink-0" />
             </button>
           ))}
         </div>
       </section>
 
-      {/* Lär dig */}
-      <section className="mb-7">
-        <div className="mb-3 flex items-baseline justify-between">
-          <div>
-            <h3 className="text-xl">Lär dig</h3>
-            <p className="text-sm text-text-secondary">Korta texter med forskningsstöd</p>
-          </div>
+      {/* Lär dig — färgad vänsterruta med stor läs-minut-siffra istället för ikon */}
+      <section className="mb-8">
+        <div className="mb-4 flex items-baseline justify-between">
+          <h3 className="text-xl">Lär dig</h3>
           <button onClick={() => navigate("/lar-dig")} className="text-xs font-extrabold text-orange-deep press-soft">Se alla</button>
         </div>
         <div className="space-y-3">
@@ -143,17 +134,18 @@ const Explore = () => {
             <button
               key={a.slug}
               onClick={() => navigate(`/lar-dig/${a.slug}`)}
-              className="w-full card-cream p-4 text-left flex items-start gap-3 press-soft animate-fade-in-up"
+              className="w-full card-cream p-5 text-left flex items-stretch gap-4 press-soft animate-fade-in-up"
               style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
             >
-              <div className={`shrink-0 w-12 h-12 grid place-items-center rounded-2xl ${colorBg(a.color)} ${colorText(a.color)}`}>
-                <AbstractIcon name="book-open" size={22} color="currentColor" />
+              <div className={`shrink-0 w-16 rounded-2xl ${colorBg(a.color)} ${colorText(a.color)} grid place-items-center`}>
+                <div className="text-center leading-none">
+                  <div className="text-[28px] font-extrabold tabular-nums">{a.read_minutes}</div>
+                  <div className="text-[10px] font-extrabold uppercase tracking-wider opacity-90 mt-0.5">min</div>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-extrabold uppercase tracking-wider text-text-secondary mb-0.5 inline-flex items-center gap-1.5">
-                  <Clock size={10} strokeWidth={2.6} /> {a.read_minutes} min · {a.category}
-                </p>
-                <h4 className="text-[15px] leading-tight font-extrabold mb-1">{a.title}</h4>
+              <div className="flex-1 min-w-0 flex flex-col justify-center">
+                <p className="text-[11px] font-extrabold uppercase tracking-wider text-text-secondary mb-1">{a.category}</p>
+                <h4 className="text-[16px] leading-tight font-extrabold mb-1">{a.title}</h4>
                 <p className="text-xs text-text-secondary leading-snug line-clamp-2">{a.excerpt}</p>
               </div>
             </button>
