@@ -514,6 +514,191 @@ export const drawSummaryBlock = (
   return y + tileH + 14;
 };
 
+/* ---------- Till läkaren – auto-genererad sammanfattning ---------- */
+export interface ClinicianScore {
+  label: string;
+  /** 0–100. */
+  value: number | null;
+  /** Föregående periods värde, för delta. */
+  prev?: number | null;
+  /** Är högre = bättre? Default true. */
+  goodWhenUp?: boolean;
+}
+
+export interface ClinicianSummaryInput {
+  /** Periodbeskrivning, t.ex. "senaste 7 dagar". */
+  periodLabel: string;
+  /** Scores som listas i scorebandet längst upp. */
+  scores: ClinicianScore[];
+  /** Topp-drivers från loggarna (rankade efter påverkan). */
+  drivers: string[];
+  /** Säkerhetssignaler för perioden. */
+  safety?: { passive: number; active: number; acute: number };
+  /** Antal dagar med data (för att kvalificera tillförlitlighet). */
+  daysWithData?: number;
+  /** Total period i dagar. */
+  totalDays?: number;
+}
+
+/**
+ * "Till läkaren" — en kompakt narrativ sammanfattning som vårdgivaren ser
+ * högst upp i rapporten. Sammanfattar scores i klartext, listar de viktigaste
+ * bidragande faktorerna från loggarna, och flaggar säkerhetssignaler.
+ *
+ * Tänkt som första sektionen efter rapporthuvudet — läkaren ska kunna fatta
+ * ett kliniskt beslut på endast denna sida.
+ */
+export const drawClinicianSummary = (
+  doc: jsPDF,
+  input: ClinicianSummaryInput,
+  y: number,
+  margin: number,
+): number => {
+  const pageW = doc.internal.pageSize.getWidth();
+  const w = pageW - margin * 2;
+
+  // Bakgrundskort
+  const startY = y;
+  setFill(doc, PDF_COLORS.surface);
+  setDraw(doc, PDF_COLORS.rule);
+  doc.setLineWidth(0.5);
+  doc.roundedRect(margin, y, w, 10, 4, 4, "F"); // placeholder, ritas om nedan
+
+  // Vi vet inte exakt höjd ännu, så vi ritar innehållet först i en buffert
+  // och målar bakgrunden efter att vi har räknat fram höjden. För enkelhet:
+  // beräkna höjd analytiskt först.
+  const padX = 16;
+  const padY = 14;
+  let cursor = y + padY;
+
+  // Rubrik
+  setText(doc, PDF_COLORS.ink);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  const headerY = cursor + 4;
+
+  // Mät innehåll för höjdberäkning
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  const driverLines: string[] = [];
+  const driversToShow = input.drivers.slice(0, 5);
+  driversToShow.forEach((d) => {
+    const wrapped = doc.splitTextToSize(`• ${d}`, w - padX * 2 - 8);
+    driverLines.push(...wrapped);
+  });
+
+  // Bygg narrativ scoretext
+  const fmtDelta = (cur: number | null, prev: number | null | undefined, goodUp = true) => {
+    if (cur == null || prev == null) return "";
+    const diff = cur - prev;
+    if (Math.abs(diff) < 0.5) return " (stabil)";
+    const arrow = diff > 0 ? "^" : "v";
+    const positive = (diff > 0 && goodUp) || (diff < 0 && !goodUp);
+    const sign = diff > 0 ? "+" : "";
+    return ` (${arrow} ${sign}${Math.round(diff)} ${positive ? "förbättring" : "försämring"})`;
+  };
+  const narrative = input.scores
+    .filter((s) => s.value != null)
+    .map((s) => `${s.label}: ${Math.round(s.value as number)}/100${fmtDelta(s.value, s.prev, s.goodWhenUp ?? true)}`)
+    .join(" · ");
+  const narrativeLines = narrative
+    ? doc.splitTextToSize(narrative, w - padX * 2)
+    : ["Inte tillräckligt med data för att beräkna scores."];
+
+  // Säkerhetsrad
+  const safetyTotal =
+    (input.safety?.passive ?? 0) + (input.safety?.active ?? 0) + (input.safety?.acute ?? 0);
+  const hasSafety = safetyTotal > 0;
+  const dataCoverage =
+    input.daysWithData != null && input.totalDays != null
+      ? `Underlag: ${input.daysWithData}/${input.totalDays} dagar med checkin (${input.periodLabel}).`
+      : `Underlag: ${input.periodLabel}.`;
+
+  // Beräknad totalhöjd
+  const driversBlockH = driversToShow.length > 0 ? 18 + driverLines.length * 11 + 4 : 0;
+  const safetyH = hasSafety ? 18 : 0;
+  const totalH =
+    padY + // top pad
+    18 + // rubrik
+    8 + // gap
+    narrativeLines.length * 11 + // narrativ
+    8 + // gap
+    driversBlockH +
+    safetyH +
+    14 + // dataCoverage rad
+    padY; // bottom pad
+
+  // Måla bakgrund med rätt höjd
+  setFill(doc, PDF_COLORS.surface);
+  setDraw(doc, PDF_COLORS.rule);
+  doc.setLineWidth(0.5);
+  doc.roundedRect(margin, startY, w, totalH, 6, 6, "FD");
+  // Vänster accentstripe (blå = neutral klinisk)
+  setFill(doc, PDF_COLORS.blue);
+  doc.roundedRect(margin, startY, 3, totalH, 1.5, 1.5, "F");
+
+  // Rita rubrik
+  setText(doc, PDF_COLORS.ink);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text("TILL LÄKAREN", margin + padX, headerY);
+  // Sub-rubrik
+  setText(doc, PDF_COLORS.inkMuted);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.text(`Auto-sammanfattning · ${input.periodLabel}`, margin + padX, headerY + 11);
+  cursor = headerY + 22;
+
+  // Narrativ scoretext
+  setText(doc, PDF_COLORS.ink);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  narrativeLines.forEach((ln: string) => {
+    doc.text(ln, margin + padX, cursor);
+    cursor += 11;
+  });
+  cursor += 4;
+
+  // Bidragande faktorer
+  if (driversToShow.length > 0) {
+    setText(doc, PDF_COLORS.inkSoft);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.text("VIKTIGASTE BIDRAGANDE FAKTORER", margin + padX, cursor);
+    cursor += 12;
+    setText(doc, PDF_COLORS.ink);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    driverLines.forEach((ln) => {
+      doc.text(ln, margin + padX + 4, cursor);
+      cursor += 11;
+    });
+    cursor += 4;
+  }
+
+  // Säkerhetsrad
+  if (hasSafety) {
+    setText(doc, PDF_COLORS.red);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    const parts: string[] = [];
+    if (input.safety!.acute > 0) parts.push(`${input.safety!.acute} dgr akuta signaler`);
+    if (input.safety!.active > 0) parts.push(`${input.safety!.active} dgr aktiva tankar`);
+    if (input.safety!.passive > 0) parts.push(`${input.safety!.passive} dgr passiva dödstankar`);
+    doc.text(`! Säkerhet: ${parts.join(" · ")}`, margin + padX, cursor);
+    cursor += 14;
+  }
+
+  // Underlagsrad
+  setText(doc, PDF_COLORS.inkMuted);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.text(dataCoverage, margin + padX, cursor);
+
+  setText(doc, PDF_COLORS.ink);
+  return startY + totalH + 14;
+};
+
 /* ---------- Sidnumrering & footer ---------- */
 export const drawFooter = (doc: jsPDF, footerText: string, margin: number) => {
   const pageW = doc.internal.pageSize.getWidth();

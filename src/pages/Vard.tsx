@@ -24,6 +24,7 @@ import {
   drawHBarChart,
   drawWeekDots,
   drawSummaryBlock,
+  drawClinicianSummary,
   drawFooter,
   setPdfText,
   setPdfDraw,
@@ -778,6 +779,29 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
       }
       setPdfText(doc, PDF_COLORS.ink);
     };
+
+    // ----- TILL LÄKAREN: auto-genererad sammanfattning (måste visas först) -----
+    const daysWithData = new Set(structured.checkins.map((c) => c.date)).size;
+    ensureSpace(180);
+    y = drawClinicianSummary(
+      doc,
+      {
+        periodLabel: `senaste ${structured.periodDays} dagarna`,
+        scores: [
+          { label: "Riktning", value: structured.direction, prev: structured.directionPrev, goodWhenUp: true },
+          { label: "Belastning", value: structured.burden, goodWhenUp: false },
+          { label: "Funktion", value: structured.fn, goodWhenUp: true },
+          { label: "Återhämtning", value: structured.rec, goodWhenUp: true },
+          { label: "Stabilitet", value: structured.stab, goodWhenUp: true },
+        ],
+        drivers: structured.drivers,
+        safety: structured.safetyCounts,
+        daysWithData,
+        totalDays: structured.periodDays,
+      },
+      y,
+      margin,
+    );
 
     // ----- Score-kort -----
     ensureSpace(110);
