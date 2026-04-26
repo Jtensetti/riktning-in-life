@@ -62,6 +62,7 @@ const App = () => {
           <Route path="/vecka" element={<Week />} />
           <Route path="/journal" element={<Journal />} />
           <Route path="/vard" element={<Vard />} />
+          <Route path="/rapport/vecka" element={<WeeklyReport />} />
           <Route path="/lar-dig" element={<Learn />} />
           <Route path="/lar-dig/:slug" element={<LearnArticle />} />
           <Route path="/rutiner" element={<Sequences />} />
