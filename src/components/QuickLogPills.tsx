@@ -136,7 +136,7 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
     if (!user || busy) return;
     setBusy(item.slug);
     setFailed(null);
-    if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.(10);
+    haptic("tap");
 
     const { data: inserted, error } = await supabase.from("activity_logs").insert({
       user_id: user.id,
