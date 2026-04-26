@@ -124,6 +124,7 @@ export const StackedRecovery = ({ data, height = 160 }: Props) => {
           </li>
         ))}
       </ul>
-    </div>
+      </div>
+    </AnimatedChart>
   );
 };
