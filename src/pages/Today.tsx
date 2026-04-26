@@ -419,7 +419,7 @@ const Today = () => {
   // Hero icon adapts to weather + daylight; falls back to friendly blob.
   const heroIcon: IconName = weather
     ? weatherIcon(weather.kind, weather.isDaylight)
-    : (time.partOfDay === "night" || time.partOfDay === "evening" ? "moon-soft" : "blob-smile");
+    : (time.partOfDay === "night" || time.partOfDay === "evening" ? "moon-stars" : "blob-smile");
   const heroIconColor = weather
     ? weatherIconColor(weather.kind, weather.isDaylight)
     : (time.partOfDay === "evening" || time.partOfDay === "night"
