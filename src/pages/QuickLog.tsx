@@ -63,6 +63,8 @@ type DayEntry = {
 };
 
 // === Page ===
+type MoodEdit = { id: string; heaviness: number; anxiety: number; energy: number };
+
 const QuickLog = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -72,6 +74,8 @@ const QuickLog = () => {
   const [meds, setMeds] = useState<{ id: string; name: string; dose: string | null }[]>([]);
   const [fetching, setFetching] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
+  const [moodEdit, setMoodEdit] = useState<MoodEdit | null>(null);
+  const [savingMoodEdit, setSavingMoodEdit] = useState(false);
 
   useEffect(() => { if (!loading && !user) navigate("/auth"); }, [user, loading, navigate]);
 
