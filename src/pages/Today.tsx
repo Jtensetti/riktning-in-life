@@ -18,7 +18,7 @@ import { recommendForToday, type Exercise as RecExercise, type Pick } from "@/li
 import { Moon } from "lucide-react";
 import { StreakRing } from "@/components/StreakRing";
 import { QuickLogPills } from "@/components/QuickLogPills";
-import { QuickLogFab } from "@/components/QuickLogFab";
+
 import { ActivityPicker, type ActivityDraft } from "@/components/ActivityPicker";
 import { countDaysInWindow, type StreakCounts } from "@/lib/streaks";
 import { useRecentCheckins, seriesForField } from "@/hooks/useRecentCheckins";

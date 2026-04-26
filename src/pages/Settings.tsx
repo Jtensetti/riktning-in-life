@@ -183,35 +183,6 @@ const Settings = () => {
         </div>
       </section>
 
-      <section className="mb-7">
-        <h2 className="text-lg font-extrabold mb-3">Mer i appen</h2>
-        <div className="space-y-3">
-          <LinkRow
-            icon={<AbstractIcon name="book-open" size={18} color="currentColor" />}
-            iconBg="bg-blue-calm/15"
-            iconColor="text-blue-calm"
-            label="Lär dig"
-            sub="Korta artiklar med forskningsstöd"
-            onClick={() => navigate("/lar-dig")}
-          />
-          <LinkRow
-            icon={<Sparkles size={18} />}
-            iconBg="bg-orange-start/15"
-            iconColor="text-orange-deep"
-            label="Rutiner"
-            sub="Färdiga paket för morgon, dag och kväll"
-            onClick={() => navigate("/rutiner")}
-          />
-          <LinkRow
-            icon={<AbstractIcon name="shield-soft" size={18} color="currentColor" />}
-            iconBg="bg-red-risk/15"
-            iconColor="text-red-risk"
-            label="Min krisplan"
-            sub="Förbered i lugnt läge — för svåra stunder"
-            onClick={() => navigate("/krisplan")}
-          />
-        </div>
-      </section>
 
       <section className="mb-7">
         <h2 className="text-lg font-extrabold mb-3">Din data</h2>
