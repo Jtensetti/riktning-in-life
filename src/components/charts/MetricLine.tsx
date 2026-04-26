@@ -1,9 +1,15 @@
 import { useMemo } from "react";
+import { LineChart, Line, ResponsiveContainer } from "recharts";
+import { toneHsl, type ChartTone } from "@/lib/chartColors";
 import {
-  LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
-} from "recharts";
-import { toneHsl, chartTokens, prefersReducedMotion, type ChartTone } from "@/lib/chartColors";
+  chartAnimation,
+  chartHeights,
+  chartLineActiveDot,
+  chartLineDot,
+  chartMargins,
+} from "@/lib/chartTheme";
 import { AnimatedChart, buildChartSignature } from "./AnimatedChart";
+import { ThemedGrid, ThemedTooltip, ThemedXAxis, ThemedYAxis } from "./ChartPrimitives";
 
 export type MetricLinePoint = {
   /** Visningsetikett på X-axeln (kort). */
@@ -40,7 +46,7 @@ interface Props {
 export const MetricLine = ({
   data,
   tone = "green",
-  height = 180,
+  height = chartHeights.expanded,
   yMin = 0,
   yMax = 100,
   yTicks = [0, 25, 50, 75, 100],
@@ -49,7 +55,6 @@ export const MetricLine = ({
   showYAxis = true,
   labelFormatter,
 }: Props) => {
-  const reduced = prefersReducedMotion();
   const stroke = toneHsl(tone);
   const gradId = useMemo(() => `metric-line-${tone}-${Math.random().toString(36).slice(2, 7)}`, [tone]);
   const sig = buildChartSignature(data, tone);
@@ -58,69 +63,37 @@ export const MetricLine = ({
     <AnimatedChart signature={sig}>
       <div style={{ height }} role="img" aria-label={valueLabel}>
         <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 8, right: 12, bottom: 8, left: showYAxis ? -8 : 0 }}>
-          <defs>
-            <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor={stroke} stopOpacity={0.85} />
-              <stop offset="100%" stopColor={stroke} stopOpacity={1} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid stroke={chartTokens.gridStroke} strokeDasharray="3 4" vertical={false} />
-          <XAxis
-            dataKey="label"
-            tickLine={false}
-            axisLine={false}
-            interval={0}
-            tick={{ fill: chartTokens.axisText, fontSize: 11, fontWeight: 700 }}
-            height={22}
-          />
-          {showYAxis ? (
-            <YAxis
-              domain={[yMin, yMax]}
-              ticks={yTicks}
-              tickLine={false}
-              axisLine={false}
-              width={28}
-              tick={{ fill: chartTokens.axisText, fontSize: 10, fontWeight: 700 }}
+          <LineChart data={data} margin={showYAxis ? chartMargins.lineWithY : chartMargins.line}>
+            <defs>
+              <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor={stroke} stopOpacity={0.85} />
+                <stop offset="100%" stopColor={stroke} stopOpacity={1} />
+              </linearGradient>
+            </defs>
+            <ThemedGrid />
+            <ThemedXAxis weight="light" height={22} />
+            <ThemedYAxis hide={!showYAxis} domain={[yMin, yMax]} ticks={showYAxis ? yTicks : undefined} />
+            <ThemedTooltip
+              variant="line"
+              labelFormatter={(label, payload) => {
+                const k = payload?.[0]?.payload?.key as string | undefined;
+                return labelFormatter ? labelFormatter(k, String(label)) : String(label);
+              }}
+              formatter={(value) => [value == null ? "—" : valueFormatter(Number(value)), valueLabel]}
             />
-          ) : (
-            <YAxis hide domain={[yMin, yMax]} />
-          )}
-          <Tooltip
-            cursor={{ stroke: chartTokens.gridStroke, strokeWidth: 1 }}
-            contentStyle={{
-              borderRadius: 16,
-              border: `1px solid ${chartTokens.tooltipBorder}`,
-              background: chartTokens.tooltipBg,
-              boxShadow: "0 8px 24px hsl(240 4% 19% / 0.08)",
-              fontSize: 12,
-              fontWeight: 700,
-              padding: "8px 12px",
-            }}
-            labelFormatter={(label, payload) => {
-              const k = payload?.[0]?.payload?.key as string | undefined;
-              return labelFormatter ? labelFormatter(k, String(label)) : String(label);
-            }}
-            formatter={(value) => [
-              value == null ? "—" : valueFormatter(Number(value)),
-              valueLabel,
-            ]}
-          />
-          <Line
-            type="monotone"
-            dataKey="value"
-            stroke={`url(#${gradId})`}
-            strokeWidth={3}
-            strokeLinecap="round"
-            dot={{ r: 4, strokeWidth: 2, stroke: chartTokens.tooltipBg, fill: stroke }}
-            activeDot={{ r: 6, strokeWidth: 2, stroke: chartTokens.tooltipBg, fill: stroke }}
-            isAnimationActive={!reduced}
-            animationDuration={700}
-            animationEasing="ease-out"
-            connectNulls
-          />
-        </LineChart>
-      </ResponsiveContainer>
+            <Line
+              type="monotone"
+              dataKey="value"
+              stroke={`url(#${gradId})`}
+              strokeWidth={3}
+              strokeLinecap="round"
+              dot={chartLineDot(stroke)}
+              activeDot={chartLineActiveDot(stroke)}
+              {...chartAnimation("line")}
+              connectNulls
+            />
+          </LineChart>
+        </ResponsiveContainer>
       </div>
     </AnimatedChart>
   );

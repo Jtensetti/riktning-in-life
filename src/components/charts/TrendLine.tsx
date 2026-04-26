@@ -1,7 +1,9 @@
 import { useMemo } from "react";
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
-import { toneHsl, chartTokens, prefersReducedMotion, type ChartTone } from "@/lib/chartColors";
+import { AreaChart, Area, ResponsiveContainer } from "recharts";
+import { toneHsl, type ChartTone } from "@/lib/chartColors";
+import { chartAnimation, chartHeights, chartLineActiveDot, chartMargins } from "@/lib/chartTheme";
 import { AnimatedChart } from "./AnimatedChart";
+import { ThemedGrid, ThemedTooltip, ThemedXAxis, ThemedYAxis } from "./ChartPrimitives";
 
 export type TrendSeries = {
   key: string;
@@ -37,12 +39,10 @@ const fmtTooltipDate = (iso: string): string => {
  * Mjuk monotone-area med tunna linjer i kategorifärger.
  * Visar 1–3 serier samtidigt utan att bli rörig.
  */
-export const TrendLine = ({ dates, series, showAxis = true, height = 160 }: Props) => {
-  const reduced = prefersReducedMotion();
-
+export const TrendLine = ({ dates, series, showAxis = true, height = chartHeights.standard }: Props) => {
   const data = useMemo(() => {
     return dates.map((iso, i) => {
-      const row: Record<string, string | number | null> = { date: iso, day: dayLetter(iso) };
+      const row: Record<string, string | number | null> = { date: iso, label: dayLetter(iso) };
       for (const s of series) row[s.key] = s.values[i] ?? null;
       return row;
     });
@@ -50,7 +50,6 @@ export const TrendLine = ({ dates, series, showAxis = true, height = 160 }: Prop
 
   const yMax = Math.max(...series.map((s) => s.max ?? 10));
 
-  // Signaturen byts om antal datum, första/sista datum, eller senaste värde i någon serie ändras.
   let valueSum = 0;
   for (const s of series) for (const v of s.values) valueSum += v ?? 0;
   const sig = `${dates.length}|${dates[0] ?? ""}|${dates[dates.length - 1] ?? ""}|${series.map((s) => s.key).join(",")}|${valueSum}`;
@@ -59,66 +58,46 @@ export const TrendLine = ({ dates, series, showAxis = true, height = 160 }: Prop
     <AnimatedChart signature={sig}>
       <div style={{ height }} role="img" aria-label={`Trend för ${series.map((s) => s.label).join(", ")}`}>
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 8, right: 8, bottom: showAxis ? 8 : 0, left: 0 }}>
-          <defs>
+          <AreaChart data={data} margin={chartMargins.area}>
+            <defs>
+              {series.map((s) => (
+                <linearGradient key={s.key} id={`area-${s.key}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={toneHsl(s.tone)} stopOpacity={0.18} />
+                  <stop offset="100%" stopColor={toneHsl(s.tone)} stopOpacity={0.0} />
+                </linearGradient>
+              ))}
+            </defs>
+            <ThemedGrid />
+            {showAxis && <ThemedXAxis weight="light" />}
+            <ThemedYAxis hide domain={[0, yMax]} />
+            <ThemedTooltip
+              variant="line"
+              labelFormatter={(_, payload) => {
+                const iso = payload?.[0]?.payload?.date as string | undefined;
+                return iso ? fmtTooltipDate(iso) : "";
+              }}
+              formatter={(value: number | string, name: string) => {
+                const s = series.find((x) => x.key === name);
+                return [value == null ? "—" : value, s?.label ?? name];
+              }}
+            />
             {series.map((s) => (
-              <linearGradient key={s.key} id={`area-${s.key}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={toneHsl(s.tone)} stopOpacity={0.18} />
-                <stop offset="100%" stopColor={toneHsl(s.tone)} stopOpacity={0.0} />
-              </linearGradient>
+              <Area
+                key={s.key}
+                type="monotone"
+                dataKey={s.key}
+                stroke={toneHsl(s.tone)}
+                strokeWidth={3}
+                strokeLinecap="round"
+                fill={`url(#area-${s.key})`}
+                dot={false}
+                activeDot={chartLineActiveDot(toneHsl(s.tone))}
+                {...chartAnimation("line")}
+                connectNulls
+              />
             ))}
-          </defs>
-          <CartesianGrid stroke={chartTokens.gridStroke} strokeDasharray="3 4" vertical={false} />
-          {showAxis && (
-            <XAxis
-              dataKey="day"
-              tickLine={false}
-              axisLine={false}
-              interval={0}
-              tick={{ fill: chartTokens.axisText, fontSize: 11, fontWeight: 700 }}
-              height={20}
-            />
-          )}
-          <YAxis hide domain={[0, yMax]} />
-          <Tooltip
-            cursor={{ stroke: chartTokens.gridStroke, strokeWidth: 1 }}
-            contentStyle={{
-              borderRadius: 16,
-              border: `1px solid ${chartTokens.tooltipBorder}`,
-              background: chartTokens.tooltipBg,
-              boxShadow: "0 8px 24px hsl(240 4% 19% / 0.08)",
-              fontSize: 12,
-              fontWeight: 700,
-              padding: "8px 12px",
-            }}
-            labelFormatter={(_, payload) => {
-              const iso = payload?.[0]?.payload?.date as string | undefined;
-              return iso ? fmtTooltipDate(iso) : "";
-            }}
-            formatter={(value: number | string, name: string) => {
-              const s = series.find((x) => x.key === name);
-              return [value == null ? "—" : value, s?.label ?? name];
-            }}
-          />
-          {series.map((s) => (
-            <Area
-              key={s.key}
-              type="monotone"
-              dataKey={s.key}
-              stroke={toneHsl(s.tone)}
-              strokeWidth={3}
-              strokeLinecap="round"
-              fill={`url(#area-${s.key})`}
-              dot={false}
-              activeDot={{ r: 5, strokeWidth: 2, stroke: chartTokens.tooltipBg, fill: toneHsl(s.tone) }}
-              isAnimationActive={!reduced}
-              animationDuration={700}
-              animationEasing="ease-out"
-              connectNulls
-            />
-          ))}
-        </AreaChart>
-      </ResponsiveContainer>
+          </AreaChart>
+        </ResponsiveContainer>
       </div>
     </AnimatedChart>
   );

@@ -2,6 +2,8 @@
 // från en plats: `import { MetricBars, MetricLine, MetricDonut } from "@/components/charts";`
 
 export { ChartCard } from "./ChartCard";
+export { AnimatedChart, buildChartSignature } from "./AnimatedChart";
+export { ThemedXAxis, ThemedYAxis, ThemedGrid, ThemedTooltip } from "./ChartPrimitives";
 
 // Standardprimitiver — använd dessa i nya metric-kort.
 export { MetricBars, type MetricBarPoint } from "./MetricBars";

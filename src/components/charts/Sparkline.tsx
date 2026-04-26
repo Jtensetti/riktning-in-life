@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
-import { toneHsl, prefersReducedMotion, type ChartTone } from "@/lib/chartColors";
+import { toneHsl, type ChartTone } from "@/lib/chartColors";
+import { chartAnimation } from "@/lib/chartTheme";
 import { AnimatedChart } from "./AnimatedChart";
 
 interface Props {
@@ -15,7 +16,6 @@ interface Props {
  * Inga axlar, inga tooltips — bara en mjuk linje + slutpunkt.
  */
 export const Sparkline = ({ values, tone = "orange", width = 64, height = 24 }: Props) => {
-  const reduced = prefersReducedMotion();
   const data = useMemo(
     () =>
       values.map((v, i) => ({
@@ -54,9 +54,7 @@ export const Sparkline = ({ values, tone = "orange", width = 64, height = 24 }: 
               strokeWidth={2}
               dot={false}
               activeDot={false}
-              isAnimationActive={!reduced}
-              animationDuration={650}
-              animationEasing="ease-out"
+              {...chartAnimation("line")}
               connectNulls
             />
           </LineChart>
