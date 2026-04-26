@@ -13,6 +13,8 @@ type FavItem = {
   icon: string;
   color: string;
   default_minutes: number;
+  lastLoggedDays: number | null;
+  logCount30d: number;
 };
 
 const colorBg = (color: string): string => {
