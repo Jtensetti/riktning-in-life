@@ -37,7 +37,7 @@ export const MechanismCard = ({ mechanism, evidence }: Props) => {
       {open && (
         <div className="mt-3 pt-3 border-t border-border-soft animate-fade-in-up">
           <p className="text-sm leading-relaxed text-foreground/90 mb-3">{mechanism}</p>
-          {evidence.length > 0 && (
+          {evidence.length > 0 ? (
             <div className="space-y-1.5">
               <p className="text-[10px] font-extrabold uppercase tracking-wider text-text-secondary">
                 Stöd i forskningen
@@ -48,6 +48,10 @@ export const MechanismCard = ({ mechanism, evidence }: Props) => {
                 </p>
               ))}
             </div>
+          ) : (
+            <p className="text-xs text-text-secondary leading-snug italic">
+              Bygger på klinisk praxis snarare än en specifik studie.
+            </p>
           )}
         </div>
       )}

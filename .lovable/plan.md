@@ -1,96 +1,112 @@
-## Nuläget — varför det känns spretigt
 
-Jag har gått igenom alla routes och länkar. Tre konkreta problem:
+# Enklare app, rakare språk, rena källor
 
-1. **Innehåll bor på fel ställen.** "Lär dig", "Rutiner" och "Krisplan" länkas bara från **Inställningar** och delvis från Today/Vård. En användare som vill läsa en artikel hittar den inte via navbaren.
-2. **Bottom-nav blandar verb och substantiv.** `Idag · Logga · Vecka · Journal · Vård` — "Logga" är en handling (FAB-jobb), "Journal" är en innehållstyp, "Vecka" är en tidsperiod. Det finns ingen plats för utforska/läsa.
-3. **Carousellen är gömd.** `ForYouCarousel` renderas bara *efter* att man checkat in, och bara som en av många moduler i Today-flödet. Den var tänkt som primär ingång — den ska tillbaka, tydligare.
+Målet: appen ska kännas som någon som håller i din hand — inte ett formulär. Och varje referens vi visar ska gå att lita på.
 
-Dessutom finns 16 routes men bara 5 i navbaren — resten är beroende av att man råkar hitta knappar inne på sidor.
+---
 
-## Föreslagen sitemap (5 tabs + en hub)
+## 1. Rakare språk genom hela appen
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  IDAG          UTFORSKA       (FAB)        INSIKTER     VÅRD   │
-│  house-soft    sparkles       Logga +      pie          stetho │
-└─────────────────────────────────────────────────────────────────┘
-```
+Idag blandas tre röster: klinisk ("Tyngd / nedstämdhet", "Funktion", "Säkerhet"), terapeutisk ("Spara dagen som den var") och teknisk ("Bygger baslinje", "PHQ-9, GAD-7, WHO-5"). Vi enar tonen runt **rak svenska — du-form, korta meningar, ingen jargong i UI**.
 
-### 1. **Idag** (`/`) — *oförändrad URL*
-Dagens flöde + state. Carousellen flyttas hit som **alltid synlig** modul (inte gated bakom check-in) — det var det användaren saknade.
-- Hero + hälsning + väder
-- Streak / state-kort
-- **"För dig just nu" carousel** (3 picks — alltid synlig så fort `picks.length > 0`)
-- Dagens rutin / forecast / evening prediction
-- Senaste aktivitet
-- Bort: `reportShortcut` (flyttas till Insikter), `learn` (flyttas till Utforska)
+**Specifika ord vi byter ut (UI-strängar, ej databasfält):**
 
-### 2. **Utforska** (`/utforska`) — *NY route, ersätter "Logga"-tabben*
-En äkta innehållsdestination. Tre sektioner i en sida:
-- **Övningar** (`/ovningar` — befintlig) som horisontell carousell + "Se alla"
-- **Rutiner** (`/rutiner` — befintlig) som carousell — *flyttas hit från Inställningar*
-- **Lär dig** (`/lar-dig` — befintlig) som lista — *flyttas hit från Inställningar*
+| Idag | Föreslås |
+|---|---|
+| "Logga dagen" / "Spara dagen som den var" | "Hur var idag?" |
+| "Tyngd / nedstämdhet" | "Hur tungt känns det?" |
+| "Oro / ångest" | "Hur orolig är du?" |
+| "Skuld / självkritik" | "Är du hård mot dig själv?" |
+| "Funktion" | "Hur mycket orkar du?" |
+| "Komma igång" | "Hur lätt går det att starta?" |
+| "Säkerhet" + 4 knappar | "Är du trygg just nu?" + Ja / Tunga tankar / Behöver hjälp nu |
+| "Bygger baslinje" | "Lär känna dig — dag X av 14" |
+| "PHQ-9, GAD-7, WHO-5" (i Onboarding/Mer) | "Korta veckoformulär från vården" |
+| "Veckoformulär" toggle | "Påminn mig en gång i veckan" |
+| "Aktiviteter loggat" | "Saker du gjort idag" |
+| "Mående loggat" toast | "Sparat" |
+| "Det här räcker idag" (Today whisper) | Behåller — den fungerar |
 
-Detta löser direkt "artiklar i inställningar"-problemet. URL-arna `/ovningar`, `/rutiner`, `/lar-dig` finns kvar för djuplänkar.
+Ändringarna görs som ren copy-update i:
+`Checkin.tsx`, `Onboarding.tsx`, `QuickLog.tsx` (mallarnas blurb), `More.tsx`, `Vard.tsx` (knappar mot formulär), `Today.tsx` (state-rubriker).
 
-### 3. **Logga (FAB i mitten)** — *behåll men gör om*
-Mitten-pillen i navbaren blir en upphöjd FAB (likt Instagram/Strava). Den öppnar **`ActivityPicker`-sheet** direkt (samma som dagens `QuickLogFab`). Snabbare än att gå till `/snabblogg`-sidan, men `/snabblogg` finns kvar som djuplänk.
+Inga schemafält byter namn — vi rör bara texten användaren ser.
 
-Konsekvens: `QuickLogFab` på Today blir överflödig och tas bort (en plats att logga är bättre än två).
+## 2. Mer guidning, mindre formulär — Check-in delas i steg
 
-### 4. **Insikter** (`/insikter`) — *byt namn från "Vecka"*
-Routen `/vecka` aliasas till `/insikter` (båda funkar). Sidan är redan rätt innehåll (vecko­trender, baseline, top-aktiviteter). Lägger till en topp-sektion:
-- **Veckorapport** (PDF-genvägen som idag bor på Today, rad 772-787) flyttas hit — det är där rapporter hör hemma.
+Idag är `/checkin` **9 reglage + 4 segment + textfält + säkerhetspanel** på en lång sida. Det ÄR ett formulär. Vi gör om till en **3-stegs samtalston** med samma data men en fråga åt gången:
 
-### 5. **Vård** (`/vard`) — *oförändrad*
-Skattningar, läkemedel, exportrapport, krisplan. Lägger till en **direktlänk till Krisplan** högst upp (finns redan på rad 96-110, behåller).
+- **Steg 1 — "Hur är kroppen?"** sömn (timmar + kvalitet), rörelse, energi
+- **Steg 2 — "Hur är huvudet?"** tyngd, oro, självkritik, hopplöshet
+- **Steg 3 — "Hur går dagen?"** orka/komma igång, vad du gjort (ActivityPicker), trygghet, ev. anteckning
 
-### Mer-hub (`/mer`) — *NY, nås via header-knapp på Today*
-Settings-cogen i Today-headern leder till en **Mer-meny** istället för direkt till Inställningar. Den listar:
-- Krisplan (med röd accent)
-- Hälsoanslutning (`/health`)
-- Inställningar (`/installningar`)
-- Om Riktning / utlogg
+Stegen visar 2–3 reglage var, en stor rubrik på frågespråk, "Hoppa"-knapp om något inte är relevant, och en mjuk progressindikator. Spara sker först i sista steget — ingen risk för halva svar.
 
-Inställningar slimmas: kontot, påminnelser, plats, data-export, om-sektionen. **"Mer i appen"-blocket** (Lär dig / Rutiner / Krisplan) försvinner — det innehållet bor nu i Utforska + Mer.
+Snabbloggens 4-knappsläge på `/snabblogg` finns kvar oförändrat för dem som bara vill nudda en sak.
 
-## Komplett route-karta efter ändring
+## 3. Onboarding blir kortare och varmare
 
-| Route | Tab | Källa |
-|---|---|---|
-| `/` | Idag | navbar |
-| `/utforska` | Utforska | navbar (ny) |
-| `/ovningar`, `/ovningar/:id` | (Utforska → Övningar) | djuplänk |
-| `/rutiner` | (Utforska → Rutiner) | djuplänk |
-| `/lar-dig`, `/lar-dig/:slug` | (Utforska → Lär dig) | djuplänk |
-| `/snabblogg` | FAB-sheet | djuplänk + FAB |
-| `/checkin` | (Idag CTA) | knapp |
-| `/journal` | (Idag CTA + chip) | knapp |
-| `/insikter` (alias `/vecka`) | Insikter | navbar |
-| `/rapport/vecka` | (Insikter topp) | knapp |
-| `/vard` | Vård | navbar |
-| `/krisplan` | (Vård + Mer) | knapp |
-| `/mer` | header-cog på Idag | knapp |
-| `/installningar` | (Mer) | knapp |
-| `/health` | (Mer) | knapp |
-| `/auth`, `/onboarding` | systemflöden | redirect |
+Idag: 4 steg, varav steg 2 är en tung textbjölke om baslinje. Vi:
+- Slår ihop intro (steg 0+1) → en sida: **"Det här är Riktning. En lugn plats för att se hur du har det över tid."**
+- Gör steg 2 (medicin) helt valfritt, mindre formell — "Tar du någon medicin? Du kan lägga till senare."
+- Gör steg 3 (påminnelser) till **en enda fråga**: "Vill du att jag pinglar dig en gång om dagen?" Ja/Nej/Senare.
 
-## Konkret jobb att göra
+3 steg istället för 4. Samma data sparas.
 
-1. **`src/components/BottomNav.tsx`** — byt tabs till `Idag · Utforska · [FAB] · Insikter · Vård`. FAB:en är ett upphöjt mitten-element (rundad knapp som överlappar nav-kanten med `-translate-y-3`).
-2. **`src/App.tsx`** — lägg till routes: `/utforska`, `/insikter` (alias för `/vecka`), `/mer`. Ta bort ingen befintlig route.
-3. **`src/pages/Explore.tsx`** — NY sida. Tre sektioner: Övningar (carousell, hämtar från `exercises`), Rutiner (carousell, från `exercise_sequences`), Lär dig (lista, från `learn_articles`). Återanvänd `ColorCard` + `Illustration`.
-4. **`src/pages/More.tsx`** — NY sida. Enkel länklista (krisplan, hälsa, inställningar, om).
-5. **`src/pages/Today.tsx`** —
-   - Ta bort `forYou`-gating på `hasCheckin` i `src/lib/todayLayout.ts` rad 142 så carousellen syns direkt när det finns picks.
-   - Höj `forYou` i prioritetslistan så den visas tidigt.
-   - Ta bort `reportShortcut`- och `learn`-modulerna (flyttade till Insikter resp. Utforska).
-   - Cog-ikon i hero leder till `/mer` istället för `/installningar`.
-   - Ta bort `QuickLogFab` (FAB:en finns nu i navbaren).
-6. **`src/pages/Settings.tsx`** — ta bort "Mer i appen"-sektionen (rad 188–217). Behåll konto, påminnelser, plats, data, om.
-7. **`src/pages/Week.tsx`** — döp `<h1>` till "Insikter" (URL `/vecka` finns kvar, men `/insikter` blir kanonisk). Lägg PDF-rapportgenväg överst.
+## 4. Källor: rensa svaga referenser, behåll de starka
 
-## Frågor innan jag bygger
+Här gör jag konkret klinisk research. Av nuvarande källor:
 
-Vill du att jag bekräftar några val?
+**Behåller (peer-reviewed eller myndighet — håller kliniskt):**
+- NICE NG222, NICE CG113, Socialstyrelsen, Folkhälsomyndigheten, AASM
+- Cuijpers BA-meta (2007), Dimidjian BA (2006), Cooney Cochrane exercise (2013), Schuch (2018)
+- Cochrane CBT-I, Irwin CBT-I (2017), Morin & Espie
+- Zaccaro breathing review (2018), Brown & Gerbarg (2005), cyclic sighing Cell Reports (2022)
+- Holt-Lunstad social meta (2010), Neff/Germer self-compassion, MacBeth & Gumley meta
+- Stanley & Brown Safety Planning (2012)
+- Borkovec worry-time (1983), Beck Cognitive Therapy (1979), Hayes ACT (2012)
+- Kabat-Zinn MBSR, Hölzel mindfulness brain (2011)
+- JAMA Psychiatry physical activity (Pearce et al. 2022), JAMA loneliness meta
+
+**Tar bort (populärvetenskap / självhjälp / TED — inte klinisk källa):**
+- Walker — *Why We Sleep* (boken, ej studierna bakom)
+- *Atomic Habits* / James Clear, Fogg *Tiny Habits*
+- *The Happiness Trap*, Russ Harris (intro-bok, inte studie)
+- Emily Esfahani Smith TED-talk
+- Wood & Neal habit research → ersätts med Lally et al. 2010 (faktisk peer-reviewed habit-studie) eller tas bort
+- Wegner *ironic processes* → behåller (är peer-reviewed Psych Review)
+- Beck Institute (organisation, inte källa) → tas bort, behåll Beck 1979
+
+**Princip i koden:** Hellre **inga referenser** än en svag. `MechanismCard` ska inte rendera "Stöd i forskningen"-rubriken alls om listan är tom efter rensning. Samma för `LearnArticle` och `WeeklyReport` PDF.
+
+Rensningen sker som **en migration** som uppdaterar `exercises.evidence_json` och `learn_articles.sources_json` enligt listan ovan. Inga rader tas bort — bara svaga referenser filtreras ut. Där en artikel/övning blir helt utan källa lägger jag till en ärlig text: "Bygger på klinisk erfarenhet och praxis — inte på en specifik studie."
+
+## 5. Mer guidning på Today
+
+Två små tillägg som tar bort gissning:
+- **När check-in saknas:** byt rubrik från "Inget loggat idag" till en mjuk fråga + tydligare CTA: *"Hur har du det? — Ta 60 sekunder"*.
+- **Efter spara:** liten tackrad i toast: *"Tack. Det här hjälper dig se mönster."* (en mening, ingen pop-up).
+
+## Filer som ändras
+
+**Copy + flow:**
+- `src/pages/Checkin.tsx` — delas i 3 steg, ny copy
+- `src/pages/Onboarding.tsx` — 4 → 3 steg, ny copy
+- `src/pages/QuickLog.tsx` — varmare blurb i mallar
+- `src/pages/Today.tsx` — mjukare state-rubriker, tackrad efter check-in
+- `src/pages/More.tsx`, `src/pages/Vard.tsx` — formulärnamn på svenska i UI
+
+**Källrensning:**
+- `src/components/MechanismCard.tsx` — dölj rubrik om tom
+- `src/pages/LearnArticle.tsx` — dölj källblock om tomt + "bygger på klinisk praxis"-fallback
+- Ny migration: `update_evidence_sources_clean` (uppdaterar JSON-fält)
+
+**Inget av detta rör databasen-schema, RLS, eller integrationer.**
+
+## Vad jag *inte* gör i denna runda
+
+- Rör inte navbar/sitemap igen — den landade i förra rundan.
+- Ändrar inga datamodeller eller fältnamn — bara texten användaren läser.
+- Lägger inte till nya frågor i check-in. Färre, men bättre presenterade.
+
+Säg till om du vill kika på copy-listan i detalj eller om något av stegen ska delas annorlunda innan jag bygger.

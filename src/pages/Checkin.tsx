@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Plus, X } from "lucide-react";
+import { ArrowLeft, ChevronLeft, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { useWeather, weatherLabel, type WeatherKind } from "@/lib/weather";
 import { AbstractIcon, weatherIcon, weatherIconColor, weatherIconAccent, type IconName } from "@/components/AbstractIcon";
@@ -53,6 +53,8 @@ const initialForm: Form = {
   safety_status: "none", note: "",
 };
 
+const TOTAL_STEPS = 3;
+
 const Checkin = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -64,8 +66,8 @@ const Checkin = () => {
   const [showWeatherPicker, setShowWeatherPicker] = useState(false);
   const [activities, setActivities] = useState<ActivityDraft[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [step, setStep] = useState(0);
 
-  // Effective weather kind = manual override if set, else autodetected.
   const effectiveKind: WeatherKind | null = weatherOverride ?? weather?.kind ?? null;
 
   useEffect(() => {
@@ -94,14 +96,12 @@ const Checkin = () => {
             safety_status: (data.safety_status as Form["safety_status"]) ?? "none",
             note: data.note ?? "",
           });
-          // Restore prior weather override if user changed it earlier today.
           const prevKind = (data as any).weather_kind as WeatherKind | null | undefined;
           if (prevKind && weather && prevKind !== weather.kind) setWeatherOverride(prevKind);
         }
       });
   }, [user, weather]);
 
-  // Load today's activities
   useEffect(() => {
     if (!user) return;
     supabase.from("activity_logs")
@@ -150,7 +150,6 @@ const Checkin = () => {
     if (data && data[0]) await supabase.from("activity_logs").delete().eq("id", data[0].id);
   };
 
-  // Auto-derive legacy fields so recommend/week-trend keeps working
   const deriveLegacy = () => {
     if (activities.length === 0) {
       return { movement_today: form.movement_today, meaningful_activity: form.meaningful_activity };
@@ -196,9 +195,19 @@ const Checkin = () => {
       toast.error("Det gick inte att spara. Försök igen.");
       return;
     }
-    toast.success("Dagen sparad");
+    toast.success("Tack — det här hjälper dig se mönster.");
     navigate("/");
   };
+
+  const next = () => setStep(s => Math.min(s + 1, TOTAL_STEPS - 1));
+  const prev = () => setStep(s => Math.max(s - 1, 0));
+
+  const stepHeading = ["Hur är kroppen idag?", "Hur är huvudet idag?", "Hur går dagen?"][step];
+  const stepIntro = [
+    "Sömn, energi och rörelse. Tre korta frågor.",
+    "Inga rätt svar — bara hur det känns just nu.",
+    "Vad du orkat, gjort, och hur du har det. Sen sparar vi.",
+  ][step];
 
   return (
     <div className="min-h-screen bg-background pb-32">
@@ -209,182 +218,213 @@ const Checkin = () => {
         >
           <ArrowLeft size={18} /> Tillbaka
         </button>
-        <h1 className="text-[28px] leading-[34px] mb-2 animate-fade-in-up">Logga dagen</h1>
-        <p className="text-sm text-text-secondary mb-8 animate-fade-in-up" style={{ animationDelay: "var(--stagger-1)" }}>
-          Tar under 60 sekunder. Spara dagen som den var.
+
+        {/* Progress */}
+        <div className="flex gap-1.5 mb-6">
+          {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+            <span key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${i <= step ? "bg-orange-start" : "bg-surface-alt"}`} />
+          ))}
+        </div>
+
+        <h1 className="text-[28px] leading-[34px] mb-2 animate-fade-in-up">{stepHeading}</h1>
+        <p className="text-sm text-text-secondary mb-6 animate-fade-in-up" style={{ animationDelay: "var(--stagger-1)" }}>
+          {stepIntro}
         </p>
 
-        {effectiveKind && (
-          <div className="card-cream p-4 mb-4 animate-fade-in-up flex items-center gap-3">
-            <div className="shrink-0">
-              <AbstractIcon
-                name={weatherIcon(effectiveKind, weather?.isDaylight ?? true)}
-                size={36}
-                color={weatherIconColor(effectiveKind, weather?.isDaylight ?? true)}
-                accent={weatherIconAccent(effectiveKind)}
+        {/* Steg 1 — Kroppen: sömn (timmar + kvalitet), energi */}
+        {step === 0 && (
+          <>
+            {effectiveKind && (
+              <div className="card-cream p-4 mb-4 animate-fade-in-up flex items-center gap-3">
+                <div className="shrink-0">
+                  <AbstractIcon
+                    name={weatherIcon(effectiveKind, weather?.isDaylight ?? true)}
+                    size={36}
+                    color={weatherIconColor(effectiveKind, weather?.isDaylight ?? true)}
+                    accent={weatherIconAccent(effectiveKind)}
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-extrabold uppercase tracking-wide text-text-secondary">Vädret idag</p>
+                  <p className="text-sm font-extrabold truncate">
+                    {weatherLabel(effectiveKind)}
+                    {weather && !weatherOverride ? ` · ${Math.round(weather.tempC)}°` : ""}
+                    {weatherOverride ? " · ändrat" : ""}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowWeatherPicker(s => !s)}
+                  className="text-xs font-extrabold text-orange-deep underline press-soft shrink-0"
+                >
+                  {showWeatherPicker ? "Stäng" : "Ändra"}
+                </button>
+              </div>
+            )}
+            {showWeatherPicker && (
+              <div className="card-cream p-3 mb-4 animate-fade-in-up grid grid-cols-4 gap-2">
+                {(["clear", "partly", "cloudy", "rain", "snow", "fog", "thunder", "wind"] as WeatherKind[]).map((k) => (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => { setWeatherOverride(k); setShowWeatherPicker(false); }}
+                    className={`rounded-2xl p-2 flex flex-col items-center gap-1 border-2 press-soft ${
+                      effectiveKind === k ? "border-foreground bg-surface-alt" : "border-border-soft bg-surface"
+                    }`}
+                  >
+                    <AbstractIcon
+                      name={weatherIcon(k, true)}
+                      size={28}
+                      color={weatherIconColor(k, true)}
+                      accent={weatherIconAccent(k)}
+                    />
+                    <span className="text-[10px] font-extrabold leading-tight text-center">{weatherLabel(k)}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="card-cream p-5 mb-4 press-soft animate-fade-in-up">
+              <label className="text-sm font-extrabold mb-3 block">Hur länge sov du i natt?</label>
+              <Slider value={[form.sleep_hours]} min={0} max={12} step={0.5} onValueChange={([v]) => setForm(f => ({ ...f, sleep_hours: v }))} />
+              <div className="text-right text-sm font-bold mt-2">{form.sleep_hours} h</div>
+            </div>
+
+            <SliderField idx={1} label="Hur kändes sömnen?" value={form.sleep_quality} onChange={(v) => setForm(f => ({ ...f, sleep_quality: v }))} low="Dålig" high="Bra" />
+            <SliderField idx={2} label="Hur mycket energi har du?" value={form.energy} onChange={(v) => setForm(f => ({ ...f, energy: v }))} low="Tom" high="Pigg" />
+          </>
+        )}
+
+        {/* Steg 2 — Huvudet: tyngd, oro, självkritik, hopplöshet */}
+        {step === 1 && (
+          <>
+            <SliderField idx={0} label="Hur tungt känns det?" value={form.mood_heaviness} onChange={(v) => setForm(f => ({ ...f, mood_heaviness: v }))} low="Lätt" high="Tungt" />
+            <SliderField idx={1} label="Hur orolig är du?" value={form.anxiety} onChange={(v) => setForm(f => ({ ...f, anxiety: v }))} low="Lugn" high="Mycket orolig" />
+            <SliderField idx={2} label="Är du hård mot dig själv?" value={form.guilt_selfcriticism} onChange={(v) => setForm(f => ({ ...f, guilt_selfcriticism: v }))} low="Mild" high="Skarp" />
+            <SliderField idx={3} label="Känns det hopplöst?" value={form.hopelessness} onChange={(v) => setForm(f => ({ ...f, hopelessness: v }))} low="Det finns hopp" high="Tomt" />
+          </>
+        )}
+
+        {/* Steg 3 — Dagen: orka, aktiviteter, trygghet, anteckning */}
+        {step === 2 && (
+          <>
+            <SliderField idx={0} label="Hur mycket orkar du?" value={form.function_score} onChange={(v) => setForm(f => ({ ...f, function_score: v }))} low="Lite" high="Mycket" />
+            <SliderField idx={1} label="Hur lätt går det att starta?" value={form.getting_started} onChange={(v) => setForm(f => ({ ...f, getting_started: v }))} low="Tungt" high="Lätt" />
+
+            <SegField label="Tagit medicinen idag?" value={form.medication_taken} onChange={(v) => setForm(f => ({ ...f, medication_taken: v as Form["medication_taken"] }))}
+              opts={[["yes", "Ja"], ["partial", "Delvis"], ["no", "Nej"]]} />
+
+            <div className="card-cream p-5 mb-4 animate-fade-in-up">
+              <div className="flex items-baseline justify-between mb-1">
+                <label className="text-sm font-extrabold">Saker du gjort idag</label>
+                <span className="text-[11px] font-bold text-text-secondary">{activities.length} loggade</span>
+              </div>
+              <p className="text-xs text-text-secondary mb-3">Litet räknas. Kaffe i solen lika mycket som en löprunda.</p>
+
+              {activities.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {activities.map((a, i) => (
+                    <div
+                      key={i}
+                      className={`inline-flex items-center gap-2 rounded-full pl-2 pr-1 py-1 ${colorBg(a.color)} animate-pop-in shadow-card`}
+                    >
+                      <AbstractIcon name={a.icon as IconName} size={16} color="currentColor" />
+                      <span className="text-xs font-extrabold">{a.label}</span>
+                      <span className="text-[10px] opacity-90 font-bold">· {a.duration_minutes}m {moodEmoji(a.mood_delta)}</span>
+                      <button
+                        onClick={() => removeActivity(i)}
+                        className="ml-1 w-6 h-6 rounded-full bg-white/25 grid place-items-center press-soft"
+                        aria-label="Ta bort"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <button
+                onClick={() => setPickerOpen(true)}
+                className="w-full h-12 rounded-full bg-foreground text-background font-extrabold text-sm press-soft inline-flex items-center justify-center gap-2"
+              >
+                <Plus size={18} />
+                {activities.length === 0 ? "Lägg till något" : "Lägg till en till"}
+              </button>
+            </div>
+
+            <div className="card-cream p-5 mb-4 animate-fade-in-up">
+              <label className="text-sm font-extrabold mb-1 block">Är du trygg just nu?</label>
+              <p className="text-xs text-text-secondary mb-3">Ärlighet hjälper både dig och vården.</p>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  ["none", "Ja, det är okej"],
+                  ["passive_thoughts", "Tunga tankar"],
+                  ["active_thoughts", "Behöver hjälp"],
+                  ["acute", "Akut nu"],
+                ] as const).map(([k, l]) => (
+                  <button
+                    key={k}
+                    onClick={() => setForm(f => ({ ...f, safety_status: k }))}
+                    className={`rounded-2xl px-3 py-3 text-sm font-extrabold border-2 transition press-soft ${
+                      form.safety_status === k
+                        ? (k === "active_thoughts" || k === "acute" ? "bg-red-risk border-red-risk text-white" : "bg-foreground border-foreground text-background")
+                        : "bg-surface border-border-soft text-foreground"
+                    }`}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="card-cream p-5 mb-6 animate-fade-in-up">
+              <label className="text-sm font-extrabold mb-2 block">Något du vill skriva ner? (valfritt)</label>
+              <Textarea
+                value={form.note}
+                onChange={(e) => setForm(f => ({ ...f, note: e.target.value }))}
+                placeholder="En tanke, en händelse, något att minnas..."
+                className="rounded-2xl border-border-soft bg-surface min-h-[80px]"
               />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-extrabold uppercase tracking-wide text-text-secondary">Väder just nu</p>
-              <p className="text-sm font-extrabold truncate">
-                {weatherLabel(effectiveKind)}
-                {weather && !weatherOverride ? ` · ${Math.round(weather.tempC)}°` : ""}
-                {weatherOverride ? " · justerat" : ""}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowWeatherPicker(s => !s)}
-              className="text-xs font-extrabold text-orange-deep underline press-soft shrink-0"
-            >
-              {showWeatherPicker ? "Stäng" : "Byt"}
-            </button>
-          </div>
-        )}
-        {showWeatherPicker && (
-          <div className="card-cream p-3 mb-4 animate-fade-in-up grid grid-cols-4 gap-2">
-            {(["clear", "partly", "cloudy", "rain", "snow", "fog", "thunder", "wind"] as WeatherKind[]).map((k) => (
-              <button
-                key={k}
-                type="button"
-                onClick={() => { setWeatherOverride(k); setShowWeatherPicker(false); }}
-                className={`rounded-2xl p-2 flex flex-col items-center gap-1 border-2 press-soft ${
-                  effectiveKind === k ? "border-foreground bg-surface-alt" : "border-border-soft bg-surface"
-                }`}
-              >
-                <AbstractIcon
-                  name={weatherIcon(k, true)}
-                  size={28}
-                  color={weatherIconColor(k, true)}
-                  accent={weatherIconAccent(k)}
-                />
-                <span className="text-[10px] font-extrabold leading-tight text-center">{weatherLabel(k)}</span>
-              </button>
-            ))}
-          </div>
-        )}
 
-        <SliderField idx={0} label="Tyngd / nedstämdhet" value={form.mood_heaviness} onChange={(v) => setForm(f => ({ ...f, mood_heaviness: v }))} low="Lätt" high="Tungt" />
-        <SliderField idx={1} label="Oro / ångest" value={form.anxiety} onChange={(v) => setForm(f => ({ ...f, anxiety: v }))} low="Lugn" high="Hög oro" />
-        <SliderField idx={2} label="Skuld / självkritik" value={form.guilt_selfcriticism} onChange={(v) => setForm(f => ({ ...f, guilt_selfcriticism: v }))} low="Mild" high="Skarp" />
-        <SliderField idx={3} label="Hopplöshet" value={form.hopelessness} onChange={(v) => setForm(f => ({ ...f, hopelessness: v }))} low="Hopp" high="Tomt" />
-        <SliderField idx={4} label="Energi" value={form.energy} onChange={(v) => setForm(f => ({ ...f, energy: v }))} low="Tom" high="Pigg" />
-        <SliderField idx={4} label="Komma igång" value={form.getting_started} onChange={(v) => setForm(f => ({ ...f, getting_started: v }))} low="Tungt" high="Lätt" />
-        <SliderField idx={4} label="Funktion" value={form.function_score} onChange={(v) => setForm(f => ({ ...f, function_score: v }))} low="Låg" high="Hög" />
-
-        <div className="card-cream p-5 mb-4 press-soft animate-fade-in-up" style={{ animationDelay: "var(--stagger-4)" }}>
-          <label className="text-sm font-extrabold mb-3 block">Sömn (timmar)</label>
-          <Slider value={[form.sleep_hours]} min={0} max={12} step={0.5} onValueChange={([v]) => setForm(f => ({ ...f, sleep_hours: v }))} />
-          <div className="text-right text-sm font-bold mt-2">{form.sleep_hours} h</div>
-        </div>
-
-        <SliderField idx={4} label="Sömnkvalitet" value={form.sleep_quality} onChange={(v) => setForm(f => ({ ...f, sleep_quality: v }))} low="Dålig" high="Bra" />
-
-        <div className="card-cream p-5 mb-4 press-soft animate-fade-in-up" style={{ animationDelay: "var(--stagger-4)" }}>
-          <label className="text-sm font-extrabold mb-3 block">Säng / soffa dagtid (minuter)</label>
-          <Slider value={[form.daytime_bed_sofa_time_minutes]} min={0} max={480} step={15} onValueChange={([v]) => setForm(f => ({ ...f, daytime_bed_sofa_time_minutes: v }))} />
-          <div className="text-right text-sm font-bold mt-2">{form.daytime_bed_sofa_time_minutes} min</div>
-        </div>
-
-        <SegField label="Medicin" value={form.medication_taken} onChange={(v) => setForm(f => ({ ...f, medication_taken: v as Form["medication_taken"] }))}
-          opts={[["yes", "Tagit"], ["partial", "Delvis"], ["no", "Inte tagit"]]} />
-        <div className="card-cream p-5 mb-4 animate-fade-in-up" style={{ animationDelay: "var(--stagger-4)" }}>
-          <div className="flex items-baseline justify-between mb-1">
-            <label className="text-sm font-extrabold">Vad gjorde du idag?</label>
-            <span className="text-[11px] font-bold text-text-secondary">{activities.length} loggat</span>
-          </div>
-          <p className="text-xs text-text-secondary mb-3">Litet räknas också. Kaffe i solen lika mycket som en löprunda.</p>
-
-          {activities.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-3">
-              {activities.map((a, i) => (
-                <div
-                  key={i}
-                  className={`inline-flex items-center gap-2 rounded-full pl-2 pr-1 py-1 ${colorBg(a.color)} animate-pop-in shadow-card`}
-                >
-                  <AbstractIcon name={a.icon as IconName} size={16} color="currentColor" />
-                  <span className="text-xs font-extrabold">{a.label}</span>
-                  <span className="text-[10px] opacity-90 font-bold">· {a.duration_minutes}m {moodEmoji(a.mood_delta)}</span>
-                  <button
-                    onClick={() => removeActivity(i)}
-                    className="ml-1 w-6 h-6 rounded-full bg-white/25 grid place-items-center press-soft"
-                    aria-label="Ta bort"
-                  >
-                    <X size={12} />
-                  </button>
+            {showSafetyDialog && (
+              <div className="rounded-3xl border-2 border-red-risk bg-red-bg p-5 mb-4 animate-pop-in">
+                <h3 className="font-extrabold text-red-risk mb-2">Innan du sparar</h3>
+                <p className="text-sm mb-3 text-foreground/80">
+                  Du har angett en allvarlig signal. Kontakta vården, 1177 eller 112 vid akut fara. Vi sparar din dag oavsett.
+                </p>
+                <div className="flex gap-2">
+                  <Button onClick={save} disabled={saving} className="flex-1 bg-foreground text-background rounded-full font-extrabold press-soft">
+                    Spara ändå
+                  </Button>
+                  <Button onClick={() => navigate("/vard")} variant="outline" className="flex-1 rounded-full font-extrabold border-2 border-red-risk text-red-risk press-soft">
+                    Vård
+                  </Button>
                 </div>
-              ))}
-            </div>
-          )}
-
-          <button
-            onClick={() => setPickerOpen(true)}
-            className="w-full h-12 rounded-full bg-foreground text-background font-extrabold text-sm press-soft inline-flex items-center justify-center gap-2"
-          >
-            <Plus size={18} />
-            {activities.length === 0 ? "Lägg till aktivitet" : "Lägg till en till"}
-          </button>
-        </div>
-
-        <div className="card-cream p-5 mb-4 animate-fade-in-up" style={{ animationDelay: "var(--stagger-4)" }}>
-          <label className="text-sm font-extrabold mb-3 block">Säkerhet</label>
-          <p className="text-xs text-text-secondary mb-3">Ärlighet hjälper både dig och vården.</p>
-          <div className="grid grid-cols-2 gap-2">
-            {([
-              ["none", "Ingen signal"],
-              ["passive_thoughts", "Passiva tankar"],
-              ["active_thoughts", "Aktiva tankar"],
-              ["acute", "Akut"],
-            ] as const).map(([k, l]) => (
-              <button
-                key={k}
-                onClick={() => setForm(f => ({ ...f, safety_status: k }))}
-                className={`rounded-2xl px-3 py-3 text-sm font-extrabold border-2 transition press-soft ${
-                  form.safety_status === k
-                    ? (k === "active_thoughts" || k === "acute" ? "bg-red-risk border-red-risk text-white" : "bg-foreground border-foreground text-background")
-                    : "bg-surface border-border-soft text-foreground"
-                }`}
-              >
-                {l}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="card-cream p-5 mb-6 animate-fade-in-up" style={{ animationDelay: "var(--stagger-4)" }}>
-          <label className="text-sm font-extrabold mb-2 block">Anteckning (valfri)</label>
-          <Textarea
-            value={form.note}
-            onChange={(e) => setForm(f => ({ ...f, note: e.target.value }))}
-            placeholder="Något du vill minnas om dagen..."
-            className="rounded-2xl border-border-soft bg-surface min-h-[80px]"
-          />
-        </div>
-
-        {showSafetyDialog && (
-          <div className="rounded-3xl border-2 border-red-risk bg-red-bg p-5 mb-4 animate-pop-in">
-            <h3 className="font-extrabold text-red-risk mb-2">Innan du sparar</h3>
-            <p className="text-sm mb-3 text-foreground/80">
-              Du har angett en allvarlig signal. Kontakta vården, 1177 eller 112 vid akut fara. Vi sparar din dag oavsett.
-            </p>
-            <div className="flex gap-2">
-              <Button onClick={save} disabled={saving} className="flex-1 bg-foreground text-background rounded-full font-extrabold press-soft">
-                Spara ändå
-              </Button>
-              <Button onClick={() => navigate("/vard")} variant="outline" className="flex-1 rounded-full font-extrabold border-2 border-red-risk text-red-risk press-soft">
-                Vård
-              </Button>
-            </div>
-          </div>
+              </div>
+            )}
+          </>
         )}
 
-        <Button
-          onClick={save}
-          disabled={saving}
-          className="w-full h-14 rounded-full bg-orange-start hover:bg-orange-deep text-white font-extrabold text-[17px] shadow-soft press-soft"
-        >
-          {saving ? "Sparar..." : "Spara dagen"}
-        </Button>
+        {/* Navigation buttons */}
+        <div className="flex gap-3 mt-2">
+          {step > 0 && (
+            <Button
+              onClick={prev}
+              variant="secondary"
+              className="h-14 rounded-full font-extrabold text-[15px] press-soft px-6"
+            >
+              <ChevronLeft size={18} /> Tillbaka
+            </Button>
+          )}
+          <Button
+            onClick={step < TOTAL_STEPS - 1 ? next : save}
+            disabled={saving}
+            className="flex-1 h-14 rounded-full bg-orange-start hover:bg-orange-deep text-white font-extrabold text-[17px] shadow-soft press-soft"
+          >
+            {saving ? "Sparar..." : step < TOTAL_STEPS - 1 ? "Fortsätt" : "Spara dagen"}
+          </Button>
+        </div>
       </div>
 
       <ActivityPicker open={pickerOpen} onOpenChange={setPickerOpen} onAdd={addActivity} />
@@ -409,7 +449,7 @@ const SliderField = ({ idx = 0, label, value, onChange, low, high }: { idx?: num
 );
 
 const SegField = ({ label, value, onChange, opts }: { label: string; value: string; onChange: (v: string) => void; opts: [string, string][] }) => (
-  <div className="card-cream p-5 mb-4 animate-fade-in-up" style={{ animationDelay: "var(--stagger-4)" }}>
+  <div className="card-cream p-5 mb-4 animate-fade-in-up">
     <label className="text-sm font-extrabold mb-3 block">{label}</label>
     <div className="grid grid-cols-3 gap-2">
       {opts.map(([k, l]) => (

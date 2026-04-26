@@ -140,17 +140,34 @@ const LearnArticle = () => {
           </section>
         )}
 
-        {article.sources_json.length > 0 && (
+        {article.sources_json.length > 0 ? (
           <section className="mb-5">
             <h3 className="text-sm font-extrabold uppercase tracking-wider text-text-secondary mb-2">
               Stöd i forskningen
             </h3>
             <div className="card-cream p-4 space-y-1.5">
-              {article.sources_json.map((s, i) => (
-                <p key={i} className="text-xs text-text-secondary leading-snug">
-                  · {s.source}{s.year ? ` (${s.year})` : ""}
-                </p>
-              ))}
+              {article.sources_json.map((s, i) => {
+                const label = (s as any).source ?? (s as any).title ?? "";
+                const url = (s as any).url as string | undefined;
+                return (
+                  <p key={i} className="text-xs text-text-secondary leading-snug">
+                    · {url ? (
+                      <a href={url} target="_blank" rel="noreferrer" className="underline hover:text-foreground">
+                        {label}
+                      </a>
+                    ) : label}
+                    {s.year ? ` (${s.year})` : ""}
+                  </p>
+                );
+              })}
+            </div>
+          </section>
+        ) : (
+          <section className="mb-5">
+            <div className="card-cream p-4">
+              <p className="text-xs text-text-secondary leading-snug italic">
+                Bygger på klinisk praxis snarare än en specifik studie.
+              </p>
             </div>
           </section>
         )}
