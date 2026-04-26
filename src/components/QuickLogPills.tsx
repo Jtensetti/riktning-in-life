@@ -31,6 +31,28 @@ const colorBg = (color: string): string => {
 
 const todayISO = () => new Date().toISOString().split("T")[0];
 
+const whyReason = (f: { lastLoggedDays: number | null; logCount30d: number; category: string }): { text: string; icon: "star" | "info" } => {
+  if (f.logCount30d === 0) {
+    return { text: "Du har stjärnmärkt den som favorit.", icon: "star" };
+  }
+  if (f.lastLoggedDays === 0) {
+    return { text: "Loggad idag — fortsätt din kedja.", icon: "info" };
+  }
+  if (f.lastLoggedDays === 1) {
+    return { text: "Loggad igår — håll i rytmen.", icon: "info" };
+  }
+  if (f.lastLoggedDays !== null && f.lastLoggedDays <= 3) {
+    return { text: `Senast för ${f.lastLoggedDays} dagar sedan.`, icon: "info" };
+  }
+  if (f.logCount30d >= 8) {
+    return { text: `En av dina vanor — ${f.logCount30d} ggr senaste månaden.`, icon: "info" };
+  }
+  if (f.lastLoggedDays !== null && f.lastLoggedDays >= 7) {
+    return { text: `Inte loggad på ${f.lastLoggedDays} dagar — dags igen?`, icon: "info" };
+  }
+  return { text: "Favorit du brukar återvända till.", icon: "info" };
+};
+
 const MOOD_OPTIONS: { delta: number; emoji: string; text: string; tone: string }[] = [
   { delta: -2, emoji: "😔", text: "Sämre", tone: "bg-purple-sleep/15 text-purple-sleep" },
   { delta: -1, emoji: "🙁", text: "Lite sämre", tone: "bg-blue-calm/15 text-blue-calm" },
