@@ -374,8 +374,35 @@ const Week = () => {
         <section className="mb-7 -mx-6">
           <div className="px-6 mb-3">
             <h2 className="text-xl">Föreslagna handlingar</h2>
-            <p className="text-xs text-text-secondary">Små steg som möter veckans mönster</p>
+            <p className="text-xs text-text-secondary">Små steg som möter veckans mönster — anpassat efter dig</p>
           </div>
+
+          {/* Preferens-kontroller: tid på dagen + längd. "Auto" är default. */}
+          <div className="px-6 mb-3 space-y-2">
+            <PrefRow
+              label="När"
+              value={actionPrefs.time}
+              options={[
+                { key: "auto", label: "Auto" },
+                { key: "morning", label: "Morgon" },
+                { key: "day", label: "Dag" },
+                { key: "evening", label: "Kväll" },
+              ]}
+              onChange={(v) => updatePrefs({ time: v as PreferredTime })}
+            />
+            <PrefRow
+              label="Längd"
+              value={actionPrefs.length}
+              options={[
+                { key: "auto", label: "Auto" },
+                { key: "short", label: "≤5 min" },
+                { key: "medium", label: "6–12 min" },
+                { key: "long", label: "13+ min" },
+              ]}
+              onChange={(v) => updatePrefs({ length: v as PreferredLength })}
+            />
+          </div>
+
           <div className="overflow-x-auto scrollbar-hide snap-x snap-mandatory flex gap-3 px-6 pb-3 -mb-3">
             {suggestedActions.map(({ priority, exercise }, i) => (
               <button
