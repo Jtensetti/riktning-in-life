@@ -794,7 +794,62 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
       margin,
     );
 
-    // ----- Trender (sparklines) -----
+    // ----- Sammanfattningsblock: sömn / rörelse / journal / medicin -----
+    const fmtTrend = (cur: number | null, prev: number | null, unit: string, decimals = 1) => {
+      if (cur == null || prev == null) return undefined;
+      const diff = cur - prev;
+      const dir: "up" | "down" | "flat" = Math.abs(diff) < 0.05 ? "flat" : diff > 0 ? "up" : "down";
+      const sign = diff > 0 ? "+" : "";
+      return { dir, text: `${sign}${diff.toFixed(decimals)}${unit} vs forra perioden` };
+    };
+    const fmtTrendInt = (cur: number, prev: number, unit: string) => {
+      const diff = cur - prev;
+      const dir: "up" | "down" | "flat" = diff === 0 ? "flat" : diff > 0 ? "up" : "down";
+      const sign = diff > 0 ? "+" : "";
+      return { dir, text: `${sign}${diff}${unit} vs forra perioden` };
+    };
+    const movementCombined = structured.movementYes + structured.movementLittle;
+    const periodLabel = `${structured.periodDays} dgr`;
+    ensureSpace(110);
+    y = drawSectionHeader(doc, `Sammanfattning (${periodLabel})`, y, margin);
+    y = drawSummaryBlock(
+      doc,
+      [
+        {
+          label: "Sömn",
+          value: structured.sleepHours == null ? "—" : `${structured.sleepHours.toFixed(1)} h`,
+          sub: `${structured.lowSleepNights} natt${structured.lowSleepNights === 1 ? "" : "er"} under 6 h · kvalitet ${structured.sleepQuality == null ? "—" : structured.sleepQuality.toFixed(1) + "/10"}`,
+          trend: fmtTrend(structured.sleepHours, structured.sleepHoursPrev, " h"),
+          color: PDF_COLORS.purple,
+        },
+        {
+          label: "Rörelse",
+          value: `${movementCombined} / ${structured.periodDays} dgr`,
+          sub: `${structured.movementYes} full · ${structured.movementLittle} lite · ${structured.totalActMinutes} min loggat`,
+          trend: fmtTrendInt(movementCombined, structured.movementCombinedPrev, " dgr"),
+          color: PDF_COLORS.green,
+        },
+        {
+          label: "Journal",
+          value: `${structured.journalCount} st`,
+          sub: `${structured.journalDays} dag${structured.journalDays === 1 ? "" : "ar"} med anteckning · ${structured.meaningfulYes} meningsfull aktivitet`,
+          color: PDF_COLORS.blue,
+        },
+        {
+          label: "Medicin",
+          value: structured.adherence == null ? "—" : `${structured.adherence}%`,
+          sub: `${structured.activeMeds} aktiv${structured.activeMeds === 1 ? "" : "a"} · ${structured.sideEffects.length === 0 ? "inga biverkningar" : `${structured.sideEffects.length} biverkning${structured.sideEffects.length === 1 ? "" : "ar"}`}`,
+          trend:
+            structured.adherence != null && structured.adherencePrev != null
+              ? fmtTrendInt(structured.adherence, structured.adherencePrev, " %")
+              : undefined,
+          color: PDF_COLORS.amber,
+        },
+      ],
+      y,
+      margin,
+    );
+
     ensureSpace(180);
     y = drawSectionHeader(doc, "Trender senaste 7 dagar", y, margin);
     const recent = structured.checkins.filter((c) => {
