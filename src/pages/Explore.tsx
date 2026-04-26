@@ -105,7 +105,7 @@ const Explore = () => {
           {sequences.slice(0, 4).map((s, i) => (
             <button
               key={s.slug}
-              onClick={() => navigate("/rutiner")}
+              onClick={() => navigate(`/rutiner/${s.slug}`)}
               className={`relative overflow-hidden w-full ${colorBg(s.color)} ${colorText(s.color)} card-hero press-soft animate-pop-in`}
               style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
             >
