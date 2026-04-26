@@ -488,6 +488,24 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
       .then(({ count }) => setMarkedJournalCount(count ?? 0));
   }, [user, days]);
 
+  // Strukturerad data behövs för visuella PDF-widgets utöver textraderna.
+  const [structured, setStructured] = useState<{
+    checkins: Checkin[];
+    activities: { date: string; label: string; category: string; duration_minutes: number | null; mood_delta: number | null }[];
+    journals: { date: string; template_type: string; title: string | null; free_text: string | null }[];
+    drivers: string[];
+    direction: number | null;
+    directionPrev: number | null;
+    burden: number | null;
+    fn: number | null;
+    rec: number | null;
+    stab: number | null;
+    safetyCounts: { passive: number; active: number; acute: number };
+    adherence: number | null;
+    sideEffects: string[];
+    movementDays: number;
+  } | null>(null);
+
   const generate = async () => {
     if (!user) return;
     setGenerating(true);
