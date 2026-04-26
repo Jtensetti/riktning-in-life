@@ -84,7 +84,10 @@ export type IconName =
   | "weather-fog"
   | "weather-thunder"
   | "weather-wind"
-  | "weather-moon";
+  | "weather-moon"
+  // Night / wind-down (auto night mode)
+  | "moon-stars"
+  | "night-cloud";
 
 interface Props extends Omit<SVGProps<SVGSVGElement>, "color"> {
   name: IconName;
@@ -208,7 +211,41 @@ export const AbstractIcon = ({
         </svg>
       );
 
-    case "play-soft":
+    case "moon-stars":
+      return (
+        <svg {...common}>
+          {/* Halo */}
+          <circle cx="14" cy="16" r="12" fill={a} opacity="0.28" />
+          {/* Crescent moon */}
+          <path
+            d="M20 5 a11 11 0 1 0 5 12 a8.5 8.5 0 0 1 -5 -12 z"
+            fill={color}
+          />
+          {/* Tre stjärnor i accent */}
+          <path d="M27 7 l0.6 1.6 1.6 0.6 -1.6 0.6 -0.6 1.6 -0.6 -1.6 -1.6 -0.6 1.6 -0.6 z" fill={a} />
+          <circle cx="6" cy="22" r="1.2" fill={a} />
+          <circle cx="28" cy="22" r="0.9" fill={a} opacity="0.7" />
+        </svg>
+      );
+
+    case "night-cloud":
+      return (
+        <svg {...common}>
+          {/* Liten måne bakom molnet */}
+          <path
+            d="M24 4 a7 7 0 1 0 4 9 a5.5 5.5 0 0 1 -4 -9 z"
+            fill={a}
+          />
+          {/* Mjukt moln */}
+          <path
+            d="M9 22 a5 5 0 0 1 0.6 -9.95 a7 7 0 0 1 13.4 1.45 a5 5 0 0 1 -1 9.9 z"
+            fill={color}
+          />
+          {/* Två stjärnor */}
+          <circle cx="5" cy="9" r="1" fill={a} opacity="0.7" />
+          <circle cx="29" cy="20" r="0.9" fill={a} opacity="0.6" />
+        </svg>
+      );
       return (
         <svg {...common}>
           {/* Mjuk halo bakom triangeln */}
