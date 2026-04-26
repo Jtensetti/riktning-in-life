@@ -14,6 +14,9 @@ import {
   pctChange, splitWeeks, isoDaysAgo, generateInsights, type Checkin, type WeeklyFormScore,
 } from "@/lib/metrics";
 import { buildPriorities, type Priority } from "@/lib/priorities";
+import { refreshBaseline, loadBaseline, thresholdsFromBaseline } from "@/lib/baseline";
+import { buildDayHighlights, buildLiftSummary } from "@/lib/dayInsights";
+import { DayHighlightCards } from "@/components/DayHighlightCards";
 import { ChartCard } from "@/components/charts/ChartCard";
 import { ActivityBars } from "@/components/charts/ActivityBars";
 import { StackedRecovery, type RecoveryDay } from "@/components/charts/StackedRecovery";
@@ -107,6 +110,9 @@ const Week = () => {
   const [activities, setActivities] = useState<ActivityLite[]>([]);
   const [exercises, setExercises] = useState<ExerciseLite[]>([]);
   const [fetching, setFetching] = useState(true);
+  // Råa 30-dagars samlingar för "Vad lyfter dig?"-evidens (Spår A)
+  const [activitiesAll, setActivitiesAll] = useState<{ activity_slug: string; label: string; icon: string; color: string; mood_delta: number | null }[]>([]);
+  const [sessionsAll, setSessionsAll] = useState<{ exercises: { title: string; category: string; color: string } | null; mood_before: number | null; mood_after: number | null; anxiety_before: number | null; anxiety_after: number | null }[]>([]);
   const [historyFilter, setHistoryFilter] = useState<"all" | "checkins" | "exercises" | "activeTime">("all");
   const [actionPrefs, setActionPrefs] = useState<ActionPreferences>(() => loadActionPreferences());
 
@@ -125,11 +131,12 @@ const Week = () => {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const since = isoDaysAgo(20);
+      const since = isoDaysAgo(60); // mer historik för baslinje + logg-konsekvens-insikt
       const since7 = isoDaysAgo(6);
-      const sinceTs = new Date(Date.now() - 7 * 86_400_000).toISOString();
+      const since30 = isoDaysAgo(29);
+      const sinceTs = new Date(Date.now() - 30 * 86_400_000).toISOString();
 
-      const [checkinsRes, formsRes, sessRes, actsRes, exRes] = await Promise.all([
+      const [checkinsRes, formsRes, sessRes, actsRes, exRes, actsAllRes, sessAllRes] = await Promise.all([
         supabase
           .from("daily_checkins")
           .select("id,date,mood_heaviness,anxiety,guilt_selfcriticism,hopelessness,energy,getting_started,function_score,daytime_bed_sofa_time_minutes,sleep_hours,sleep_quality,movement_today,meaningful_activity,safety_status")
@@ -149,12 +156,25 @@ const Week = () => {
         supabase
           .from("exercises")
           .select("id,title,category,duration_minutes,color"),
+        supabase
+          .from("activity_logs")
+          .select("activity_slug,label,icon,color,mood_delta")
+          .eq("user_id", user.id).gte("date", since30),
+        supabase
+          .from("exercise_sessions")
+          .select("mood_before,mood_after,anxiety_before,anxiety_after,exercises(title,category,color)")
+          .eq("user_id", user.id).gte("created_at", sinceTs),
       ]);
 
       setCheckins((checkinsRes.data ?? []) as Checkin[]);
       setSessions((sessRes.data ?? []) as unknown as SessionLite[]);
       setActivities((actsRes.data ?? []) as unknown as ActivityLite[]);
       setExercises((exRes.data ?? []) as ExerciseLite[]);
+      setActivitiesAll((actsAllRes.data ?? []) as any[]);
+      setSessionsAll((sessAllRes.data ?? []) as any[]);
+
+      // Spår D: uppdatera personlig baslinje när vi har ≥14 dagar.
+      refreshBaseline((checkinsRes.data ?? []) as Checkin[]);
 
       const d7 = isoDaysAgo(6);
       const d14 = isoDaysAgo(13);
@@ -194,6 +214,9 @@ const Week = () => {
   const baselineComplete = total >= 14;
   const { current, previous } = useMemo(() => splitWeeks(checkins), [checkins]);
 
+  // Spår D: läs personliga trösklar (uppdateras i load ovan).
+  const thresholds = useMemo(() => thresholdsFromBaseline(loadBaseline()), [checkins.length]);
+
   const burdenC = useMemo(() => burdenScore(current, weeklyCurrent), [current, weeklyCurrent]);
   const burdenP = useMemo(() => burdenScore(previous, weeklyPrev), [previous, weeklyPrev]);
   const fnC = useMemo(() => functionScore(current), [current]);
@@ -203,8 +226,18 @@ const Week = () => {
   const stabC = useMemo(() => stabilityScore(current), [current]);
   const stabP = useMemo(() => stabilityScore(previous), [previous]);
 
-  const priorities = useMemo(() => buildPriorities(current), [current]);
-  const insights = useMemo(() => generateInsights(current), [current]);
+  const priorities = useMemo(() => buildPriorities(current, thresholds), [current, thresholds]);
+  // Spår E: skicka full historik så vi kan upptäcka logg-konsekvens-mönster.
+  const insights = useMemo(() => generateInsights(current, checkins), [current, checkins]);
+
+  // Spår B: bästa & tyngsta dag.
+  const dayHighlights = useMemo(() => buildDayHighlights(current), [current]);
+
+  // Spår A: bevisbaserad lift-summary (lifters + drainers).
+  const liftSummary = useMemo(
+    () => buildLiftSummary(activitiesAll, sessionsAll),
+    [activitiesAll, sessionsAll],
+  );
 
   /** Per-dag Riktning (0–100, högre = bättre) för senaste 7 dagar.
    *  Riktning = 100 − burden för dagens checkin. Saknas dagen → null. */
@@ -402,6 +435,9 @@ const Week = () => {
             <WeekDirectionChart data={directionSeries} />
           </ChartCard>
         </div>
+
+        {/* Spår B: bästa & tyngsta dag — förklarar varför linjen ser ut som den gör */}
+        <DayHighlightCards data={dayHighlights} />
 
         <div className="space-y-3">
           {priorities.map((p, i) => (
@@ -730,17 +766,31 @@ const Week = () => {
         </section>
       )}
 
-      {topActivities.length > 0 && (
+      {(liftSummary.lifters.length > 0 || liftSummary.drainers.length > 0 || topActivities.length > 0) && (
         <section className="mb-2">
           <h2 className="text-xl mb-1 flex items-center gap-2">
             <AbstractIcon name="heart-care" size={18} color="hsl(var(--pink-move))" />
             Vad lyfte dig?
           </h2>
-          <p className="text-xs text-text-secondary mb-3">Aktiviteterna som gjorde störst skillnad denna vecka</p>
+          <p className="text-xs text-text-secondary mb-3">
+            {liftSummary.lifters.length > 0
+              ? "Bevisat lyftande — minst 3 gångers data per aktivitet"
+              : "Aktiviteterna som gjorde störst skillnad denna vecka"}
+          </p>
+
           <div className="space-y-2">
-            {topActivities.map((a, i) => {
-              const delta = a.avgDelta;
-              const deltaLabel = delta >= 1.5 ? "Lyfte mycket" : delta >= 0.5 ? "Lyfte" : delta >= -0.5 ? "Neutralt" : "Drog ner";
+            {(liftSummary.lifters.length > 0
+              ? liftSummary.lifters
+              : topActivities.map((a) => ({
+                  ...a,
+                  effectLabel:
+                    a.avgDelta >= 1.5 ? "Lyfte mycket"
+                    : a.avgDelta >= 0.5 ? "Lyfte"
+                    : a.avgDelta >= -0.5 ? "Neutralt"
+                    : "Drog ner",
+                }))
+            ).map((a, i) => {
+              const deltaSign = a.avgDelta > 0 ? "+" : "";
               return (
                 <ColorCard
                   key={i}
@@ -749,15 +799,33 @@ const Week = () => {
                   iconPosition="bottom-right"
                   size="sm"
                   index={i}
-                  ariaLabel={`${a.label}: ${a.count} gånger, ${deltaLabel}`}
+                  ariaLabel={`${a.label}: ${a.count} gånger, ${a.effectLabel}`}
                   className="!min-h-0"
                 >
                   <p className="font-extrabold text-[15px] truncate">{a.label}</p>
-                  <p className="text-[11px] opacity-90 font-bold">{a.count} ggr · {deltaLabel}</p>
+                  <p className="text-[11px] opacity-90 font-bold">
+                    {a.count} ggr · {a.effectLabel}
+                    {Math.abs(a.avgDelta) >= 0.1 && (
+                      <span className="ml-1 opacity-80">· {deltaSign}{a.avgDelta} humör</span>
+                    )}
+                  </p>
                 </ColorCard>
               );
             })}
           </div>
+
+          {liftSummary.drainers.length > 0 && (
+            <div className="mt-3 rounded-2xl bg-surface-alt p-3 flex items-start gap-2 animate-fade-in-up">
+              <AbstractIcon name="info-soft" size={16} color="hsl(var(--text-secondary))" />
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-extrabold uppercase tracking-wider text-text-secondary mb-0.5">Värt att märka</p>
+                <p className="text-sm leading-snug">
+                  <span className="font-extrabold">{liftSummary.drainers[0].label}</span> verkar ta mer än den ger just nu
+                  <span className="text-text-secondary"> · {liftSummary.drainers[0].count} ggr · {liftSummary.drainers[0].avgDelta} humör</span>
+                </p>
+              </div>
+            </div>
+          )}
         </section>
       )}
     </AppShell>
