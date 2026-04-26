@@ -5,6 +5,7 @@ import { AbstractIcon, type IconName } from "./AbstractIcon";
 import { Plus, Sparkles, Info, Star, Loader2, AlertCircle, RefreshCw, Trash2, Pencil, Minus } from "lucide-react";
 import { toast } from "sonner";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
+import { haptic } from "@/lib/haptics";
 
 type FavItem = {
   slug: string;
