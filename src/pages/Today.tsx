@@ -614,16 +614,11 @@ const Today = () => {
       </div>
     ),
     returneeNote: () => (
-      <div key="returneeNote" className="card-cream p-4 mb-5 flex items-start gap-3 animate-fade-in-up">
-        <div className="shrink-0 w-10 h-10 rounded-2xl bg-orange-start/15 grid place-items-center">
-          <AbstractIcon name="blob-smile" size={20} color="hsl(var(--orange-deep))" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[15px] font-extrabold leading-snug">Välkommen tillbaka</p>
-          <p className="text-xs text-text-secondary leading-snug mt-0.5">
-            Vi börjar mjukt. En liten logg räcker för idag.
-          </p>
-        </div>
+      <div key="returneeNote" className="card-quiet mb-6 animate-fade-in-up">
+        <p className="text-[15px] font-extrabold leading-snug">Välkommen tillbaka</p>
+        <p className="text-sm text-text-secondary leading-snug mt-1">
+          Vi börjar mjukt. En liten logg räcker för idag.
+        </p>
       </div>
     ),
     streak: () => <StreakRing key="streak" counts={streakCounts} className="mb-5" />,
