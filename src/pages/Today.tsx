@@ -242,6 +242,7 @@ const Today = () => {
   const [time, setTime] = useState<TimeContext>(() => getTimeContext());
   const { weather, status: weatherStatus, requestLocation } = useWeather(true);
   const [permissionDismissed, setPermissionDismissed] = useState(() => isWeatherPermissionDismissed());
+  const [permissionExiting, setPermissionExiting] = useState(false);
   const [streakCounts, setStreakCounts] = useState<StreakCounts>({ checkin: 0, activity: 0, session: 0 });
   const [pickerOpen, setPickerOpen] = useState(false);
   const [streakReloadKey, setStreakReloadKey] = useState(0);
@@ -519,8 +520,10 @@ const Today = () => {
   const greet = greetingForLastSeen(time.greeting, lastSeen);
 
   // Show permission card only once: not asked, no granted permission, not dismissed this session.
+  // Keep showing while the exit animation runs so the layout doesn't jump.
   const showWeatherPermission =
-    !weather && !hasAskedWeatherPermission() && !isWeatherPermissionGranted() && !permissionDismissed;
+    permissionExiting ||
+    (!weather && !hasAskedWeatherPermission() && !isWeatherPermissionGranted() && !permissionDismissed);
 
   // -------- Layout-decision (vad ska visas?) --------
   // Räkna antal dagar med data i recent7 (för baselineProgress / hasInsights).
@@ -561,11 +564,30 @@ const Today = () => {
 
   const MODULES: Record<ModuleId, () => React.ReactNode> = {
     weatherPermission: () => (
-      <WeatherPermissionCard
+      <div
         key="weatherPermission"
-        onAllow={() => requestLocation()}
-        onDismiss={() => { dismissWeatherPermission(); setPermissionDismissed(true); }}
-      />
+        className="collapsible mb-7"
+        data-open={!permissionExiting}
+        onTransitionEnd={(e) => {
+          if (e.propertyName === "grid-template-rows" && permissionExiting) {
+            setPermissionDismissed(true);
+            setPermissionExiting(false);
+          }
+        }}
+      >
+        <div>
+          <WeatherPermissionCard
+            onAllow={() => {
+              setPermissionExiting(true);
+              requestLocation();
+            }}
+            onDismiss={() => {
+              dismissWeatherPermission();
+              setPermissionExiting(true);
+            }}
+          />
+        </div>
+      </div>
     ),
     safety: () => (
       <div key="safety" className="rounded-3xl border-2 border-red-risk bg-red-bg p-5 mb-7 animate-pop-in">
