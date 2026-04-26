@@ -476,12 +476,13 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
     setGenerating(true);
     const since = new Date(Date.now() - days * 86400000).toISOString().split("T")[0];
 
-    const [checkins, forms, meds, medLogs, journals] = await Promise.all([
+    const [checkins, forms, meds, medLogs, journals, activities] = await Promise.all([
       supabase.from("daily_checkins").select("*").eq("user_id", user.id).gte("date", since).order("date"),
       supabase.from("weekly_forms").select("*").eq("user_id", user.id).gte("date", since).order("date"),
       supabase.from("medications").select("*").eq("user_id", user.id),
       supabase.from("medication_logs").select("*").eq("user_id", user.id).gte("date", since),
       includeJournal ? supabase.from("journal_entries").select("*").eq("user_id", user.id).eq("include_in_report", true).gte("date", since) : Promise.resolve({ data: [] as any[] }),
+      supabase.from("activity_logs").select("date,label,category,duration_minutes,mood_delta").eq("user_id", user.id).gte("date", since).order("date"),
     ]);
 
     const c = checkins.data ?? [];
@@ -489,6 +490,7 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
     const m = (meds.data ?? []) as any[];
     const ml = (medLogs.data ?? []) as any[];
     const j = (journals.data ?? []) as any[];
+    const acts = (activities.data ?? []) as any[];
 
     const avg = (arr: any[], k: string) => {
       const xs = arr.map(r => r[k]).filter((v): v is number => typeof v === "number");
@@ -530,7 +532,11 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
       `Säng/sofftid dagtid: ${avg(c, "daytime_bed_sofa_time_minutes") ?? "—"} min`,
       ``,
       `AKTIVITET`,
-      `Rörelse-dagar: ${movementDays}/${c.length}`,
+      `Rörelse-dagar (självskattat): ${movementDays}/${c.length}`,
+      `Loggade aktiviteter: ${acts.length} st över ${new Set(acts.map(a => a.date)).size} dagar`,
+      `Total tid: ${acts.reduce((s, a) => s + (a.duration_minutes ?? 0), 0)} min`,
+      `Snitt humörförändring efter aktivitet: ${acts.length ? ((acts.reduce((s, a) => s + Number(a.mood_delta ?? 0), 0) / acts.length).toFixed(1)) : "—"} (-2 till +2)`,
+      ...activitySummary(acts),
       `Journal-anteckningar: ${j.length}`,
       ``,
       `LÄKEMEDEL`,
@@ -687,6 +693,31 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
     </AppShell>
   );
 };
+
+function activitySummary(acts: any[]): string[] {
+  if (!acts.length) return ["Inga loggade aktiviteter under perioden."];
+  // Per aktivitet: snitt-mooddelta och antal
+  const byLabel = new Map<string, { count: number; sumDelta: number; minutes: number }>();
+  const byCategory = new Map<string, number>();
+  for (const a of acts) {
+    const cur = byLabel.get(a.label) ?? { count: 0, sumDelta: 0, minutes: 0 };
+    cur.count += 1;
+    cur.sumDelta += Number(a.mood_delta ?? 0);
+    cur.minutes += Number(a.duration_minutes ?? 0);
+    byLabel.set(a.label, cur);
+    byCategory.set(a.category, (byCategory.get(a.category) ?? 0) + 1);
+  }
+  const top = Array.from(byLabel.entries())
+    .map(([label, v]) => ({ label, count: v.count, avgDelta: v.sumDelta / v.count, minutes: v.minutes }))
+    .sort((a, b) => (b.avgDelta - a.avgDelta) || (b.count - a.count))
+    .slice(0, 5);
+  const cats = Array.from(byCategory.entries()).sort((a, b) => b[1] - a[1]);
+  return [
+    `Aktiviteter med störst humörlyft:`,
+    ...top.map(t => `  - ${t.label} · ${t.count} ggr · ${t.minutes} min totalt · snittlyft ${t.avgDelta >= 0 ? "+" : ""}${t.avgDelta.toFixed(1)}`),
+    `Fördelning per kategori: ${cats.map(([k, v]) => `${k} (${v})`).join(", ")}`,
+  ];
+}
 
 function summarize(c: any[], f: any[], safety: { passive: number; active: number; acute: number }) {
   if (!c.length) return "För lite data för en sammanfattning.";
