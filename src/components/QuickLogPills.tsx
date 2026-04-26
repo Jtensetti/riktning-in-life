@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AbstractIcon, type IconName } from "./AbstractIcon";
-import { Plus, Sparkles } from "lucide-react";
+import { Plus, Sparkles, Info, Star } from "lucide-react";
 import { toast } from "sonner";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 
@@ -13,6 +13,8 @@ type FavItem = {
   icon: string;
   color: string;
   default_minutes: number;
+  lastLoggedDays: number | null;
+  logCount30d: number;
 };
 
 const colorBg = (color: string): string => {
@@ -28,6 +30,28 @@ const colorBg = (color: string): string => {
 };
 
 const todayISO = () => new Date().toISOString().split("T")[0];
+
+const whyReason = (f: { lastLoggedDays: number | null; logCount30d: number; category: string }): { text: string; icon: "star" | "info" } => {
+  if (f.logCount30d === 0) {
+    return { text: "Du har stjärnmärkt den som favorit.", icon: "star" };
+  }
+  if (f.lastLoggedDays === 0) {
+    return { text: "Loggad idag — fortsätt din kedja.", icon: "info" };
+  }
+  if (f.lastLoggedDays === 1) {
+    return { text: "Loggad igår — håll i rytmen.", icon: "info" };
+  }
+  if (f.lastLoggedDays !== null && f.lastLoggedDays <= 3) {
+    return { text: `Senast för ${f.lastLoggedDays} dagar sedan.`, icon: "info" };
+  }
+  if (f.logCount30d >= 8) {
+    return { text: `En av dina vanor — ${f.logCount30d} ggr senaste månaden.`, icon: "info" };
+  }
+  if (f.lastLoggedDays !== null && f.lastLoggedDays >= 7) {
+    return { text: `Inte loggad på ${f.lastLoggedDays} dagar — dags igen?`, icon: "info" };
+  }
+  return { text: "Favorit du brukar återvända till.", icon: "info" };
+};
 
 const MOOD_OPTIONS: { delta: number; emoji: string; text: string; tone: string }[] = [
   { delta: -2, emoji: "😔", text: "Sämre", tone: "bg-purple-sleep/15 text-purple-sleep" },
@@ -62,11 +86,38 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
         if (!cancelled) setFavs([]);
         return;
       }
-      const { data: cat } = await supabase
-        .from("activity_catalog")
-        .select("slug,label,category,icon,color,default_minutes")
-        .in("slug", slugs);
-      if (!cancelled) setFavs(((cat ?? []) as any[]).slice(0, 3));
+      const since = new Date(Date.now() - 30 * 86_400_000).toISOString().split("T")[0];
+      const [{ data: cat }, { data: logs }] = await Promise.all([
+        supabase
+          .from("activity_catalog")
+          .select("slug,label,category,icon,color,default_minutes")
+          .in("slug", slugs),
+        supabase
+          .from("activity_logs")
+          .select("activity_slug,date")
+          .eq("user_id", user.id)
+          .in("activity_slug", slugs)
+          .gte("date", since)
+          .order("date", { ascending: false }),
+      ]);
+      const today = todayISO();
+      const stats = new Map<string, { last: string | null; count: number }>();
+      for (const l of (logs ?? []) as any[]) {
+        const cur = stats.get(l.activity_slug) ?? { last: null, count: 0 };
+        cur.count += 1;
+        if (!cur.last || l.date > cur.last) cur.last = l.date;
+        stats.set(l.activity_slug, cur);
+      }
+      const enriched: FavItem[] = ((cat ?? []) as any[]).slice(0, 3).map((c) => {
+        const s = stats.get(c.slug);
+        let lastLoggedDays: number | null = null;
+        if (s?.last) {
+          const diffMs = new Date(today).getTime() - new Date(s.last).getTime();
+          lastLoggedDays = Math.max(0, Math.round(diffMs / 86_400_000));
+        }
+        return { ...c, lastLoggedDays, logCount30d: s?.count ?? 0 };
+      });
+      if (!cancelled) setFavs(enriched);
     })();
     return () => { cancelled = true; };
   }, [user]);
@@ -155,26 +206,43 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
             </button>
           </div>
           <div className="grid grid-cols-1 gap-2">
-            {favs.map((f, i) => (
-              <button
-                key={f.slug}
-                onClick={() => quickLog(f)}
-                disabled={busy === f.slug}
-                className={`w-full ${colorBg(f.color)} rounded-2xl px-4 py-3 flex items-center gap-3 shadow-card press-soft animate-pop-in ${busy === f.slug ? "opacity-60" : ""}`}
-                style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
-              >
-                <div className="shrink-0 w-10 h-10 rounded-full bg-white/25 grid place-items-center">
-                  <AbstractIcon name={f.icon as IconName} size={22} color="currentColor" />
+            {favs.map((f, i) => {
+              const why = whyReason(f);
+              return (
+                <div
+                  key={f.slug}
+                  className={`${colorBg(f.color)} rounded-2xl shadow-card animate-pop-in ${busy === f.slug ? "opacity-60" : ""}`}
+                  style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
+                >
+                  <button
+                    onClick={() => quickLog(f)}
+                    disabled={busy === f.slug}
+                    className="w-full px-4 pt-3 pb-2 flex items-center gap-3 press-soft text-left"
+                  >
+                    <div className="shrink-0 w-10 h-10 rounded-full bg-white/25 grid place-items-center">
+                      <AbstractIcon name={f.icon as IconName} size={22} color="currentColor" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-extrabold text-[15px] leading-tight truncate">{f.label}</p>
+                      <p className="text-[11px] opacity-90 font-bold">{f.default_minutes} min · ett klick = loggad</p>
+                    </div>
+                    <div className="shrink-0 w-8 h-8 rounded-full bg-white/25 grid place-items-center">
+                      <Plus size={16} />
+                    </div>
+                  </button>
+                  <div className="mx-3 mb-2 px-3 py-1.5 rounded-full bg-white/20 flex items-center gap-1.5">
+                    {why.icon === "star" ? (
+                      <Star size={11} className="shrink-0" fill="currentColor" />
+                    ) : (
+                      <Info size={11} className="shrink-0" />
+                    )}
+                    <p className="text-[11px] font-bold leading-tight opacity-95 truncate">
+                      <span className="opacity-75">Varför den här? </span>{why.text}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0 text-left">
-                  <p className="font-extrabold text-[15px] leading-tight truncate">{f.label}</p>
-                  <p className="text-[11px] opacity-90 font-bold">{f.default_minutes} min · ett klick = loggad</p>
-                </div>
-                <div className="shrink-0 w-8 h-8 rounded-full bg-white/25 grid place-items-center">
-                  <Plus size={16} />
-                </div>
-              </button>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}
