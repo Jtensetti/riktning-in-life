@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Illustration, colorIll } from "@/components/Illustrations";
+import { AbstractIcon } from "@/components/AbstractIcon";
 import { ChevronRight, Settings as SettingsIcon } from "lucide-react";
 import { isOnboarded } from "@/lib/settings";
 
@@ -213,45 +214,47 @@ const Today = () => {
 
   return (
     <AppShell>
-      <header className="flex items-start justify-between mb-6">
-        <div>
-          <h1 className="text-[32px] leading-[38px]">Idag</h1>
-          <p className="text-sm font-semibold text-text-secondary capitalize mt-1">{formatDate()}</p>
+      {/* Hero banner with floating blob — Headspace-style warm intro */}
+      <div className="-mx-6 -mt-8 mb-6 relative overflow-hidden rounded-b-[36px]"
+           style={{ background: "linear-gradient(180deg, hsl(var(--orange-start)) 0%, hsl(var(--orange-start) / 0.55) 55%, hsl(var(--background)) 100%)" }}>
+        <div className="h-40 relative">
+          <button
+            onClick={() => navigate("/installningar")}
+            className="absolute top-4 left-4 z-10 w-10 h-10 grid place-items-center rounded-full bg-surface shadow-card press-soft"
+            aria-label="Inställningar"
+          >
+            <SettingsIcon size={18} className="text-foreground" strokeWidth={2.4} />
+          </button>
+          <div className="absolute left-1/2 -translate-x-1/2 top-6 animate-float">
+            <AbstractIcon name="blob-smile" size={84} color="hsl(var(--orange-deep))" />
+          </div>
+          {/* Decorative arcs */}
+          <svg className="absolute inset-x-0 bottom-0 w-full" viewBox="0 0 400 60" preserveAspectRatio="none" aria-hidden>
+            <path d="M0 60 Q200 0 400 60 Z" fill="hsl(var(--background))" />
+          </svg>
         </div>
-        <button
-          onClick={() => navigate("/installningar")}
-          className="p-2 rounded-full hover:bg-surface-alt"
-          aria-label="Inställningar"
-        >
-          <SettingsIcon size={20} className="text-text-secondary" strokeWidth={2.2} />
-        </button>
+      </div>
+
+      <header className="mb-6">
+        <h1 className="text-[32px] leading-[38px]">Idag</h1>
+        <p className="text-sm font-semibold text-text-secondary capitalize mt-1">{formatDate()}</p>
       </header>
 
       {showSafety && (
-        <div className="rounded-3xl border-2 border-red-risk bg-red-bg p-5 mb-7">
-          <div className="mb-3 -mx-1">
-            <Illustration name="safety" className="w-full h-auto rounded-2xl" />
-          </div>
-          <h3 className="text-lg font-extrabold text-red-risk mb-2">Allvarlig signal</h3>
-          <p className="text-sm text-foreground/80 mb-3">
-            Det här ska inte hanteras som vanlig statistik. Kontakta vården, psykiatrisk akutmottagning, 1177 eller 112 vid akut fara. Kontakta också någon du litar på.
-          </p>
-          <Button
-            onClick={() => navigate("/vard")}
-            className="bg-red-risk hover:bg-red-risk/90 text-white rounded-full font-extrabold"
-          >
-            Gå till Vård
-          </Button>
-        </div>
+...
       )}
 
-      {/* State card with illustration */}
-      <section className="card-cream p-5 mb-7">
-        <div className="-mx-1 mb-4">
-          <Illustration name="checkin" className="w-full h-auto rounded-2xl" />
+      {/* State card — compact horizontal layout */}
+      <section className="card-cream p-5 mb-7 animate-pop-in">
+        <div className="flex items-start gap-3 mb-4">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-2xl mb-1">{state.title}</h2>
+            <p className="text-sm text-text-secondary">{state.sub}</p>
+          </div>
+          <div className="shrink-0 -mr-1 -mt-1">
+            <AbstractIcon name="blob-smile" size={68} color="hsl(var(--orange-start))" />
+          </div>
         </div>
-        <h2 className="text-2xl mb-1">{state.title}</h2>
-        <p className="text-sm text-text-secondary mb-5">{state.sub}</p>
         <div className="grid grid-cols-2 gap-2 mb-5">
           <Pill label="Belastning" value={burdenLabel(checkin)} />
           <Pill label="Funktion" value={fnLabel(checkin)} />
@@ -260,7 +263,7 @@ const Today = () => {
         </div>
         <Button
           onClick={() => navigate("/checkin")}
-          className="w-full h-12 rounded-full bg-foreground hover:bg-foreground/90 text-background font-extrabold text-[17px]"
+          className="w-full h-12 rounded-full bg-foreground hover:bg-foreground/90 text-background font-extrabold text-[17px] press-soft"
         >
           {checkin ? "Uppdatera dagen" : "Logga dagen"}
         </Button>
