@@ -520,8 +520,10 @@ const Today = () => {
   const greet = greetingForLastSeen(time.greeting, lastSeen);
 
   // Show permission card only once: not asked, no granted permission, not dismissed this session.
+  // Keep showing while the exit animation runs so the layout doesn't jump.
   const showWeatherPermission =
-    !weather && !hasAskedWeatherPermission() && !isWeatherPermissionGranted() && !permissionDismissed;
+    permissionExiting ||
+    (!weather && !hasAskedWeatherPermission() && !isWeatherPermissionGranted() && !permissionDismissed);
 
   // -------- Layout-decision (vad ska visas?) --------
   // Räkna antal dagar med data i recent7 (för baselineProgress / hasInsights).
