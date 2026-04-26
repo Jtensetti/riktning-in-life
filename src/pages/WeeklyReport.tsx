@@ -24,7 +24,7 @@ const fmt = (v: number | null | undefined, suffix = "") =>
 
 const fmtScore = (v: number | null) => (v == null ? "—" : `${Math.round(v)}/100`);
 
-const meanOf = <K extends keyof Checkin>(arr: Checkin[], key: K): number | null => {
+const meanOf = (arr: Checkin[], key: keyof Checkin): number | null => {
   const xs = arr.map((r) => r[key]).filter((v): v is number => typeof v === "number");
   return xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : null;
 };
