@@ -764,11 +764,11 @@ const MoodForm = ({
 
   return (
     <div className="space-y-5">
-      <MoodSliderRow label="Tyngd / nedstämdhet" value={heaviness} set={setHeaviness} tone="orange" />
-      <MoodSliderRow label="Oro / ångest" value={anxiety} set={setAnxiety} tone="blue" />
-      <MoodSliderRow label="Energi" value={energy} set={setEnergy} tone="pink" />
+      <MoodSliderRow label="Tyngd / nedstämdhet" value={heaviness} set={setHeaviness} tone="orange" disabled={busy} />
+      <MoodSliderRow label="Oro / ångest" value={anxiety} set={setAnxiety} tone="blue" disabled={busy} />
+      <MoodSliderRow label="Energi" value={energy} set={setEnergy} tone="pink" disabled={busy} />
       <Button onClick={save} disabled={busy} variant="pill-strong" size="pill-lg" className="w-full">
-        Spara mående
+        {busy ? "Sparar…" : "Spara mående"}
       </Button>
     </div>
   );
