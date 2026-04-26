@@ -5,18 +5,51 @@
 import type { SVGProps } from "react";
 
 export type IconName =
+  // Layout / nav
   | "house-soft"
   | "spark"
   | "pie"
   | "pencil-soft"
-  | "heart-pulse"
   | "blob-smile"
   | "moon-soft"
   | "play-soft"
   | "flag"
   | "eye-closed"
-  | "bike"
   | "bookmark-soft"
+  | "compass-soft"
+  // Body / health
+  | "heart-care"
+  | "heart-pulse" // alias of heart-care, kept for back-compat
+  | "pill"
+  | "glass-water"
+  | "apple-bite"
+  | "lungs-breathe"
+  | "bed-soft"
+  // Activity
+  | "bike"
+  | "walk-figure"
+  | "stretch-figure"
+  | "yoga-pose"
+  | "weights"
+  | "nature-tree"
+  // Daily / social
+  | "chat-bubble"
+  | "people-two"
+  | "work-bag"
+  | "coffee-cup"
+  // UI / control
+  | "plus-soft"
+  | "check-soft"
+  | "clock-soft"
+  | "calendar-soft"
+  | "lock-soft"
+  | "info-soft"
+  | "warning-soft"
+  | "mic-soft"
+  | "mute-soft"
+  | "search-soft"
+  | "filter-soft"
+  // Weather
   | "weather-sun"
   | "weather-partly"
   | "weather-cloud"
