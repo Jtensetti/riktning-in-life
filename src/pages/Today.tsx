@@ -774,6 +774,8 @@ const InsightCard = ({
   invert,
   trend,
   colorClass,
+  spark,
+  sparkTone,
 }: {
   label: string;
   value: number | null;
@@ -782,9 +784,10 @@ const InsightCard = ({
   invert?: boolean;
   trend: Trend;
   colorClass: string;
+  spark?: (number | null)[];
+  sparkTone?: "orange" | "blue" | "purple" | "pink" | "green" | "yellow";
 }) => {
   const display = value == null ? "—" : value.toFixed(decimals);
-  // Visual: invert means lower=better, so on insight cards we still show the raw average
   const toneClass =
     trend.tone === "good"
       ? "bg-green-recovery/15 text-green-recovery"
@@ -793,19 +796,64 @@ const InsightCard = ({
         : "bg-surface-alt text-text-secondary";
   const arrow = trend.dir === "up" ? "↑" : trend.dir === "down" ? "↓" : "→";
   return (
-    <div className={`rounded-3xl ${colorClass} text-white p-4 shadow-soft flex flex-col justify-between min-h-[128px]`}>
+    <div className={`rounded-3xl ${colorClass} text-white p-4 shadow-soft flex flex-col justify-between min-h-[148px] relative overflow-hidden`}>
       <div className="text-[12px] font-extrabold uppercase tracking-wide opacity-90">{label}</div>
       <div className="mt-2">
         <div className="text-[28px] leading-none font-extrabold">
           {display}
           <span className="text-sm opacity-80 font-bold">{suffix}</span>
         </div>
+        {spark && spark.some((v) => v != null) && (
+          <div className="-mx-1 mt-2 opacity-95">
+            <SparklineWrap values={spark} tone="white" />
+          </div>
+        )}
         <div className={`mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-extrabold ${toneClass}`}>
           <span aria-hidden>{arrow}</span>
           <span>{trend.deltaLabel}</span>
         </div>
       </div>
     </div>
+  );
+};
+
+// Liten wrapper som ritar sparkline i vit färg ovanpå färgad bakgrund.
+// Återanvänder Sparkline-komponentens layout men byter ut färgen.
+const SparklineWrap = ({ values, tone }: { values: (number | null)[]; tone: "white" }) => {
+  const points = values.filter((v) => v != null) as number[];
+  if (points.length < 2) return null;
+  const min = Math.min(...points);
+  const max = Math.max(...points);
+  const range = max - min || 1;
+  const w = 100;
+  const h = 22;
+  const path = values
+    .map((v, i) => {
+      if (v == null) return null;
+      const x = (i / (values.length - 1)) * w;
+      const y = h - ((v - min) / range) * h;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .filter(Boolean)
+    .join(" L ");
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="w-full h-[22px]" aria-hidden>
+      <path
+        d={`M ${path}`}
+        fill="none"
+        stroke="hsl(var(--surface))"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        opacity="0.85"
+        style={{
+          strokeDasharray: 200,
+          strokeDashoffset: 200,
+          animation: "spark-draw 700ms ease-out forwards",
+        }}
+      />
+      <style>{`@keyframes spark-draw { to { stroke-dashoffset: 0; } }`}</style>
+    </svg>
   );
 };
 
