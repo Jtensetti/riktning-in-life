@@ -199,6 +199,27 @@ const scoreExercise = (
   // 6) Säkerhetsnät: om allt scoreas ner ska land-kategorin (mycket korta) ändå alltid få en chans.
   if (ex.duration_minutes <= 3 && score < 25) score = 25;
 
+  // 7) PERSONLIG EFFEKT-BIAS — boosta övningar som visat sig lyfta dig, dra av de som inte gjort det.
+  //    Kräver ≥3 observationer för att alls räknas (annars är signalen brus).
+  if (history) {
+    const stat =
+      history.byExerciseId?.[ex.id] ??
+      history.byExerciseTitle?.[ex.title] ??
+      history.byCategory?.[ex.category];
+    if (stat && stat.count >= 3) {
+      if (stat.avgDelta >= 1) score += 15;
+      else if (stat.avgDelta <= -0.5) score -= 20;
+      else if (stat.avgDelta >= 0.4) score += 7;
+    }
+  }
+
+  // 8) FORECAST-TRIGGER: vid morgon-oro tvinga fram korta andnings-/lugna-passar.
+  if (forecast && forecast.kind === "anxiety" && forecast.partOfDay === "morning") {
+    if ((ex.category === "Lugna kroppen" || ex.category === "Bryt ältande") && ex.duration_minutes <= 5) {
+      score += 18;
+    }
+  }
+
   return Math.max(0, Math.min(100, score));
 };
 
