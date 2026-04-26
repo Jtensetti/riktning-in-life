@@ -26,6 +26,8 @@ import { toast } from "sonner";
 import { refreshBaseline, loadBaseline, thresholdsFromBaseline } from "@/lib/baseline";
 import { buildEveningPrediction } from "@/lib/dayInsights";
 import { EveningPredictionCard } from "@/components/EveningPredictionCard";
+import { buildForecast, FORECAST_VISIBLE_THRESHOLD } from "@/lib/forecast";
+import { TomorrowForecastCard } from "@/components/TomorrowForecastCard";
 import { heroVisualsFor } from "@/lib/heroVisuals";
 import { readAndUpdateLastSeen, greetingFor as greetingForLastSeen, type LastSeen } from "@/lib/lastSeen";
 import { getToneFor, phrasebookFor } from "@/lib/tone";
@@ -476,6 +478,25 @@ const Today = () => {
   })();
   void baselineRow; // använd-flagga: vi visar inte ett "personlig baslinje aktiv"-ord just nu
 
+  // 2-dagars-prognos: visar ett "Gör detta imorgon"-kort när signalen är tydlig.
+  // Bygger på samma 14-dagars-fönster som baseline; göms tyst när confidence är låg.
+  const forecast = (() => {
+    if (showSafety) return null;
+    if (recent7.length < 4) return null;
+    const f = buildForecast(
+      recent7.map((r) => ({
+        date: r.date,
+        mood_heaviness: r.mood_heaviness,
+        anxiety: r.anxiety,
+        energy: r.energy,
+        function_score: r.function_score,
+        sleep_hours: r.sleep_hours == null ? null : Number(r.sleep_hours),
+      })),
+      thresholds,
+    );
+    return f.kind && f.confidence >= FORECAST_VISIBLE_THRESHOLD ? f : null;
+  })();
+
   // Levande hero — tid + väder + säsong + dagens energi avgör ton, ikon och tempo.
   const hero = heroVisualsFor({
     time,
@@ -633,6 +654,8 @@ const Today = () => {
       )}
 
       {eveningPrediction && <EveningPredictionCard prediction={eveningPrediction} />}
+
+      {forecast && <TomorrowForecastCard forecast={forecast} exercises={library} />}
 
 
       {rec && (
