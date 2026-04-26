@@ -649,7 +649,7 @@ const MedicationForm = ({
               }`}
             >
               <div className={`w-9 h-9 rounded-full grid place-items-center ${pickedId === m.id ? "bg-white/25" : "bg-blue-calm/15 text-blue-calm"}`}>
-                <AbstractIcon name="heart-pulse" size={18} color="currentColor" />
+                <AbstractIcon name="pill" size={18} color="currentColor" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-extrabold leading-tight truncate">{m.name}</p>
