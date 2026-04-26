@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronLeft, ChevronRight, Plus, Download, Trash2, FileDown, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { FORMS, FormType, SIDE_EFFECTS } from "@/lib/forms";
+import { burdenScore, functionScore, recoveryScore, stabilityScore, stabilityLabel, pctChange, splitWeeks, type Checkin, type WeeklyFormScore } from "@/lib/metrics";
 import jsPDF from "jspdf";
 
 type View = "home" | "form" | "meds" | "med_log" | "report";
@@ -514,9 +515,51 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
     const adherence = ml.length ? Math.round((ml.filter(x => x.taken_status === "taken").length / ml.length) * 100) : null;
     const sideEffects = Array.from(new Set(ml.flatMap(x => (Array.isArray(x.side_effects_json) ? x.side_effects_json : []))));
 
+    // ---- Beräknade scores (0–100) ----
+    const checkinsTyped = c as unknown as Checkin[];
+    const { current: curWeek, previous: prevWeek } = splitWeeks(checkinsTyped);
+    const latestPhq = [...f].reverse().find((x: any) => x.type === "phq9");
+    const latestGad = [...f].reverse().find((x: any) => x.type === "gad7");
+    const latestWho = [...f].reverse().find((x: any) => x.type === "who5");
+    const weekly: WeeklyFormScore = {
+      phq9: latestPhq ? Number(latestPhq.total_score) : undefined,
+      gad7: latestGad ? Number(latestGad.total_score) : undefined,
+      who5: latestWho ? Number(latestWho.total_score) : undefined,
+    };
+    const burdenCur = burdenScore(curWeek, weekly);
+    const burdenPrev = burdenScore(prevWeek, weekly);
+    const fnCur = functionScore(curWeek);
+    const fnPrev = functionScore(prevWeek);
+    const recCur = recoveryScore(curWeek);
+    const recPrev = recoveryScore(prevWeek);
+    const stabCur = stabilityScore(curWeek);
+    const stabPrev = stabilityScore(prevWeek);
+    const directionCur = burdenCur.value == null ? null : 100 - burdenCur.value;
+    const directionPrev = burdenPrev.value == null ? null : 100 - burdenPrev.value;
+    const fmtScore = (v: number | null) => v == null ? "—" : `${Math.round(v)}/100`;
+    const fmtDelta = (cur: number | null, prev: number | null) => {
+      if (cur == null || prev == null) return "";
+      const d = Math.round(cur - prev);
+      if (d === 0) return " (oförändrad)";
+      return ` (${d > 0 ? "+" : ""}${d} vs föregående vecka)`;
+    };
+
+    // ---- Bidragande faktorer (drivare) ----
+    const drivers = computeDrivers(checkinsTyped);
+
     const lines = [
       `RIKTNING – Klinisk rapport`,
       `Period: ${since} till ${new Date().toISOString().split("T")[0]} (${days} dagar)`,
+      ``,
+      `BERÄKNADE SCORES (senaste 7 dagar, 0–100)`,
+      `Riktning (100 − belastning): ${fmtScore(directionCur)}${fmtDelta(directionCur, directionPrev)}`,
+      `Belastning${burdenCur.withWeekly ? " (inkl. PHQ-9/GAD-7)" : " (utan veckoskattning)"}: ${fmtScore(burdenCur.value)}${fmtDelta(burdenCur.value, burdenPrev.value)}`,
+      `Funktion: ${fmtScore(fnCur)}${fmtDelta(fnCur, fnPrev)}`,
+      `Återhämtning: ${fmtScore(recCur)}${fmtDelta(recCur, recPrev)}`,
+      `Stabilitet: ${fmtScore(stabCur)} · ${stabilityLabel(stabCur, stabPrev)}`,
+      ``,
+      `VIKTIGASTE BIDRAGANDE FAKTORER`,
+      ...(drivers.length ? drivers.map(d => `- ${d}`) : ["För lite data för att rangordna drivare."]),
       ``,
       `SKATTNINGAR`,
       `PHQ-9: ${formStat("phq9")}`,
@@ -593,7 +636,7 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
-    const SECTION_HEADERS = new Set(["SKATTNINGAR", "DAGLIGA MEDELVÄRDEN", "AKTIVITET", "LÄKEMEDEL", "SÄKERHETSSIGNALER", "SAMMANFATTNING", "JOURNAL (utvalda)"]);
+    const SECTION_HEADERS = new Set(["BERÄKNADE SCORES (senaste 7 dagar, 0–100)", "VIKTIGASTE BIDRAGANDE FAKTORER", "SKATTNINGAR", "DAGLIGA MEDELVÄRDEN", "AKTIVITET", "LÄKEMEDEL", "SÄKERHETSSIGNALER", "SAMMANFATTNING", "JOURNAL (utvalda)"]);
 
     for (const raw of report.split("\n").slice(2)) {
       const line = raw === "" ? " " : raw;
@@ -791,6 +834,55 @@ function summarize(c: any[], f: any[], safety: { passive: number; active: number
     out += ` Inga säkerhetssignaler rapporterade.`;
   }
   return out;
+}
+
+function computeDrivers(cs: Checkin[]): string[] {
+  if (cs.length < 3) return [];
+  const half = Math.ceil(cs.length / 2);
+  const first = cs.slice(0, half);
+  const last = cs.slice(-half);
+  const meanOf = (arr: Checkin[], k: keyof Checkin) => {
+    const xs = arr.map(r => r[k]).filter((v): v is number => typeof v === "number");
+    return xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : null;
+  };
+  type Driver = { label: string; mean: number; trend: number; impact: number; direction: "neg" | "pos"; unit: string };
+  const fields: { key: keyof Checkin; label: string; direction: "neg" | "pos"; unit: string; max: number }[] = [
+    { key: "mood_heaviness", label: "Tyngd", direction: "neg", unit: "/10", max: 10 },
+    { key: "anxiety", label: "Oro", direction: "neg", unit: "/10", max: 10 },
+    { key: "hopelessness", label: "Hopplöshet", direction: "neg", unit: "/10", max: 10 },
+    { key: "guilt_selfcriticism", label: "Skuld/självkritik", direction: "neg", unit: "/10", max: 10 },
+    { key: "energy", label: "Energi", direction: "pos", unit: "/10", max: 10 },
+    { key: "function_score", label: "Funktion", direction: "pos", unit: "/10", max: 10 },
+    { key: "getting_started", label: "Komma igång", direction: "pos", unit: "/10", max: 10 },
+    { key: "sleep_quality", label: "Sömnkvalitet", direction: "pos", unit: "/10", max: 10 },
+    { key: "daytime_bed_sofa_time_minutes", label: "Säng/sofftid dagtid", direction: "neg", unit: " min", max: 240 },
+  ];
+  const drivers: Driver[] = [];
+  for (const f of fields) {
+    const m = meanOf(cs, f.key);
+    if (m == null) continue;
+    const m1 = meanOf(first, f.key);
+    const m2 = meanOf(last, f.key);
+    const trend = (m1 != null && m2 != null) ? m2 - m1 : 0;
+    // Impact: hur långt från "bra" på en 0–100-skala, plus trendmagnitud
+    const norm = (m / f.max) * 100;
+    const distanceFromGood = f.direction === "neg" ? norm : 100 - norm;
+    const impact = distanceFromGood + Math.abs(trend / f.max) * 50;
+    drivers.push({ label: f.label, mean: m, trend, impact, direction: f.direction, unit: f.unit });
+  }
+  drivers.sort((a, b) => b.impact - a.impact);
+  return drivers.slice(0, 5).map(d => {
+    const meanStr = `${Math.round(d.mean * 10) / 10}${d.unit}`;
+    let trendStr = "";
+    if (Math.abs(d.trend) >= (d.unit === " min" ? 15 : 0.5)) {
+      const sign = d.trend > 0 ? "↑" : "↓";
+      const good = (d.direction === "pos" && d.trend > 0) || (d.direction === "neg" && d.trend < 0);
+      trendStr = ` · ${sign} ${good ? "förbättring" : "försämring"}`;
+    } else {
+      trendStr = " · stabil";
+    }
+    return `${d.label}: snitt ${meanStr}${trendStr}`;
+  });
 }
 
 export default Vard;
