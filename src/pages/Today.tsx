@@ -331,11 +331,13 @@ const Today = () => {
         supabase.from("activity_logs").select("date").eq("user_id", user.id).gte("date", since),
         supabase.from("exercise_sessions").select("created_at").eq("user_id", user.id).gte("created_at", sinceTs),
       ]);
+      const todayStr = new Date().toISOString().split("T")[0];
       setStreakCounts({
         checkin: countDaysInWindow((ci.data ?? []) as any[]),
         activity: countDaysInWindow((al.data ?? []) as any[]),
         session: countDaysInWindow((es.data ?? []) as any[]),
       });
+      setActivitiesToday(((al.data ?? []) as any[]).filter((r) => r.date === todayStr).length);
     })();
   }, [user, streakReloadKey]);
 
