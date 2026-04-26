@@ -627,6 +627,8 @@ const MedicationForm = ({
           <p className="text-xs text-text-secondary">Lägg till en medicin under Vård för att kunna logga den här.</p>
         </div>
         <Button
+          variant="pill-strong"
+          size="pill-lg"
           onClick={() => navigate("/vard")}
           className="w-full"
         >
