@@ -131,8 +131,9 @@ const Week = () => {
   const [exercises, setExercises] = useState<ExerciseLite[]>([]);
   const [fetching, setFetching] = useState(true);
   // Råa 30-dagars samlingar för "Vad lyfter dig?"-evidens (Spår A)
-  const [activitiesAll, setActivitiesAll] = useState<{ activity_slug: string; label: string; icon: string; color: string; mood_delta: number | null }[]>([]);
-  const [sessionsAll, setSessionsAll] = useState<{ exercises: { title: string; category: string; color: string } | null; mood_before: number | null; mood_after: number | null; anxiety_before: number | null; anxiety_after: number | null }[]>([]);
+  const [activitiesAll, setActivitiesAll] = useState<{ activity_slug: string; label: string; icon: string; color: string; mood_delta: number | null; date: string }[]>([]);
+  const [sessionsAll, setSessionsAll] = useState<{ exercises: { title: string; category: string; color: string } | null; mood_before: number | null; mood_after: number | null; anxiety_before: number | null; anxiety_after: number | null; created_at: string }[]>([]);
+  const [medLogsAll, setMedLogsAll] = useState<{ date: string; taken_status: string }[]>([]);
   const [historyFilter, setHistoryFilter] = useState<"all" | "checkins" | "exercises" | "activeTime">("all");
   // Toggle persistas i localStorage så användaren slipper öppna detaljerna
   // varje gång de navigerar tillbaka till Insikter.
