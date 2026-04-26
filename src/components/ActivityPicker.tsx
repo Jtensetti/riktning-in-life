@@ -64,6 +64,7 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
   const [duration, setDuration] = useState(30);
   const [mood, setMood] = useState(1);
   const [customLabel, setCustomLabel] = useState("");
+  const recentSlugs = useRecentActivities(4);
 
   useEffect(() => {
     if (!open) return;
