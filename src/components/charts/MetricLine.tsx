@@ -52,10 +52,12 @@ export const MetricLine = ({
   const reduced = prefersReducedMotion();
   const stroke = toneHsl(tone);
   const gradId = useMemo(() => `metric-line-${tone}-${Math.random().toString(36).slice(2, 7)}`, [tone]);
+  const sig = buildChartSignature(data, tone);
 
   return (
-    <div style={{ height }} role="img" aria-label={valueLabel}>
-      <ResponsiveContainer width="100%" height="100%">
+    <AnimatedChart signature={sig}>
+      <div style={{ height }} role="img" aria-label={valueLabel}>
+        <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 8, right: 12, bottom: 8, left: showYAxis ? -8 : 0 }}>
           <defs>
             <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="0">
