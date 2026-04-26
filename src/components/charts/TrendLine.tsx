@@ -119,6 +119,7 @@ export const TrendLine = ({ dates, series, showAxis = true, height = 160 }: Prop
           ))}
         </AreaChart>
       </ResponsiveContainer>
-    </div>
+      </div>
+    </AnimatedChart>
   );
 };
