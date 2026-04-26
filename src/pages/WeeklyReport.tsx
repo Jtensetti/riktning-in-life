@@ -529,6 +529,9 @@ const WeeklyReport = () => {
         </p>
       </header>
 
+      {/* AI-veckosammanfattning visas också här som mjuk preamble — göms tyst utan AI. */}
+      <WeeklyAIInsight minDays={3} />
+
       {summary && (
         <div className="card-cream p-4 mb-5 space-y-1">
           <div className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-2">
