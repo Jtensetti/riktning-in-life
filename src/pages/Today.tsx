@@ -476,16 +476,20 @@ const Today = () => {
   })();
   void baselineRow; // använd-flagga: vi visar inte ett "personlig baslinje aktiv"-ord just nu
 
-  // Hero icon adapts to weather + daylight; falls back to friendly blob.
-  const heroIcon: IconName = weather
-    ? weatherIcon(weather.kind, weather.isDaylight)
-    : (time.partOfDay === "night" || time.partOfDay === "evening" ? "moon-stars" : "blob-smile");
-  const heroIconColor = weather
-    ? weatherIconColor(weather.kind, weather.isDaylight)
-    : (time.partOfDay === "evening" || time.partOfDay === "night"
-        ? "hsl(var(--surface))"
-        : "hsl(var(--orange-deep))");
-  const heroIconAccent = weather ? weatherIconAccent(weather.kind) : undefined;
+  // Levande hero — tid + väder + säsong + dagens energi avgör ton, ikon och tempo.
+  const hero = heroVisualsFor({
+    time,
+    weather,
+    energy: checkin?.energy ?? null,
+    safetyFlag: showSafety,
+  });
+
+  // Adaptiv ton — vad rubriker och CTA-knappen säger följer hur dagen ser ut.
+  const tone = getToneFor(checkin, thresholds);
+  const phrases = phrasebookFor(tone);
+
+  // Hälsning anpassad efter när användaren senast var här.
+  const greet = greetingForLastSeen(time.greeting, lastSeen);
 
   // Show permission card only once: not asked, no granted permission, not dismissed this session.
   const showWeatherPermission =
@@ -494,10 +498,12 @@ const Today = () => {
   return (
     <AppShell>
       <HeroBanner
-        tone={heroToneFor(time.partOfDay)}
-        icon={heroIcon}
-        iconColor={heroIconColor}
-        iconAccent={heroIconAccent}
+        tone={hero.tone}
+        icon={hero.icon}
+        iconColor={hero.iconColor}
+        iconAccent={hero.iconAccent}
+        mood={hero.mood}
+        pattern={hero.pattern}
         topLeft={
           <button
             onClick={() => navigate("/installningar")}
@@ -511,9 +517,12 @@ const Today = () => {
       />
 
       <header className="mb-6">
-        <p className="text-sm font-extrabold text-orange-deep mb-1 animate-fade-in-up">{time.greeting}</p>
+        <p className="text-sm font-extrabold text-orange-deep mb-1 animate-fade-in-up">{greet.headline}</p>
         <h1 className="text-[32px] leading-[38px]">Idag</h1>
         <p className="text-sm font-semibold text-text-secondary capitalize mt-1">{formatDate()}</p>
+        {greet.sub && (
+          <p className="text-sm text-text-secondary mt-2 animate-fade-in-up">{greet.sub}</p>
+        )}
       </header>
 
       {showWeatherPermission && (
