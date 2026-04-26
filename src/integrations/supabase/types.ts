@@ -178,6 +178,160 @@ export type Database = {
         }
         Relationships: []
       }
+      journal_entries: {
+        Row: {
+          body_json: Json
+          created_at: string
+          date: string
+          free_text: string | null
+          id: string
+          include_in_report: boolean
+          linked_checkin_id: string | null
+          template_type: string
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body_json?: Json
+          created_at?: string
+          date?: string
+          free_text?: string | null
+          id?: string
+          include_in_report?: boolean
+          linked_checkin_id?: string | null
+          template_type: string
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body_json?: Json
+          created_at?: string
+          date?: string
+          free_text?: string | null
+          id?: string
+          include_in_report?: boolean
+          linked_checkin_id?: string | null
+          template_type?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entries_linked_checkin_id_fkey"
+            columns: ["linked_checkin_id"]
+            isOneToOne: false
+            referencedRelation: "daily_checkins"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medication_logs: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          medication_id: string
+          note: string | null
+          side_effects_json: Json
+          taken_status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          id?: string
+          medication_id: string
+          note?: string | null
+          side_effects_json?: Json
+          taken_status: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          medication_id?: string
+          note?: string | null
+          side_effects_json?: Json
+          taken_status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medication_logs_medication_id_fkey"
+            columns: ["medication_id"]
+            isOneToOne: false
+            referencedRelation: "medications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medications: {
+        Row: {
+          active: boolean
+          created_at: string
+          date_started: string | null
+          date_stopped: string | null
+          dose: string | null
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          date_started?: string | null
+          date_stopped?: string | null
+          dose?: string | null
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          date_started?: string | null
+          date_stopped?: string | null
+          dose?: string | null
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      weekly_forms: {
+        Row: {
+          answers_json: Json
+          created_at: string
+          date: string
+          id: string
+          total_score: number
+          type: string
+          user_id: string
+        }
+        Insert: {
+          answers_json?: Json
+          created_at?: string
+          date?: string
+          id?: string
+          total_score: number
+          type: string
+          user_id: string
+        }
+        Update: {
+          answers_json?: Json
+          created_at?: string
+          date?: string
+          id?: string
+          total_score?: number
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
