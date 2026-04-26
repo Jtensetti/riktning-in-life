@@ -702,9 +702,9 @@ const MovementForm = ({ onSaved, userId }: { onSaved: () => void; userId: string
 // ====================================================================
 /** Delad slider-rad för både MoodForm (nylog) och mood-edit-drawern. */
 const MoodSliderRow = ({
-  label, value, set, tone,
-}: { label: string; value: number; set: (n: number) => void; tone: Tone }) => (
-  <div>
+  label, value, set, tone, disabled = false,
+}: { label: string; value: number; set: (n: number) => void; tone: Tone; disabled?: boolean }) => (
+  <div aria-busy={disabled} className={disabled ? "opacity-60 pointer-events-none" : ""}>
     <div className="flex items-baseline justify-between mb-2">
       <p className="text-xs font-extrabold uppercase tracking-wider text-text-secondary">{label}</p>
       <p className="text-base font-extrabold tabular-nums">{value}/10</p>
@@ -713,7 +713,8 @@ const MoodSliderRow = ({
       {Array.from({ length: 11 }, (_, n) => (
         <button key={n}
           onClick={() => set(n)}
-          className={`aspect-square rounded-xl text-xs font-extrabold tabular-nums press-soft ${
+          disabled={disabled}
+          className={`aspect-square rounded-xl text-xs font-extrabold tabular-nums press-soft disabled:cursor-not-allowed ${
             value === n ? toneBg(tone) : "bg-surface-alt text-foreground"
           }`}
         >{n}</button>
