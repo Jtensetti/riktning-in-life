@@ -65,31 +65,33 @@
   }
 
   .dark {
-    /* Riktning is light-first; dark mode uses muted earth tones */
-    --background: 240 8% 8%;
-    --surface: 240 6% 12%;
-    --surface-alt: 240 6% 16%;
+    /* Auto night mode — purple-sleep-toner som knyter an till befintlig palett.
+       Triggas automatiskt av klocktid (22–05) via App.tsx. Ingen toggle. */
+    --background: 261 35% 9%;
+    --surface: 261 28% 14%;
+    --surface-alt: 261 24% 18%;
+    --cream-card: 261 22% 16%;
     --foreground: 36 38% 95%;
-    --text-secondary: 30 6% 65%;
-    --border-soft: 240 6% 20%;
+    --text-secondary: 30 12% 72%;
+    --border-soft: 261 18% 24%;
 
-    --card: 240 6% 12%;
+    --card: 261 28% 14%;
     --card-foreground: 36 38% 95%;
-    --popover: 240 6% 12%;
+    --popover: 261 28% 14%;
     --popover-foreground: 36 38% 95%;
-    --primary: 23 100% 60%;
-    --primary-foreground: 240 8% 8%;
-    --secondary: 240 6% 16%;
+    --primary: 23 100% 62%;
+    --primary-foreground: 261 35% 9%;
+    --secondary: 261 24% 18%;
     --secondary-foreground: 36 38% 95%;
-    --muted: 240 6% 16%;
-    --muted-foreground: 30 6% 65%;
-    --accent: 240 6% 16%;
+    --muted: 261 24% 18%;
+    --muted-foreground: 30 12% 72%;
+    --accent: 261 24% 18%;
     --accent-foreground: 36 38% 95%;
-    --destructive: 0 60% 55%;
+    --destructive: 0 70% 62%;
     --destructive-foreground: 36 38% 95%;
-    --border: 240 6% 20%;
-    --input: 240 6% 20%;
-    --ring: 23 100% 60%;
+    --border: 261 18% 24%;
+    --input: 261 18% 24%;
+    --ring: 23 100% 62%;
   }
 }
 
