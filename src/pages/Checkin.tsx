@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useWeather, weatherLabel, type WeatherKind } from "@/lib/weather";
 import { AbstractIcon, weatherIcon, weatherIconColor, weatherIconAccent, type IconName } from "@/components/AbstractIcon";
 import { ActivityPicker, type ActivityDraft } from "@/components/ActivityPicker";
+import { refreshBaseline, loadBaseline, rankVariance, type VarianceField } from "@/lib/baseline";
 
 const colorBg = (color: string): string => {
   switch (color) {
@@ -67,6 +68,14 @@ const Checkin = () => {
   const [activities, setActivities] = useState<ActivityDraft[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [step, setStep] = useState(0);
+  const [deepAnswer, setDeepAnswer] = useState<string>("");
+
+  // Välj en adaptiv "djupfråga" baserat på vad som varierar mest för dig.
+  // Stabil per session — räknas en gång på mount.
+  const [deepField] = useState<VarianceField | null>(() => {
+    const ranked = rankVariance(loadBaseline());
+    return ranked[0] ?? null;
+  });
 
   const effectiveKind: WeatherKind | null = weatherOverride ?? weather?.kind ?? null;
 
@@ -96,6 +105,11 @@ const Checkin = () => {
             safety_status: (data.safety_status as Form["safety_status"]) ?? "none",
             note: data.note ?? "",
           });
+          // Plocka ut djup-svaret om det finns
+          if (data.note) {
+            const m = String(data.note).match(/#deep:[a-z_]+=(.*)$/m);
+            if (m) setDeepAnswer(m[1]);
+          }
           const prevKind = (data as any).weather_kind as WeatherKind | null | undefined;
           if (prevKind && weather && prevKind !== weather.kind) setWeatherOverride(prevKind);
         }
@@ -180,10 +194,17 @@ const Checkin = () => {
     }
     setSaving(true);
     const legacy = deriveLegacy();
+    // Foga in den adaptiva djupfrågans svar i note som en taggrad — ingen
+    // schemändring, men sökbart för framtida mönsterdetektion.
+    const baseNote = (form.note ?? "").replace(/\n?#deep:[a-z_]+=.*$/m, "").trimEnd();
+    const noteWithDeep = deepAnswer.trim() && deepField
+      ? `${baseNote}${baseNote ? "\n" : ""}#deep:${deepField}=${deepAnswer.trim()}`
+      : baseNote;
     const { error } = await supabase.from("daily_checkins").upsert({
       user_id: user.id,
       date: todayISO(),
       ...form,
+      note: noteWithDeep || null,
       medication_taken: form.medication_taken || null,
       movement_today: legacy.movement_today || null,
       meaningful_activity: legacy.meaningful_activity || null,
@@ -196,6 +217,20 @@ const Checkin = () => {
       return;
     }
     toast.success("Tack — det här hjälper dig se mönster.");
+
+    // Auto-refresh baseline med färsk data så att tröskelvärden alltid är aktuella.
+    // Body är fire-and-forget — vi blockerar inte navigeringen.
+    void (async () => {
+      const since = new Date();
+      since.setDate(since.getDate() - 30);
+      const { data } = await supabase
+        .from("daily_checkins")
+        .select("date,mood_heaviness,anxiety,energy,sleep_hours,function_score,daytime_bed_sofa_time_minutes")
+        .eq("user_id", user.id)
+        .gte("date", since.toISOString().split("T")[0]);
+      if (data) refreshBaseline(data as any);
+    })();
+
     navigate("/");
   };
 
@@ -302,6 +337,7 @@ const Checkin = () => {
             <SliderField idx={1} label="Hur orolig är du?" value={form.anxiety} onChange={(v) => setForm(f => ({ ...f, anxiety: v }))} low="Lugn" high="Mycket orolig" />
             <SliderField idx={2} label="Är du hård mot dig själv?" value={form.guilt_selfcriticism} onChange={(v) => setForm(f => ({ ...f, guilt_selfcriticism: v }))} low="Mild" high="Skarp" />
             <SliderField idx={3} label="Känns det hopplöst?" value={form.hopelessness} onChange={(v) => setForm(f => ({ ...f, hopelessness: v }))} low="Det finns hopp" high="Tomt" />
+            <DeepQuestion field={deepField} value={deepAnswer} onChange={setDeepAnswer} />
           </>
         )}
 
@@ -466,5 +502,64 @@ const SegField = ({ label, value, onChange, opts }: { label: string; value: stri
     </div>
   </div>
 );
+
+/**
+ * Adaptiv djupfråga — visas bara när vi har en personlig baslinje och kan se
+ * vilket fält som varierar mest. Frågan är fri-text (tags) och sparas i note
+ * som "#deep:<field>=<svar>" — ingen schemändring krävs.
+ */
+const DEEP_QUESTIONS: Record<VarianceField, { label: string; placeholder: string; hint: string }> = {
+  sleep_hours: {
+    label: "Hur var sömnen i kväll/morse?",
+    placeholder: "T.ex. somnade sent, vaknade flera gånger, drömde mycket",
+    hint: "Sömnen varierar mest för dig — kvalitet och mönster säger ofta mer än timmarna.",
+  },
+  anxiety: {
+    label: "Vad triggade oron mest idag?",
+    placeholder: "T.ex. mejl, kvällstankar, fysiskt obehag",
+    hint: "Din oro varierar mycket. Att namnge triggers hjälper oss se mönster.",
+  },
+  daytime_bed_sofa_time_minutes: {
+    label: "Hur mycket tid i sängen/soffan idag (minuter)?",
+    placeholder: "T.ex. 90",
+    hint: "Stillatid varierar mycket för dig — bra att följa över tid.",
+  },
+  energy: {
+    label: "När var energin som lägst/högst idag?",
+    placeholder: "T.ex. dipp efter lunch, lyft på kvällen",
+    hint: "Energin svänger för dig — timing kan ge ledtrådar.",
+  },
+  mood_heaviness: {
+    label: "Vad färgade dagen mest — något särskilt?",
+    placeholder: "T.ex. ett samtal, väder, en tanke",
+    hint: "Tyngden varierar mycket för dig. Korta noteringar bygger mönster.",
+  },
+};
+
+const DeepQuestion = ({
+  field,
+  value,
+  onChange,
+}: {
+  field: VarianceField | null;
+  value: string;
+  onChange: (v: string) => void;
+}) => {
+  if (!field) return null;
+  const q = DEEP_QUESTIONS[field];
+  return (
+    <div className="card-cream p-5 mb-4 animate-fade-in-up" style={{ animationDelay: "var(--stagger-4)" }}>
+      <label className="text-sm font-extrabold mb-1 block">{q.label}</label>
+      <p className="text-xs text-text-secondary mb-3">{q.hint}</p>
+      <Textarea
+        rows={2}
+        placeholder={q.placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="bg-surface border-border-soft"
+      />
+    </div>
+  );
+};
 
 export default Checkin;

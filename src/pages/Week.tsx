@@ -19,6 +19,7 @@ import { buildDayHighlights, buildLiftSummary } from "@/lib/dayInsights";
 import { DayHighlightCards } from "@/components/DayHighlightCards";
 import { detectPatterns } from "@/lib/patterns";
 import { PatternsSection } from "@/components/PatternsSection";
+import { WeeklyAIInsight } from "@/components/WeeklyAIInsight";
 import { ChartCard } from "@/components/charts/ChartCard";
 // Bara WeekDirectionChart syns ovan kollapsen — resten lazy-laddas när
 // "Återhämtningshistorik" öppnas. Det halverar Recharts-overhead på
@@ -457,6 +458,9 @@ const Week = () => {
 
       <h1 className="text-[32px] leading-[38px] mb-1">Insikter</h1>
       <p className="text-sm text-text-secondary mb-6">Vad veckan visar — på en skärm.</p>
+
+      {/* AI-veckosammanfattning — varm sammanfattning baserad på riktig data. Göms tyst om AI inte svarar. */}
+      <WeeklyAIInsight />
 
       {/* Spår 1: bevisbaserade mönster från senaste 28 dagarna. */}
       <PatternsSection patterns={patterns} />

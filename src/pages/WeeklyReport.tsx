@@ -9,6 +9,7 @@ import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { WeeklyAIInsight } from "@/components/WeeklyAIInsight";
 import { burdenScore, functionScore, recoveryScore, stabilityScore, splitWeeks, type Checkin, type WeeklyFormScore } from "@/lib/metrics";
 import {
   PDF_COLORS,
@@ -527,6 +528,9 @@ const WeeklyReport = () => {
           Sammanställer senaste 7 dagar: sömn, rörelse, journal, medicin — plus tomma anteckningsfält för vården.
         </p>
       </header>
+
+      {/* AI-veckosammanfattning visas också här som mjuk preamble — göms tyst utan AI. */}
+      <WeeklyAIInsight minDays={3} />
 
       {summary && (
         <div className="card-cream p-4 mb-5 space-y-1">

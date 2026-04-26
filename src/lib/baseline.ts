@@ -138,3 +138,24 @@ export const thresholdsFromBaseline = (b: PersonalBaseline | null): PersonalThre
       : GLOBAL_DEFAULTS.highBedSofa,
   };
 };
+
+/**
+ * Vilket fält varierar mest för den här personen? Används för att rotera in
+ * adaptiva "djupfrågor" i check-in. Returnerar fältnamn sorterade efter
+ * variationskvot (IQR / median), eller tom array om baseline saknas.
+ */
+export type VarianceField = "sleep_hours" | "anxiety" | "daytime_bed_sofa_time_minutes" | "energy" | "mood_heaviness";
+
+export const rankVariance = (b: PersonalBaseline | null): VarianceField[] => {
+  if (!b) return [];
+  const fields: VarianceField[] = ["sleep_hours", "anxiety", "daytime_bed_sofa_time_minutes", "energy", "mood_heaviness"];
+  const scored = fields
+    .map((k) => {
+      const stat = b.fields[k];
+      if (!stat || stat.median === 0) return { k, score: 0 };
+      return { k, score: stat.iqr / Math.max(1, Math.abs(stat.median)) };
+    })
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score);
+  return scored.map((x) => x.k);
+};

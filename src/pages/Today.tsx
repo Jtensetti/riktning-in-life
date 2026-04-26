@@ -14,7 +14,7 @@ import { useUserSettings } from "@/hooks/useUserSettings";
 import { getTimeContext, type TimeContext } from "@/lib/timeContext";
 import { useWeather, isOutdoorFriendly, weatherLabel, hasAskedWeatherPermission, isWeatherPermissionGranted, isWeatherPermissionDismissed, dismissWeatherPermission, type Weather } from "@/lib/weather";
 import { ForYouCarousel } from "@/components/ForYouCarousel";
-import { recommendForToday, type Exercise as RecExercise, type Pick } from "@/lib/recommend";
+import { recommendForToday, type Exercise as RecExercise, type Pick, type EffectHistory, type ForecastSignal } from "@/lib/recommend";
 import { Moon } from "lucide-react";
 import { StreakRing } from "@/components/StreakRing";
 import { QuickLogPills } from "@/components/QuickLogPills";
@@ -418,6 +418,24 @@ const Today = () => {
     }
   }, [trendData]);
 
+  // Räkna om baselinen när serverhydration sker (ny enhet) — så att tröskelvärden
+  // baseras på serverdata istället för cache. Fire-and-forget.
+  useEffect(() => {
+    if (!user) return;
+    const handler = async () => {
+      const since = new Date();
+      since.setDate(since.getDate() - 30);
+      const { data } = await supabase
+        .from("daily_checkins")
+        .select("date,mood_heaviness,anxiety,energy,sleep_hours,function_score,daytime_bed_sofa_time_minutes")
+        .eq("user_id", user.id)
+        .gte("date", since.toISOString().split("T")[0]);
+      if (data) refreshBaseline(data as any);
+    };
+    window.addEventListener("riktning:settings-hydrated", handler);
+    return () => window.removeEventListener("riktning:settings-hydrated", handler);
+  }, [user]);
+
   if (loading || fetching) {
     return (
       <AppShell>
@@ -430,7 +448,8 @@ const Today = () => {
   const showSafety = checkin?.safety_status === "active_thoughts" || checkin?.safety_status === "acute";
   const rec = showSafety ? null : recommend(checkin, time, weather);
 
-  // Smart "För dig just nu"-rekommendationer
+  // Smart "För dig just nu"-rekommendationer (picks beräknas efter forecast nedan så att
+  // vi kan tvinga lugna passar vid morgon-oro).
   const recentForRec = recent
     .filter((s) => s.exercises)
     .map((s) => ({
@@ -438,7 +457,35 @@ const Today = () => {
       created_at: s.created_at,
       exercise_id: s.exercise_id ?? undefined,
     }));
-  const picks: Pick[] = showSafety ? [] : recommendForToday(library, checkin, time, weather, recentForRec);
+
+  // Personlig effekt-historik per övning: humörlyft + orosänkning, normaliserat till skalsteg.
+  // Liknar logik i buildLiftSummary men aggregerar per exercise_id för snabbt uppslag.
+  const effectHistory: EffectHistory = (() => {
+    const byId: Record<string, { sum: number; count: number }> = {};
+    const byCat: Record<string, { sum: number; count: number }> = {};
+    for (const s of recent) {
+      if (!s.exercise_id || !s.exercises) continue;
+      const moodDelta = s.mood_before != null && s.mood_after != null
+        ? (s.mood_after - s.mood_before) / 3
+        : 0;
+      const anxRelief = s.anxiety_before != null && s.anxiety_after != null
+        ? (s.anxiety_before - s.anxiety_after) / 3
+        : 0;
+      if (s.mood_before == null && s.anxiety_before == null) continue;
+      const combined = moodDelta + anxRelief;
+      const ex = (byId[s.exercise_id] ??= { sum: 0, count: 0 });
+      ex.sum += combined;
+      ex.count += 1;
+      const cat = (byCat[s.exercises.category] ??= { sum: 0, count: 0 });
+      cat.sum += combined;
+      cat.count += 1;
+    }
+    const toStat = (m: Record<string, { sum: number; count: number }>) =>
+      Object.fromEntries(
+        Object.entries(m).map(([k, v]) => [k, { avgDelta: Math.round((v.sum / v.count) * 10) / 10, count: v.count }]),
+      );
+    return { byExerciseId: toStat(byId), byCategory: toStat(byCat) };
+  })();
 
   // 7-day insights
   const moodTrend = computeTrend(trendData, c => c.mood_heaviness, true);
@@ -508,6 +555,15 @@ const Today = () => {
     );
     return f.kind && f.confidence >= FORECAST_VISIBLE_THRESHOLD ? f : null;
   })();
+
+  // Bygg forecast-signal till rekommendationsmotorn (tvingar t.ex. korta andnings-passar
+  // i calm-sloten vid morgon-oro). null → ingen forcering.
+  const forecastSignal: ForecastSignal | undefined = forecast?.kind
+    ? { kind: forecast.kind, partOfDay: time.partOfDay }
+    : undefined;
+  const picks: Pick[] = showSafety
+    ? []
+    : recommendForToday(library, checkin, time, weather, recentForRec, effectHistory, forecastSignal);
 
   // Levande hero — tid + väder + säsong + dagens energi avgör ton, ikon och tempo.
   const hero = heroVisualsFor({
