@@ -90,8 +90,10 @@ export const ColorCard = ({
   showChevron,
   children,
 }: Props) => {
-  const minH = size === "sm" ? "min-h-[112px]" : size === "lg" ? "min-h-[200px]" : "min-h-[148px]";
-  const iconSize = size === "sm" ? 44 : size === "lg" ? 72 : 56;
+  const minH = size === "sm" ? "min-h-[124px]" : size === "lg" ? "min-h-[220px]" : "min-h-[164px]";
+  // Stickern ska bära ~40% av kortets visuella vikt — större format än tidigare,
+  // tillåts överlappa kortets bakgrundsblob så att illustrationen leder ögat.
+  const iconSize = size === "sm" ? 64 : size === "lg" ? 112 : 88;
   const Tag = onClick ? "button" : "div";
   const onYellow = tone === "yellow";
 
@@ -128,15 +130,18 @@ export const ColorCard = ({
       {badge && <span className="absolute top-2 right-2 z-10">{badge}</span>}
 
       {icon && iconPosition === "top-right" && (
-        <span className="absolute top-3 right-3 z-[1] pointer-events-none">
+        <span
+          className="absolute -top-2 -right-2 z-[1] pointer-events-none drop-shadow-[0_6px_14px_rgba(0,0,0,0.18)]"
+          aria-hidden
+        >
           <AbstractIcon name={icon} size={iconSize} color="currentColor" accent={iconAccent} />
         </span>
       )}
 
       <div className="relative z-[1]">
         {icon && iconPosition === "bottom-right" && (
-          <div className="w-11 h-11 rounded-full bg-white/25 grid place-items-center mb-2">
-            <AbstractIcon name={icon} size={24} color="currentColor" accent={iconAccent} />
+          <div className="w-16 h-16 rounded-3xl bg-white/25 grid place-items-center mb-2">
+            <AbstractIcon name={icon} size={Math.round(iconSize * 0.7)} color="currentColor" accent={iconAccent} />
           </div>
         )}
       </div>
@@ -156,7 +161,7 @@ export const ColorCard = ({
                 ))}
               </div>
             )}
-            <h4 className="text-[20px] leading-[24px] font-extrabold mb-1 pr-12">{title}</h4>
+            <h4 className="text-[20px] leading-[24px] font-extrabold mb-1 pr-20">{title}</h4>
             {reason && <p className="text-sm opacity-90 leading-snug mb-3">{reason}</p>}
             {(metaLeft || metaRight || showChevron) && (
               <div className="flex items-center justify-between gap-2">

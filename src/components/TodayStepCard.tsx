@@ -43,7 +43,7 @@ export const TodayStepCard = ({ exercises, todayCheckin, recentSessions, loggedT
   return (
     <button
       onClick={() => navigate(`/ovningar/${ex.id}`)}
-      className="w-full text-left rounded-3xl bg-orange-start text-white p-5 shadow-soft press-soft animate-pop-in flex flex-col gap-3 min-h-[160px] relative overflow-hidden"
+      className="w-full text-left rounded-3xl bg-orange-start text-white p-5 shadow-soft press-soft animate-pop-in flex flex-col gap-3 min-h-[184px] relative overflow-hidden"
       style={{ animationDelay: `var(--stagger-${Math.min(index, 4)})` }}
       aria-label={`Dagens lilla steg: ${ex.title}`}
     >
@@ -61,12 +61,12 @@ export const TodayStepCard = ({ exercises, todayCheckin, recentSessions, loggedT
         </span>
       </div>
 
-      <div className="absolute right-3 top-12 opacity-90 pointer-events-none z-[1]">
-        <AbstractIcon name="spark" size={44} color="currentColor" />
+      <div className="absolute -right-2 top-6 opacity-95 pointer-events-none z-[1] drop-shadow-[0_6px_14px_rgba(0,0,0,0.18)]">
+        <AbstractIcon name="spark" size={104} color="currentColor" />
       </div>
 
       <div className="relative z-[1] mt-auto">
-        <h4 className="text-[20px] leading-[24px] font-extrabold mb-1 pr-12">{ex.title}</h4>
+        <h4 className="text-[20px] leading-[24px] font-extrabold mb-1 pr-24">{ex.title}</h4>
         <p className="text-sm opacity-90 leading-snug mb-3">{pick.reasonLong}</p>
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs font-extrabold opacity-90">
