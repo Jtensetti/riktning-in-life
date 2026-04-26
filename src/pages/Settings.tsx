@@ -139,14 +139,14 @@ const Settings = () => {
             onClick={exportAll}
             disabled={busy}
             variant="secondary"
-            className="w-full h-12 rounded-full font-extrabold justify-start"
+            className="w-full h-12 rounded-full font-extrabold justify-start press-soft"
           >
             <Download size={16} /> Exportera all data
           </Button>
           <Button
             onClick={() => setShowDelete(s => !s)}
             disabled={busy}
-            className="w-full h-12 rounded-full font-extrabold justify-start bg-red-bg text-red-risk hover:bg-red-bg/80"
+            className="w-full h-12 rounded-full font-extrabold justify-start bg-red-bg text-red-risk hover:bg-red-bg/80 press-soft"
           >
             <Trash2 size={16} /> Radera all data
           </Button>
