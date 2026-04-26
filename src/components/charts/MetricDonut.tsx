@@ -97,7 +97,8 @@ export const MetricDonut = ({
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </AnimatedChart>
   );
 };
 
