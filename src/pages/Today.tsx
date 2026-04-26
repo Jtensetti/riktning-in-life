@@ -257,7 +257,7 @@ const Today = () => {
           .maybeSingle(),
         supabase
           .from("exercise_sessions")
-          .select("id,created_at,mood_before,mood_after,anxiety_before,anxiety_after,energy_before,energy_after,exercises(title,category,duration_minutes,color)")
+          .select("id,created_at,exercise_id,mood_before,mood_after,anxiety_before,anxiety_after,energy_before,energy_after,exercises(title,category,duration_minutes,color)")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
           .limit(10),
