@@ -386,6 +386,8 @@ const Checkin = () => {
           {saving ? "Sparar..." : "Spara dagen"}
         </Button>
       </div>
+
+      <ActivityPicker open={pickerOpen} onOpenChange={setPickerOpen} onAdd={addActivity} />
     </div>
   );
 };
