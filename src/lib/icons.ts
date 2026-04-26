@@ -92,6 +92,20 @@ const CATEGORY_MAP: Record<string, IconName> = {
   "Rörelse": "run-figure",
 };
 
+/** Map an exercise category (de svenska kategorinamnen) → IconName. */
+export const iconForExerciseCategory = (category: string): IconName => {
+  switch (category) {
+    case "Kom igång": return "play-soft";
+    case "Lugna kroppen": return "lungs-breathe";
+    case "Bryt ältande": return "chat-bubble";
+    case "Sov bättre": return "moon-soft";
+    case "Rör dig mjukt": return "walk-figure";
+    case "Skriv av dig": return "pencil-soft";
+    case "Förbered vårdkontakt": return "stethoscope";
+    default: return "spark";
+  }
+};
+
 /** Map any (slug, category, raw icon string) → safe IconName. */
 export const iconForActivity = (
   raw?: string | null,

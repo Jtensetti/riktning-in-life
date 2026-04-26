@@ -42,9 +42,7 @@ export const HeroBanner = ({
   return (
     <div
       className="-mx-6 -mt-8 mb-6 relative overflow-hidden rounded-b-[36px]"
-      style={{
-        background: `linear-gradient(180deg, hsl(${tone}) 0%, hsl(${tone} / 0.5) 55%, hsl(var(--background) / 0.92) 100%)`,
-      }}
+      style={{ background: `hsl(${tone})` }}
     >
       <div className="h-36 relative">
         {pattern && (
