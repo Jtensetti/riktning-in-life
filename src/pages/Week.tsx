@@ -207,16 +207,76 @@ const Week = () => {
   );
 
   const suggestedActions = useMemo(() => {
+    const now = new Date();
+    const hour = now.getHours();
+    const timeBucket = resolvePreferredTime(actionPrefs.time, hour);
+    const lenBucket = resolvePreferredLength(actionPrefs.length, hour);
+    const [lenMin, lenMax] = lengthRange(lenBucket);
+    const lenIdeal = (lenMin + lenMax) / 2;
+
+    // Räkna hur ofta varje kategori dykt upp i loggar/sessions senaste veckan
+    // — det fungerar som en mjuk "användaren gillar X"-signal.
+    const catCount = new Map<string, number>();
+    for (const a of activities) catCount.set(a.color, (catCount.get(a.color) ?? 0) + 1);
+    for (const s of sessions) {
+      const cat = s.exercises?.category ?? "";
+      if (cat) catCount.set(cat, (catCount.get(cat) ?? 0) + 1);
+    }
+
+    // Vilka övningar har redan körts senaste 7 dagarna? (avoid-repeat)
+    const recentExerciseTitles = new Set(
+      sessions.map((s) => s.exercises?.title).filter((t): t is string => !!t),
+    );
+
+    // Tid-på-dygn-passform per kategori. Hög = bra match.
+    const timeFitForCategory = (category: string): number => {
+      if (timeBucket === "morning") {
+        if (category === "Kom igång" || category === "Rör dig mjukt") return 1;
+        if (category === "Sov bättre") return -0.6;
+        return 0.3;
+      }
+      if (timeBucket === "evening") {
+        if (category === "Sov bättre" || category === "Lugna kroppen" || category === "Bryt ältande") return 1;
+        if (category === "Kom igång") return -0.8;
+        return 0.2;
+      }
+      // dag
+      if (category === "Sociala mikrosteg" || category === "Mat & humör" || category === "Rör dig mjukt") return 0.7;
+      return 0.3;
+    };
+
     return priorities
       .filter((p) => p.matchCategory)
       .map((p) => {
         const candidates = exercises.filter((e) => e.category === p.matchCategory);
         if (candidates.length === 0) return null;
-        const ex = [...candidates].sort((a, b) => a.duration_minutes - b.duration_minutes)[0];
-        return { priority: p, exercise: ex };
+
+        // Personlig poäng per kandidat
+        const scored = candidates.map((ex) => {
+          let score = 50;
+
+          // Längd-passform: glockenkurva runt ideal-längd inom valt span.
+          const inRange = ex.duration_minutes >= lenMin && ex.duration_minutes <= lenMax;
+          const delta = Math.abs(ex.duration_minutes - lenIdeal);
+          if (inRange) score += 20 - Math.min(15, delta);
+          else score -= Math.min(25, delta * 1.5);
+
+          // Tid-på-dygn × kategori
+          score += timeFitForCategory(ex.category) * 18;
+
+          // Tidigare beteende: mjuk bonus om kategorin är vanlig hos användaren
+          score += Math.min(10, (catCount.get(ex.category) ?? 0) * 2);
+
+          // Undvik upprepning av exakt samma övning
+          if (recentExerciseTitles.has(ex.title)) score -= 18;
+
+          return { ex, score };
+        }).sort((a, b) => b.score - a.score);
+
+        return { priority: p, exercise: scored[0].ex, fitScore: scored[0].score };
       })
-      .filter((x): x is { priority: Priority; exercise: ExerciseLite } => x !== null);
-  }, [priorities, exercises]);
+      .filter((x): x is { priority: Priority; exercise: ExerciseLite; fitScore: number } => x !== null);
+  }, [priorities, exercises, activities, sessions, actionPrefs]);
 
   // Data till "Dagens lilla steg" — uppdateras automatiskt när checkins/activities/sessions ändras.
   const todayIso = new Date().toISOString().split("T")[0];
