@@ -20,6 +20,8 @@ export type IconName =
   // Body / health
   | "heart-care"
   | "heart-pulse" // alias of heart-care, kept for back-compat
+  | "stethoscope"   // dedicated icon for vård/care
+  | "shield-soft"   // dedicated icon for crisis plan / safety
   | "pill"
   | "glass-water"
   | "apple-bite"
@@ -28,6 +30,7 @@ export type IconName =
   // Activity
   | "bike"
   | "walk-figure"
+  | "run-figure"    // dedicated icon for movement / exercise logging
   | "stretch-figure"
   | "yoga-pose"
   | "weights"
