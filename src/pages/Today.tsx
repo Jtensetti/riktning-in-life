@@ -699,6 +699,9 @@ const Today = () => {
           </ul>
         </section>
       )}
+
+      {!showSafety && <QuickLogFab onClick={() => setPickerOpen(true)} />}
+      <ActivityPicker open={pickerOpen} onOpenChange={setPickerOpen} onAdd={handleQuickAdd} />
     </AppShell>
   );
 };
