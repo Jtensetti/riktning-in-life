@@ -161,7 +161,7 @@ export const ColorCard = ({
                 ))}
               </div>
             )}
-            <h4 className="text-[20px] leading-[24px] font-extrabold mb-1 pr-12">{title}</h4>
+            <h4 className="text-[20px] leading-[24px] font-extrabold mb-1 pr-20">{title}</h4>
             {reason && <p className="text-sm opacity-90 leading-snug mb-3">{reason}</p>}
             {(metaLeft || metaRight || showChevron) && (
               <div className="flex items-center justify-between gap-2">
