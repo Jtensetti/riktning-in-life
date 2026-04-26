@@ -10,6 +10,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { burdenScore, functionScore, recoveryScore, stabilityScore, splitWeeks, type Checkin, type WeeklyFormScore } from "@/lib/metrics";
+import {
+  PDF_COLORS,
+  drawReportHeader,
+  drawSectionHeader,
+  drawScoreCards,
+  drawSparklineRows,
+  drawHBarChart,
+  drawWeekDots,
+  drawFooter,
+  sevenDayLabels,
+  sevenDayDates,
+  seriesFor,
+} from "@/lib/pdfWidgets";
 
 const QUESTIONS_KEY = "riktning_doctor_questions";
 
