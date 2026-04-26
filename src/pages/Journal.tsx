@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { Illustration } from "@/components/Illustrations";
 import { AbstractIcon, type IconName } from "@/components/AbstractIcon";
+import { HeroBanner } from "@/components/HeroBanner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -200,18 +201,11 @@ const Journal = () => {
 
   return (
     <AppShell>
-      {/* Soft yellow hero */}
-      <div className="-mx-6 -mt-8 mb-6 relative overflow-hidden rounded-b-[36px]"
-           style={{ background: "linear-gradient(180deg, hsl(var(--yellow-journal)) 0%, hsl(var(--yellow-journal) / 0.5) 55%, hsl(var(--background)) 100%)" }}>
-        <div className="h-32 relative">
-          <div className="absolute left-1/2 -translate-x-1/2 top-5 animate-float">
-            <AbstractIcon name="pencil-soft" size={64} color="hsl(var(--orange-start))" />
-          </div>
-          <svg className="absolute inset-x-0 bottom-0 w-full" viewBox="0 0 400 60" preserveAspectRatio="none" aria-hidden>
-            <path d="M0 60 Q200 0 400 60 Z" fill="hsl(var(--background))" />
-          </svg>
-        </div>
-      </div>
+      <HeroBanner
+        tone="var(--yellow-journal)"
+        icon="pencil-soft"
+        iconColor="hsl(var(--orange-start))"
+      />
 
       <header className="mb-6">
         <h1 className="text-[32px] leading-[38px] mb-1">Journal</h1>
