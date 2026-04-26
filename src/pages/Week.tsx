@@ -17,6 +17,10 @@ import { ActivityBars } from "@/components/charts/ActivityBars";
 import { StackedRecovery, type RecoveryDay } from "@/components/charts/StackedRecovery";
 import { Sparkline } from "@/components/charts/Sparkline";
 import { TodayStepCard } from "@/components/TodayStepCard";
+import {
+  loadActionPreferences, saveActionPreferences, resolvePreferredTime, resolvePreferredLength, lengthRange,
+  type ActionPreferences, type PreferredTime, type PreferredLength,
+} from "@/lib/settings";
 
 type ExerciseLite = { id: string; title: string; category: string; duration_minutes: number; color: string };
 type SessionLite = {
@@ -86,6 +90,15 @@ const Week = () => {
   const [exercises, setExercises] = useState<ExerciseLite[]>([]);
   const [fetching, setFetching] = useState(true);
   const [historyFilter, setHistoryFilter] = useState<"all" | "checkins" | "exercises" | "activeTime">("all");
+  const [actionPrefs, setActionPrefs] = useState<ActionPreferences>(() => loadActionPreferences());
+
+  const updatePrefs = (patch: Partial<ActionPreferences>) => {
+    setActionPrefs((p) => {
+      const next = { ...p, ...patch };
+      saveActionPreferences(next);
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
@@ -194,16 +207,76 @@ const Week = () => {
   );
 
   const suggestedActions = useMemo(() => {
+    const now = new Date();
+    const hour = now.getHours();
+    const timeBucket = resolvePreferredTime(actionPrefs.time, hour);
+    const lenBucket = resolvePreferredLength(actionPrefs.length, hour);
+    const [lenMin, lenMax] = lengthRange(lenBucket);
+    const lenIdeal = (lenMin + lenMax) / 2;
+
+    // Räkna hur ofta varje kategori dykt upp i loggar/sessions senaste veckan
+    // — det fungerar som en mjuk "användaren gillar X"-signal.
+    const catCount = new Map<string, number>();
+    for (const a of activities) catCount.set(a.color, (catCount.get(a.color) ?? 0) + 1);
+    for (const s of sessions) {
+      const cat = s.exercises?.category ?? "";
+      if (cat) catCount.set(cat, (catCount.get(cat) ?? 0) + 1);
+    }
+
+    // Vilka övningar har redan körts senaste 7 dagarna? (avoid-repeat)
+    const recentExerciseTitles = new Set(
+      sessions.map((s) => s.exercises?.title).filter((t): t is string => !!t),
+    );
+
+    // Tid-på-dygn-passform per kategori. Hög = bra match.
+    const timeFitForCategory = (category: string): number => {
+      if (timeBucket === "morning") {
+        if (category === "Kom igång" || category === "Rör dig mjukt") return 1;
+        if (category === "Sov bättre") return -0.6;
+        return 0.3;
+      }
+      if (timeBucket === "evening") {
+        if (category === "Sov bättre" || category === "Lugna kroppen" || category === "Bryt ältande") return 1;
+        if (category === "Kom igång") return -0.8;
+        return 0.2;
+      }
+      // dag
+      if (category === "Sociala mikrosteg" || category === "Mat & humör" || category === "Rör dig mjukt") return 0.7;
+      return 0.3;
+    };
+
     return priorities
       .filter((p) => p.matchCategory)
       .map((p) => {
         const candidates = exercises.filter((e) => e.category === p.matchCategory);
         if (candidates.length === 0) return null;
-        const ex = [...candidates].sort((a, b) => a.duration_minutes - b.duration_minutes)[0];
-        return { priority: p, exercise: ex };
+
+        // Personlig poäng per kandidat
+        const scored = candidates.map((ex) => {
+          let score = 50;
+
+          // Längd-passform: glockenkurva runt ideal-längd inom valt span.
+          const inRange = ex.duration_minutes >= lenMin && ex.duration_minutes <= lenMax;
+          const delta = Math.abs(ex.duration_minutes - lenIdeal);
+          if (inRange) score += 20 - Math.min(15, delta);
+          else score -= Math.min(25, delta * 1.5);
+
+          // Tid-på-dygn × kategori
+          score += timeFitForCategory(ex.category) * 18;
+
+          // Tidigare beteende: mjuk bonus om kategorin är vanlig hos användaren
+          score += Math.min(10, (catCount.get(ex.category) ?? 0) * 2);
+
+          // Undvik upprepning av exakt samma övning
+          if (recentExerciseTitles.has(ex.title)) score -= 18;
+
+          return { ex, score };
+        }).sort((a, b) => b.score - a.score);
+
+        return { priority: p, exercise: scored[0].ex, fitScore: scored[0].score };
       })
-      .filter((x): x is { priority: Priority; exercise: ExerciseLite } => x !== null);
-  }, [priorities, exercises]);
+      .filter((x): x is { priority: Priority; exercise: ExerciseLite; fitScore: number } => x !== null);
+  }, [priorities, exercises, activities, sessions, actionPrefs]);
 
   // Data till "Dagens lilla steg" — uppdateras automatiskt när checkins/activities/sessions ändras.
   const todayIso = new Date().toISOString().split("T")[0];
@@ -301,8 +374,35 @@ const Week = () => {
         <section className="mb-7 -mx-6">
           <div className="px-6 mb-3">
             <h2 className="text-xl">Föreslagna handlingar</h2>
-            <p className="text-xs text-text-secondary">Små steg som möter veckans mönster</p>
+            <p className="text-xs text-text-secondary">Små steg som möter veckans mönster — anpassat efter dig</p>
           </div>
+
+          {/* Preferens-kontroller: tid på dagen + längd. "Auto" är default. */}
+          <div className="px-6 mb-3 space-y-2">
+            <PrefRow
+              label="När"
+              value={actionPrefs.time}
+              options={[
+                { key: "auto", label: "Auto" },
+                { key: "morning", label: "Morgon" },
+                { key: "day", label: "Dag" },
+                { key: "evening", label: "Kväll" },
+              ]}
+              onChange={(v) => updatePrefs({ time: v as PreferredTime })}
+            />
+            <PrefRow
+              label="Längd"
+              value={actionPrefs.length}
+              options={[
+                { key: "auto", label: "Auto" },
+                { key: "short", label: "≤5 min" },
+                { key: "medium", label: "6–12 min" },
+                { key: "long", label: "13+ min" },
+              ]}
+              onChange={(v) => updatePrefs({ length: v as PreferredLength })}
+            />
+          </div>
+
           <div className="overflow-x-auto scrollbar-hide snap-x snap-mandatory flex gap-3 px-6 pb-3 -mb-3">
             {suggestedActions.map(({ priority, exercise }, i) => (
               <button
@@ -691,5 +791,39 @@ const MetricCard = ({
     </div>
   );
 };
+
+type PrefOption = { key: string; label: string };
+
+/** Liten segmenterad rad för en enskild preferens. Stilen matchar history-filtret. */
+const PrefRow = ({
+  label, value, options, onChange,
+}: {
+  label: string;
+  value: string;
+  options: PrefOption[];
+  onChange: (key: string) => void;
+}) => (
+  <div className="flex items-center gap-2">
+    <span className="text-[11px] font-extrabold uppercase tracking-wider text-text-secondary w-12 shrink-0">{label}</span>
+    <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-1.5">
+      {options.map((o) => {
+        const active = value === o.key;
+        return (
+          <button
+            key={o.key}
+            role="radio"
+            aria-checked={active}
+            onClick={() => onChange(o.key)}
+            className={`px-2.5 py-1 rounded-full text-[12px] font-extrabold press-soft transition-colors ${
+              active ? "bg-foreground text-background" : "bg-surface-alt text-text-secondary hover:text-foreground"
+            }`}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  </div>
+);
 
 export default Week;
