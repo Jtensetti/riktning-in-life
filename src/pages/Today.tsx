@@ -656,32 +656,26 @@ const Today = () => {
         )}
       </section>
     ),
-    state: () => (
-      <section key="state" className="card-cream p-5 mb-7 animate-pop-in">
-        <div className="flex items-start gap-3 mb-4">
-          <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-extrabold uppercase tracking-wider text-text-secondary mb-1">{phrases.whisper}</p>
-            <h2 className="text-2xl mb-1">{state.title}</h2>
-            <p className="text-sm text-text-secondary">{state.sub}</p>
-          </div>
-          <div className="shrink-0 -mr-1 -mt-1">
-            <AbstractIcon name="blob-smile" size={68} color="hsl(var(--orange-start))" />
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-2 mb-5">
-          <Pill label="Belastning" value={burdenLabel(checkin)} />
-          <Pill label="Funktion" value={fnLabel(checkin)} />
-          <Pill label="Återhämtning" value={recoveryLabel(checkin)} />
-          <Pill label="Risk" value={riskLabel(checkin)} accent={!!checkin?.safety_status && checkin.safety_status !== "none"} />
-        </div>
-        <Button
-          onClick={() => navigate("/checkin")}
-          className="w-full h-12 rounded-full bg-foreground hover:bg-foreground/90 text-background font-extrabold text-[17px] press-soft"
-        >
-          {checkin ? phrases.ctaUpdate : phrases.ctaLog}
-        </Button>
-      </section>
-    ),
+    state: () => {
+      // Färgton följer dagens del — orange för morgon/midday, blå eftermiddag, lila kväll/natt.
+      const accent =
+        time.partOfDay === "morning" || time.partOfDay === "midday" ? "text-orange-deep"
+          : time.partOfDay === "afternoon" ? "text-blue-calm"
+            : "text-purple-sleep";
+      return (
+        <section key="state" className="card-quiet mb-8 animate-pop-in">
+          <p className={`text-[11px] font-extrabold uppercase tracking-wider mb-3 ${accent}`}>{phrases.whisper}</p>
+          <h2 className="text-[34px] leading-[38px] font-extrabold mb-3">{state.title}</h2>
+          <p className="text-base text-text-secondary leading-snug mb-6">{state.sub}</p>
+          <Button
+            onClick={() => navigate("/checkin")}
+            className="w-full h-12 rounded-full bg-foreground hover:bg-foreground/90 text-background font-extrabold text-[15px] press-soft"
+          >
+            {checkin ? phrases.ctaUpdate : phrases.ctaLog}
+          </Button>
+        </section>
+      );
+    },
     quickStarts: () => (
       <div key="quickStarts" className="mb-7 animate-fade-in-up">
         <p className="text-xs font-extrabold uppercase tracking-wider text-text-secondary mb-2 px-1">
