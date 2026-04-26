@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { Illustration } from "@/components/Illustrations";
 import { AbstractIcon, type IconName } from "@/components/AbstractIcon";
+import { HeroBanner } from "@/components/HeroBanner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -175,7 +176,7 @@ const Journal = () => {
             </div>
           ) : (
             t.fields.map((f, i) => (
-              <div key={f.key} className="animate-fade-in-up" style={{ animationDelay: `${i * 50}ms` }}>
+              <div key={f.key} className="animate-fade-in-up" style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}>
                 <label className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-1.5 block">{f.label}</label>
                 <Textarea
                   value={body[f.key] ?? ""}
@@ -200,18 +201,11 @@ const Journal = () => {
 
   return (
     <AppShell>
-      {/* Soft yellow hero */}
-      <div className="-mx-6 -mt-8 mb-6 relative overflow-hidden rounded-b-[36px]"
-           style={{ background: "linear-gradient(180deg, hsl(var(--yellow-journal)) 0%, hsl(var(--yellow-journal) / 0.5) 55%, hsl(var(--background)) 100%)" }}>
-        <div className="h-32 relative">
-          <div className="absolute left-1/2 -translate-x-1/2 top-5 animate-float">
-            <AbstractIcon name="pencil-soft" size={64} color="hsl(var(--orange-start))" />
-          </div>
-          <svg className="absolute inset-x-0 bottom-0 w-full" viewBox="0 0 400 60" preserveAspectRatio="none" aria-hidden>
-            <path d="M0 60 Q200 0 400 60 Z" fill="hsl(var(--background))" />
-          </svg>
-        </div>
-      </div>
+      <HeroBanner
+        tone="var(--yellow-journal)"
+        icon="pencil-soft"
+        iconColor="hsl(var(--orange-start))"
+      />
 
       <header className="mb-6">
         <h1 className="text-[32px] leading-[38px] mb-1">Journal</h1>
@@ -227,7 +221,7 @@ const Journal = () => {
               key={k}
               onClick={() => startTemplate(k)}
               className={`w-full text-left rounded-3xl ${t.bg} ${t.text} px-5 py-4 shadow-card press-soft animate-fade-in-up flex items-center justify-between gap-3`}
-              style={{ animationDelay: `${i * 50}ms`, minHeight: "84px" }}
+              style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})`, minHeight: "84px" }}
             >
               <div className="min-w-0">
                 <div className="text-[17px] font-extrabold leading-tight">{t.title}</div>
@@ -265,7 +259,7 @@ const Journal = () => {
               <li
                 key={e.id}
                 className="card-soft p-4 flex gap-3 items-start animate-fade-in-up"
-                style={{ animationDelay: `${i * 50}ms` }}
+                style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
               >
                 <div className={`w-2 self-stretch rounded-full ${t?.bg ?? "bg-surface-alt"}`} />
                 <div className="flex-1 min-w-0">

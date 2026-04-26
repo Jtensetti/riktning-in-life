@@ -5,11 +5,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { Illustration } from "@/components/Illustrations";
 import { AbstractIcon } from "@/components/AbstractIcon";
+import { HeroBanner } from "@/components/HeroBanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronLeft, ChevronRight, FileText, Pill as PillIcon, ClipboardList, Plus, Download, Trash2, FileDown } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Download, Trash2, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { FORMS, FormType, SIDE_EFFECTS } from "@/lib/forms";
 import jsPDF from "jspdf";
@@ -63,18 +64,11 @@ const Vard = () => {
 
   return (
     <AppShell>
-      {/* Soft blue hero */}
-      <div className="-mx-6 -mt-8 mb-6 relative overflow-hidden rounded-b-[36px]"
-           style={{ background: "linear-gradient(180deg, hsl(var(--blue-calm)) 0%, hsl(var(--blue-calm) / 0.5) 55%, hsl(var(--background)) 100%)" }}>
-        <div className="h-32 relative">
-          <div className="absolute left-1/2 -translate-x-1/2 top-5 animate-float">
-            <AbstractIcon name="heart-pulse" size={64} color="hsl(var(--surface))" />
-          </div>
-          <svg className="absolute inset-x-0 bottom-0 w-full" viewBox="0 0 400 60" preserveAspectRatio="none" aria-hidden>
-            <path d="M0 60 Q200 0 400 60 Z" fill="hsl(var(--background))" />
-          </svg>
-        </div>
-      </div>
+      <HeroBanner
+        tone="var(--blue-calm)"
+        icon="heart-pulse"
+        iconColor="hsl(var(--surface))"
+      />
 
       <header className="mb-6">
         <h1 className="text-[32px] leading-[38px] mb-1">Vård</h1>
@@ -93,10 +87,10 @@ const Vard = () => {
                 key={t}
                 onClick={() => { setActiveForm(t); setView("form"); }}
                 className="w-full card-soft p-4 flex items-center gap-3 text-left press-soft animate-fade-in-up"
-                style={{ animationDelay: `${i * 60}ms` }}
+                style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
               >
-                <div className="w-11 h-11 rounded-2xl bg-blue-calm/10 text-blue-calm grid place-items-center">
-                  <ClipboardList size={20} />
+                <div className="w-11 h-11 rounded-2xl bg-blue-calm/10 grid place-items-center">
+                  <AbstractIcon name="bookmark-soft" size={20} color="hsl(var(--blue-calm))" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-[15px] font-extrabold">{f.title}</div>
@@ -119,8 +113,8 @@ const Vard = () => {
           onClick={() => setView("meds")}
           className="w-full card-soft p-4 flex items-center gap-3 text-left press-soft animate-fade-in-up"
         >
-          <div className="w-11 h-11 rounded-2xl bg-pink-move/15 text-pink-move grid place-items-center">
-            <PillIcon size={20} />
+          <div className="w-11 h-11 rounded-2xl bg-pink-move/15 grid place-items-center">
+            <AbstractIcon name="heart-pulse" size={20} color="hsl(var(--pink-move))" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-[15px] font-extrabold">Läkemedel & biverkningar</div>
@@ -140,7 +134,7 @@ const Vard = () => {
             <Illustration name="care" className="w-full h-auto" />
           </div>
           <div className="px-4 py-4 flex items-center gap-3">
-            <FileText size={22} />
+            <AbstractIcon name="bookmark-soft" size={22} color="hsl(var(--surface))" />
             <div className="flex-1">
               <div className="text-[17px] font-extrabold">Exportera till vården</div>
               <div className="text-xs opacity-90">14, 30 eller 90 dagar · text/PDF</div>
@@ -319,7 +313,7 @@ const MedicationsView = ({ meds, onBack, onChanged, onLogFor }: { meds: Med[]; o
 
       {meds.length === 0 ? (
         <div className="card-cream p-6 text-center">
-          <PillIcon size={28} className="mx-auto mb-2 text-text-secondary" />
+          <div className="grid place-items-center mx-auto mb-2"><AbstractIcon name="heart-pulse" size={28} color="hsl(var(--text-secondary))" /></div>
           <p className="text-sm text-text-secondary">Inga läkemedel tillagda.</p>
         </div>
       ) : (

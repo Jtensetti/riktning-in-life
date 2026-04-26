@@ -133,6 +133,18 @@
   /* Soft press effect for interactive cards */
   .press-soft {
     @apply transition-transform duration-150 active:scale-[0.98];
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* Standardiserad stagger: 50ms steg, klipps vid index 4 så att totala
+     fördröjningen aldrig blir större än 200ms (känns omedelbart även
+     på små skärmar och håller prestandan stabil). Använd som:
+     style={{ animationDelay: \`var(--stagger-\${Math.min(i, 4)})\` }} */
+  :root {
+    --stagger-0: 0ms;
+    --stagger-1: 50ms;
+    --stagger-2: 100ms;
+    --stagger-3: 150ms;
+    --stagger-4: 200ms;
   }
 }
 

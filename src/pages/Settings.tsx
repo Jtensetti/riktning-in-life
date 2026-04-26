@@ -4,10 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { AbstractIcon } from "@/components/AbstractIcon";
+import { HeroBanner } from "@/components/HeroBanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { ChevronLeft, Download, LogOut, Trash2 } from "lucide-react";
+import { ChevronLeft, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { loadReminders, saveReminders, resetOnboarded, type Reminders } from "@/lib/settings";
 
@@ -84,18 +85,11 @@ const Settings = () => {
 
   return (
     <AppShell>
-      {/* Soft cream hero */}
-      <div className="-mx-6 -mt-8 mb-6 relative overflow-hidden rounded-b-[36px]"
-           style={{ background: "linear-gradient(180deg, hsl(var(--cream-card)) 0%, hsl(var(--cream-card) / 0.5) 55%, hsl(var(--background)) 100%)" }}>
-        <div className="h-28 relative">
-          <div className="absolute left-1/2 -translate-x-1/2 top-4 animate-float">
-            <AbstractIcon name="blob-smile" size={56} color="hsl(var(--orange-start))" />
-          </div>
-          <svg className="absolute inset-x-0 bottom-0 w-full" viewBox="0 0 400 60" preserveAspectRatio="none" aria-hidden>
-            <path d="M0 60 Q200 0 400 60 Z" fill="hsl(var(--background))" />
-          </svg>
-        </div>
-      </div>
+      <HeroBanner
+        tone="var(--cream-card)"
+        icon="blob-smile"
+        iconColor="hsl(var(--orange-start))"
+      />
 
       <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm font-bold text-text-secondary mb-4 press-soft">
         <ChevronLeft size={18} /> Tillbaka
@@ -141,14 +135,14 @@ const Settings = () => {
             variant="secondary"
             className="w-full h-12 rounded-full font-extrabold justify-start press-soft"
           >
-            <Download size={16} /> Exportera all data
+            <AbstractIcon name="bookmark-soft" size={16} color="currentColor" /> Exportera all data
           </Button>
           <Button
             onClick={() => setShowDelete(s => !s)}
             disabled={busy}
             className="w-full h-12 rounded-full font-extrabold justify-start bg-red-bg text-red-risk hover:bg-red-bg/80 press-soft"
           >
-            <Trash2 size={16} /> Radera all data
+            <AbstractIcon name="eye-closed" size={16} color="currentColor" /> Radera all data
           </Button>
           {showDelete && (
             <div className="rounded-3xl border-2 border-red-risk bg-red-bg p-4">
