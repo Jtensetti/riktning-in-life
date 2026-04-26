@@ -15,6 +15,7 @@ import ExerciseDetail from "./pages/ExerciseDetail";
 import Week from "./pages/Week";
 import Journal from "./pages/Journal";
 import Vard from "./pages/Vard";
+import WeeklyReport from "./pages/WeeklyReport";
 import Learn from "./pages/Learn";
 import LearnArticle from "./pages/LearnArticle";
 import Sequences from "./pages/Sequences";
