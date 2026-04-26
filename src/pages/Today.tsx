@@ -703,29 +703,23 @@ const Today = () => {
       />
     ),
     primary: () => rec ? (
-      <div key="primary">
-        <h3 className="text-xl mb-3">Rekommenderat just nu</h3>
-        <div className={`rounded-3xl ${rec.color} text-white p-1 mb-4 shadow-soft overflow-hidden`}>
-          <div className="rounded-[20px] overflow-hidden mb-1">
-            <Illustration name={colorIll(colorOf(rec.color))} className="w-full h-auto" />
+      <section key="primary" className="mb-8">
+        <button
+          onClick={() => navigate("/ovningar")}
+          className={`relative overflow-hidden w-full ${rec.color} text-white card-hero press-soft text-left animate-pop-in`}
+        >
+          <span aria-hidden className="pointer-events-none absolute -bottom-14 -right-14 w-52 h-52 rounded-full bg-white/10" />
+          <span aria-hidden className="pointer-events-none absolute top-6 -left-10 w-28 h-28 rounded-full bg-white/10" />
+          <div className="relative z-[1]">
+            <p className="text-[11px] font-extrabold uppercase tracking-wider opacity-85 mb-3">Rekommenderat just nu</p>
+            <h3 className="text-[34px] leading-[36px] font-extrabold mb-3">{rec.title}</h3>
+            <p className="text-base opacity-90 leading-snug mb-6">{rec.reason}</p>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/25 px-4 h-11 text-sm font-extrabold backdrop-blur">
+              Starta <ChevronRight size={16} />
+            </span>
           </div>
-          <div className="px-4 pb-4 pt-1">
-            <h4 className="text-2xl mb-1">{rec.title}</h4>
-            <p className="text-sm opacity-90 mb-4">{rec.reason}</p>
-            <Button
-              onClick={() => navigate("/ovningar")}
-              className="bg-white/20 hover:bg-white/30 text-white rounded-full font-extrabold backdrop-blur"
-            >
-              Starta <ChevronRight size={18} />
-            </Button>
-          </div>
-        </div>
-        <div className="flex gap-2 flex-wrap mb-7">
-          <Chip onClick={() => navigate("/ovningar")}>Andning 4 min</Chip>
-          <Chip onClick={() => navigate("/journal")}>Skriv tre rader</Chip>
-          <Chip onClick={() => navigate("/ovningar")}>Dagsljus 15 min</Chip>
-        </div>
-      </div>
+        </button>
+      </section>
     ) : null,
     forYou: () => <ForYouCarousel key="forYou" picks={picks} />,
     eveningPrediction: () => eveningPrediction ? <EveningPredictionCard key="eveningPrediction" prediction={eveningPrediction} /> : null,
