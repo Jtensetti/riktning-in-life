@@ -939,8 +939,7 @@ const Today = () => {
     <AppShell>
       <ScreenHeader
         screen="today"
-        title={greet.headline}
-        subtitle={greet.sub}
+        subtitle={greet.headline}
         topLeft={
           <button
             onClick={() => navigate("/mer")}
@@ -954,9 +953,7 @@ const Today = () => {
       />
 
       <header className="mb-6">
-        <p className="text-sm font-extrabold text-orange-deep mb-1 animate-fade-in-up">{greet.headline}</p>
-        <h1 className="text-[32px] leading-[38px]">Idag</h1>
-        <p className="text-sm font-semibold text-text-secondary capitalize mt-1">{formatDate()}</p>
+        <p className="text-sm font-semibold text-text-secondary capitalize">{formatDate()}</p>
         {greet.sub && (
           <p className="text-sm text-text-secondary mt-2 animate-fade-in-up">{greet.sub}</p>
         )}
