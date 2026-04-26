@@ -841,17 +841,13 @@ const Week = () => {
         </section>
       )}
 
-      {insights.length > 0 && (
+      {insights.length > 2 && (
         <section className="mb-7">
-          <h2 className="text-xl mb-3 flex items-center gap-2">
-            <Sparkles size={18} className="text-orange-deep" />
-            Mönster vi ser
-          </h2>
+          <h2 className="text-xl mb-3">Fler mönster</h2>
           <div className="space-y-2">
-            {insights.map((s, i) => (
-              <div key={i} className="card-cream p-4 flex gap-3 items-start animate-fade-in-up"
+            {insights.slice(2).map((s, i) => (
+              <div key={i} className="card-quiet animate-fade-in-up"
                 style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}>
-                <AbstractIcon name="blob-smile" size={18} color="hsl(var(--orange-start))" />
                 <p className="text-sm font-semibold leading-snug">{s}</p>
               </div>
             ))}
