@@ -27,9 +27,12 @@ export const PDF_COLORS = {
 export type RGB = readonly [number, number, number];
 
 /* ---------- Hjälp ---------- */
-const setFill = (doc: jsPDF, [r, g, b]: RGB) => doc.setFillColor(r, g, b);
-const setDraw = (doc: jsPDF, [r, g, b]: RGB) => doc.setDrawColor(r, g, b);
-const setText = (doc: jsPDF, [r, g, b]: RGB) => doc.setTextColor(r, g, b);
+const setFill = (doc: jsPDF, c: RGB) => doc.setFillColor(c[0], c[1], c[2]);
+const setDraw = (doc: jsPDF, c: RGB) => doc.setDrawColor(c[0], c[1], c[2]);
+const setText = (doc: jsPDF, c: RGB) => doc.setTextColor(c[0], c[1], c[2]);
+export const setPdfText = setText;
+export const setPdfFill = setFill;
+export const setPdfDraw = setDraw;
 
 /** Klampa 0..1 från ett 0..100-värde. */
 const norm100 = (v: number | null) => (v == null ? 0 : Math.max(0, Math.min(1, v / 100)));
