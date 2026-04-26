@@ -617,6 +617,9 @@ const Today = () => {
         <ForYouCarousel picks={picks} />
       )}
 
+      {eveningPrediction && <EveningPredictionCard prediction={eveningPrediction} />}
+
+
       {rec && (
         <>
           <h3 className="text-xl mb-3">Rekommenderat just nu</h3>
