@@ -15,7 +15,7 @@ import { getTimeContext, type TimeContext } from "@/lib/timeContext";
 import { useWeather, isOutdoorFriendly, weatherLabel, hasAskedWeatherPermission, isWeatherPermissionGranted, type Weather } from "@/lib/weather";
 import { ForYouCarousel } from "@/components/ForYouCarousel";
 import { recommendForToday, type Exercise as RecExercise, type Pick } from "@/lib/recommend";
-import { BookOpen, Sparkles, Moon } from "lucide-react";
+import { Moon } from "lucide-react";
 import { StreakRing } from "@/components/StreakRing";
 import { QuickLogPills } from "@/components/QuickLogPills";
 import { QuickLogFab } from "@/components/QuickLogFab";
@@ -598,7 +598,7 @@ const Today = () => {
             className={`w-full ${colorBg(todayRoutine.color)} ${todayRoutine.color === "yellow" ? "text-foreground" : "text-white"} rounded-3xl p-5 text-left shadow-soft press-soft flex items-center gap-3`}
           >
             <div className={`shrink-0 w-12 h-12 grid place-items-center rounded-2xl ${todayRoutine.color === "yellow" ? "bg-foreground/10" : "bg-white/20"}`}>
-              <Sparkles size={22} />
+              <AbstractIcon name="play-soft-circle" size={22} color="currentColor" />
             </div>
             <div className="flex-1 min-w-0">
               <h4 className="text-[18px] leading-tight font-extrabold mb-0.5">{todayRoutine.title}</h4>
@@ -625,7 +625,7 @@ const Today = () => {
             className="w-full card-cream p-4 text-left flex items-start gap-3 press-soft"
           >
             <div className={`shrink-0 w-12 h-12 grid place-items-center rounded-2xl ${colorBg(featuredArticle.color)} ${featuredArticle.color === "yellow" ? "text-foreground" : "text-white"}`}>
-              <BookOpen size={22} />
+              <AbstractIcon name="book-open" size={22} color="currentColor" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[11px] font-extrabold uppercase tracking-wider text-text-secondary mb-0.5">

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { AbstractIcon } from "@/components/AbstractIcon";
-import { ChevronLeft, Phone, Pencil, Check } from "lucide-react";
+import { ChevronLeft, Pencil, Check } from "lucide-react";
 import { toast } from "sonner";
 
 type Contact = { name: string; phone: string; role?: string };
@@ -179,7 +179,7 @@ const CrisisPlan = () => {
               style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
             >
               <div className="w-11 h-11 rounded-2xl bg-red-risk text-white grid place-items-center shrink-0">
-                <Phone size={18} strokeWidth={2.6} />
+                <AbstractIcon name="phone-soft" size={18} color="hsl(var(--surface))" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-extrabold truncate">{s.name}</p>
@@ -249,7 +249,7 @@ const ReadView = ({ plan }: { plan: Plan }) => {
                 style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
               >
                 <div className="w-10 h-10 rounded-2xl bg-orange-start/15 grid place-items-center shrink-0">
-                  <Phone size={16} className="text-orange-deep" strokeWidth={2.6} />
+                  <AbstractIcon name="phone-soft" size={16} color="hsl(var(--orange-deep))" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-extrabold truncate">{c.name || "—"}</p>

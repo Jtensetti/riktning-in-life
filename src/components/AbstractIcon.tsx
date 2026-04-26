@@ -36,9 +36,13 @@ export type IconName =
   | "stethoscope"   // dedicated icon for vård/care
   | "shield-soft"   // dedicated icon for crisis plan / safety
   | "pill"
+  | "pill-bottle"      // dedicated icon for medication bottle / Vård
   | "glass-water"
+  | "droplet"          // hydration / single drop, complements glass-water
   | "apple-bite"
+  | "meal-plate"       // food / meals
   | "lungs-breathe"
+  | "breath-wave"      // breathing exercise (rhythm wave)
   | "bed-soft"
   // Activity
   | "bike"
@@ -51,13 +55,19 @@ export type IconName =
   // Daily / social
   | "chat-bubble"
   | "people-two"
+  | "phone-soft"       // phone / contact (crisis plan, vård contacts)
   | "work-bag"
   | "coffee-cup"
+  | "book-open"        // open book (Learn / read articles)
   // UI / control
   | "plus-soft"
   | "check-soft"
   | "clock-soft"
+  | "clock-alarm"      // alarm clock (reminders)
   | "calendar-soft"
+  | "calendar-check"   // calendar with a checkmark
+  | "play-soft-circle" // play inside a circle (sequences, exercises)
+  | "pause-soft"       // pause (active exercise)
   | "lock-soft"
   | "info-soft"
   | "warning-soft"
@@ -659,6 +669,129 @@ export const AbstractIcon = ({
           />
           <path d="M9 23 l-3 4" stroke={color} strokeWidth="2.2" strokeLinecap="round" />
           <path d="M14 28 l-2 2" stroke={color} strokeWidth="2.2" strokeLinecap="round" opacity="0.6" />
+        </svg>
+      );
+
+    // ======================================================================
+    // === ADDITIONAL ICONS — medication, hydration, food, breath, time, =====
+    // === reminders, play/pause, info, comms ================================
+    // ======================================================================
+
+    case "pill-bottle":
+      // Medicinflaska — etikett + lock. Kompletterar enskild "pill" för Vård.
+      return (
+        <svg {...common}>
+          <rect x="9" y="3" width="14" height="4" rx="1.5" fill={color} />
+          <rect x="7" y="7" width="18" height="22" rx="3" fill={color} />
+          <rect x="10" y="13" width="12" height="9" rx="1.5" fill={a} />
+          <rect x="14.4" y="15" width="3.2" height="5" rx="1.4" fill={color} />
+          <rect x="12" y="16.4" width="8" height="2.2" rx="1.1" fill={color} />
+        </svg>
+      );
+
+    case "droplet":
+      // Vattendroppe — komplement till "glass-water". Form med liten glansprick.
+      return (
+        <svg {...common}>
+          <path
+            d="M16 3 c5 6 9 11 9 15 a9 9 0 0 1 -18 0 c0 -4 4 -9 9 -15 z"
+            fill={color}
+          />
+          <ellipse cx="12.5" cy="20" rx="2" ry="3" fill={a} opacity="0.7" />
+        </svg>
+      );
+
+    case "meal-plate":
+      // Tallrik med mat — bestick på sidan, mjuka former.
+      return (
+        <svg {...common}>
+          <circle cx="16" cy="17" r="11" fill={color} />
+          <circle cx="16" cy="17" r="7" fill={a} opacity="0.55" />
+          <path d="M3 6 v8 a2 2 0 0 0 2 2 V6" stroke={color} strokeWidth="2.2" strokeLinecap="round" fill="none" />
+          <path d="M27 6 v8 a3 3 0 0 0 3 -3 V6" stroke={color} strokeWidth="2.2" strokeLinecap="round" fill="none" opacity="0.7" />
+        </svg>
+      );
+
+    case "breath-wave":
+      // Andningsvåg — sinusvåg + mjuk halo. Symboliserar takt och lugn andning.
+      return (
+        <svg {...common}>
+          <circle cx="16" cy="16" r="13" fill={color} opacity="0.18" />
+          <path
+            d="M3 16 q3 -7 6 0 t6 0 t6 0 t6 0"
+            stroke={color}
+            strokeWidth="2.6"
+            strokeLinecap="round"
+            fill="none"
+          />
+          <circle cx="16" cy="16" r="2.2" fill={color} />
+        </svg>
+      );
+
+    case "calendar-check":
+      // Kalender med tydlig bock — för "schemalagd & gjord".
+      return (
+        <svg {...common}>
+          <rect x="4" y="6" width="24" height="22" rx="3" fill={color} />
+          <rect x="4" y="6" width="24" height="6" rx="3" fill={a} />
+          <rect x="9" y="3" width="2.5" height="6" rx="1.2" fill={color} />
+          <rect x="20.5" y="3" width="2.5" height="6" rx="1.2" fill={color} />
+          <path d="M10 20 l4 4 l8 -8" stroke="hsl(var(--surface))" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        </svg>
+      );
+
+    case "clock-alarm":
+      // Väckarklocka — klocka med två "öron" och visare. För påminnelser.
+      return (
+        <svg {...common}>
+          <path d="M5 6 L9 3 M27 6 L23 3" stroke={color} strokeWidth="2.4" strokeLinecap="round" />
+          <circle cx="16" cy="18" r="11" fill={color} />
+          <circle cx="16" cy="18" r="8" fill={a} opacity="0.45" />
+          <path d="M16 12 v6 l4 2" stroke="hsl(var(--surface))" strokeWidth="2.4" strokeLinecap="round" fill="none" />
+          <rect x="11" y="28" width="3" height="2.5" rx="1" fill={color} />
+          <rect x="18" y="28" width="3" height="2.5" rx="1" fill={color} />
+        </svg>
+      );
+
+    case "play-soft-circle":
+      // Play i cirkel — för sekvenser och övningar. Symmetrisk triangel inuti.
+      return (
+        <svg {...common}>
+          <circle cx="16" cy="16" r="13" fill={color} />
+          <path d="M13 10.5 L23 16 L13 21.5 Z" fill="hsl(var(--surface))" />
+        </svg>
+      );
+
+    case "pause-soft":
+      // Paus i cirkel — för pågående övning.
+      return (
+        <svg {...common}>
+          <circle cx="16" cy="16" r="13" fill={color} />
+          <rect x="11" y="10" width="3.4" height="12" rx="1.4" fill="hsl(var(--surface))" />
+          <rect x="17.6" y="10" width="3.4" height="12" rx="1.4" fill="hsl(var(--surface))" />
+        </svg>
+      );
+
+    case "phone-soft":
+      // Telefon — mjuk lur, för krisplan-kontakter.
+      return (
+        <svg {...common}>
+          <path
+            d="M7 4 h5 a2 2 0 0 1 2 1.5 l1.5 5 a2 2 0 0 1 -1 2.3 l-2 1.2 a14 14 0 0 0 6 6 l1.2 -2 a2 2 0 0 1 2.3 -1 l5 1.5 a2 2 0 0 1 1.5 2 v5 a2 2 0 0 1 -2 2 C13 27.5 4.5 19 4.5 6 a2 2 0 0 1 2.5 -2 z"
+            fill={color}
+          />
+        </svg>
+      );
+
+    case "book-open":
+      // Öppen bok — för Learn / artiklar. Två sidor som möts i mitten.
+      return (
+        <svg {...common}>
+          <path d="M3 7 q6 -2 13 1 v19 q-7 -3 -13 -1 z" fill={color} />
+          <path d="M29 7 q-6 -2 -13 1 v19 q7 -3 13 -1 z" fill={color} opacity="0.85" />
+          <path d="M16 8 v19" stroke="hsl(var(--surface))" strokeWidth="1.4" opacity="0.6" />
+          <path d="M6 11 q4 -1 8 1 M6 16 q4 -1 8 1 M6 21 q4 -1 8 1" stroke={a} strokeWidth="1.2" strokeLinecap="round" fill="none" />
+          <path d="M18 12 q4 -2 8 -1 M18 17 q4 -2 8 -1 M18 22 q4 -2 8 -1" stroke={a} strokeWidth="1.2" strokeLinecap="round" fill="none" />
         </svg>
       );
 

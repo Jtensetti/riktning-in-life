@@ -8,7 +8,7 @@ import { HeroBanner } from "@/components/HeroBanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { ChevronLeft, ChevronRight, LogOut, BookOpen, Sparkles, HeartPulse } from "lucide-react";
+import { ChevronLeft, ChevronRight, LogOut, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { loadReminders, saveReminders, resetOnboarded, type Reminders } from "@/lib/settings";
 import { useWeather, weatherLabel, isWeatherPermissionGranted, setWeatherPermissionGranted } from "@/lib/weather";
@@ -121,7 +121,10 @@ const Settings = () => {
       </section>
 
       <section className="mb-7">
-        <h2 className="text-lg font-extrabold mb-3">Påminnelser</h2>
+        <h2 className="text-lg font-extrabold mb-3 flex items-center gap-2">
+          <AbstractIcon name="clock-alarm" size={20} color="hsl(var(--orange-deep))" />
+          Påminnelser
+        </h2>
         <div className="space-y-3">
           <ToggleRow label="Morgon-checkin" checked={reminders.morning_checkin} onChange={v => updateReminders({ ...reminders, morning_checkin: v })} />
           <ToggleRow label="Kvällsjournal" checked={reminders.evening_journal} onChange={v => updateReminders({ ...reminders, evening_journal: v })} />
@@ -184,7 +187,7 @@ const Settings = () => {
         <h2 className="text-lg font-extrabold mb-3">Mer i appen</h2>
         <div className="space-y-3">
           <LinkRow
-            icon={<BookOpen size={18} />}
+            icon={<AbstractIcon name="book-open" size={18} color="currentColor" />}
             iconBg="bg-blue-calm/15"
             iconColor="text-blue-calm"
             label="Lär dig"
@@ -200,7 +203,7 @@ const Settings = () => {
             onClick={() => navigate("/rutiner")}
           />
           <LinkRow
-            icon={<HeartPulse size={18} />}
+            icon={<AbstractIcon name="shield-soft" size={18} color="currentColor" />}
             iconBg="bg-red-risk/15"
             iconColor="text-red-risk"
             label="Min krisplan"
