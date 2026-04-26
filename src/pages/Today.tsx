@@ -241,7 +241,21 @@ const Today = () => {
       </header>
 
       {showSafety && (
-...
+        <div className="rounded-3xl border-2 border-red-risk bg-red-bg p-5 mb-7 animate-pop-in">
+          <div className="mb-3 -mx-1">
+            <Illustration name="safety" className="w-full h-auto rounded-2xl" />
+          </div>
+          <h3 className="text-lg font-extrabold text-red-risk mb-2">Allvarlig signal</h3>
+          <p className="text-sm text-foreground/80 mb-3">
+            Det här ska inte hanteras som vanlig statistik. Kontakta vården, psykiatrisk akutmottagning, 1177 eller 112 vid akut fara. Kontakta också någon du litar på.
+          </p>
+          <Button
+            onClick={() => navigate("/vard")}
+            className="bg-red-risk hover:bg-red-risk/90 text-white rounded-full font-extrabold press-soft"
+          >
+            Gå till Vård
+          </Button>
+        </div>
       )}
 
       {/* State card — compact horizontal layout */}
