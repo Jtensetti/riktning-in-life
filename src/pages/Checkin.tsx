@@ -105,6 +105,11 @@ const Checkin = () => {
             safety_status: (data.safety_status as Form["safety_status"]) ?? "none",
             note: data.note ?? "",
           });
+          // Plocka ut djup-svaret om det finns
+          if (data.note) {
+            const m = String(data.note).match(/#deep:[a-z_]+=(.*)$/m);
+            if (m) setDeepAnswer(m[1]);
+          }
           const prevKind = (data as any).weather_kind as WeatherKind | null | undefined;
           if (prevKind && weather && prevKind !== weather.kind) setWeatherOverride(prevKind);
         }
