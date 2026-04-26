@@ -663,16 +663,18 @@ const Week = () => {
                 }
                 className="mb-3"
               >
-                <ActivityBars
-                  data={timeline.map((d) => ({
-                    iso: d.iso,
-                    minutes: minutesFor(d),
-                    color: historyFilter === "all"
-                      ? (d.acts[0]?.color ?? d.sess[0]?.exercises?.color ?? "green")
-                      : colorByFilter[historyFilter],
-                  }))}
-                  height={120}
-                />
+                <Suspense fallback={<ChartFallback height={120} />}>
+                  <ActivityBars
+                    data={timeline.map((d) => ({
+                      iso: d.iso,
+                      minutes: minutesFor(d),
+                      color: historyFilter === "all"
+                        ? (d.acts[0]?.color ?? d.sess[0]?.exercises?.color ?? "green")
+                        : colorByFilter[historyFilter],
+                    }))}
+                    height={120}
+                  />
+                </Suspense>
               </ChartCard>
 
               {historyFilter === "all" && (
