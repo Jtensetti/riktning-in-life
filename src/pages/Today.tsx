@@ -6,7 +6,7 @@ import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Illustration, colorIll } from "@/components/Illustrations";
 import { AbstractIcon, weatherIcon, weatherIconColor, weatherIconAccent, type IconName } from "@/components/AbstractIcon";
-import { HeroBanner } from "@/components/HeroBanner";
+import { ScreenHeader } from "@/components/ui-kit/ScreenHeader";
 import { WeatherChip } from "@/components/WeatherChip";
 import { WeatherPermissionCard } from "@/components/WeatherPermissionCard";
 import { ChevronRight, Settings as SettingsIcon } from "lucide-react";
@@ -937,13 +937,10 @@ const Today = () => {
 
   return (
     <AppShell>
-      <HeroBanner
-        tone={hero.tone}
-        icon={hero.icon}
-        iconColor={hero.iconColor}
-        iconAccent={hero.iconAccent}
-        mood={hero.mood}
-        pattern={hero.pattern}
+      <ScreenHeader
+        screen="today"
+        title={greet.headline}
+        subtitle={greet.sub}
         topLeft={
           <button
             onClick={() => navigate("/mer")}
