@@ -117,7 +117,7 @@ const Settings = () => {
             navigate("/auth", { replace: true });
           }}
           variant="secondary"
-          className="w-full h-12 rounded-full font-extrabold"
+          className="w-full h-12 rounded-full font-extrabold press-soft"
         >
           <LogOut size={16} /> Logga ut
         </Button>
