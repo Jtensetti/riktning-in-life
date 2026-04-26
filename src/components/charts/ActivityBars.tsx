@@ -45,11 +45,15 @@ export const ActivityBars = ({ data, height = 128, emptyMin = 4 }: Props) => {
   );
 
   const maxMinutes = Math.max(60, ...data.map((d) => d.minutes));
+  const sig = buildChartSignature(
+    data.map((d) => ({ value: d.minutes, iso: d.iso })),
+  );
 
   return (
-    <div style={{ height }} role="img" aria-label="Aktiv tid per dag senaste veckan">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={chartData} margin={{ top: 6, right: 0, bottom: 0, left: 0 }} barCategoryGap="22%">
+    <AnimatedChart signature={sig}>
+      <div style={{ height }} role="img" aria-label="Aktiv tid per dag senaste veckan">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={chartData} margin={{ top: 6, right: 0, bottom: 0, left: 0 }} barCategoryGap="22%">
           <XAxis
             dataKey="day"
             tickLine={false}
