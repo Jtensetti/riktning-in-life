@@ -689,14 +689,10 @@ const Today = () => {
       </div>
     ),
     baselineProgress: () => (
-      <div key="baselineProgress" className="card-cream p-3 mb-5 flex items-center gap-3 animate-fade-in-up">
-        <div className="shrink-0 w-9 h-9 rounded-2xl bg-blue-calm/15 grid place-items-center">
-          <AbstractIcon name="bookmark-soft" size={16} color="hsl(var(--blue-calm))" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[13px] font-extrabold leading-tight">Baslinje byggs · dag {baselineDays} av {BASELINE_MIN_DAYS}</p>
-          <p className="text-[11px] text-text-secondary leading-snug">Vi visar riktning när baslinjen finns.</p>
-        </div>
+      <div key="baselineProgress" className="card-quiet mb-6 animate-fade-in-up">
+        <p className="text-[11px] font-extrabold uppercase tracking-wider text-blue-calm mb-1">Bygger baslinje</p>
+        <p className="text-base font-extrabold leading-tight">Dag {baselineDays} av {BASELINE_MIN_DAYS}</p>
+        <p className="text-xs text-text-secondary leading-snug mt-1">Vi visar riktning när baslinjen finns.</p>
       </div>
     ),
     quickLog: () => (
