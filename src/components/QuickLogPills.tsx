@@ -64,11 +64,38 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
         if (!cancelled) setFavs([]);
         return;
       }
-      const { data: cat } = await supabase
-        .from("activity_catalog")
-        .select("slug,label,category,icon,color,default_minutes")
-        .in("slug", slugs);
-      if (!cancelled) setFavs(((cat ?? []) as any[]).slice(0, 3));
+      const since = new Date(Date.now() - 30 * 86_400_000).toISOString().split("T")[0];
+      const [{ data: cat }, { data: logs }] = await Promise.all([
+        supabase
+          .from("activity_catalog")
+          .select("slug,label,category,icon,color,default_minutes")
+          .in("slug", slugs),
+        supabase
+          .from("activity_logs")
+          .select("activity_slug,date")
+          .eq("user_id", user.id)
+          .in("activity_slug", slugs)
+          .gte("date", since)
+          .order("date", { ascending: false }),
+      ]);
+      const today = todayISO();
+      const stats = new Map<string, { last: string | null; count: number }>();
+      for (const l of (logs ?? []) as any[]) {
+        const cur = stats.get(l.activity_slug) ?? { last: null, count: 0 };
+        cur.count += 1;
+        if (!cur.last || l.date > cur.last) cur.last = l.date;
+        stats.set(l.activity_slug, cur);
+      }
+      const enriched: FavItem[] = ((cat ?? []) as any[]).slice(0, 3).map((c) => {
+        const s = stats.get(c.slug);
+        let lastLoggedDays: number | null = null;
+        if (s?.last) {
+          const diffMs = new Date(today).getTime() - new Date(s.last).getTime();
+          lastLoggedDays = Math.max(0, Math.round(diffMs / 86_400_000));
+        }
+        return { ...c, lastLoggedDays, logCount30d: s?.count ?? 0 };
+      });
+      if (!cancelled) setFavs(enriched);
     })();
     return () => { cancelled = true; };
   }, [user]);
