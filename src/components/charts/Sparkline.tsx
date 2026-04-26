@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
 import { toneHsl, prefersReducedMotion, type ChartTone } from "@/lib/chartColors";
+import { AnimatedChart } from "./AnimatedChart";
 
 interface Props {
   values: (number | null)[];
