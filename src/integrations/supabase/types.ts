@@ -1,0 +1,318 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
+  public: {
+    Tables: {
+      daily_checkins: {
+        Row: {
+          anxiety: number | null
+          created_at: string
+          date: string
+          daytime_bed_sofa_time_minutes: number | null
+          energy: number | null
+          function_score: number | null
+          getting_started: number | null
+          guilt_selfcriticism: number | null
+          hopelessness: number | null
+          id: string
+          meaningful_activity: string | null
+          medication_taken: string | null
+          mood_heaviness: number | null
+          movement_today: string | null
+          note: string | null
+          safety_status: string | null
+          sleep_hours: number | null
+          sleep_quality: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          anxiety?: number | null
+          created_at?: string
+          date?: string
+          daytime_bed_sofa_time_minutes?: number | null
+          energy?: number | null
+          function_score?: number | null
+          getting_started?: number | null
+          guilt_selfcriticism?: number | null
+          hopelessness?: number | null
+          id?: string
+          meaningful_activity?: string | null
+          medication_taken?: string | null
+          mood_heaviness?: number | null
+          movement_today?: string | null
+          note?: string | null
+          safety_status?: string | null
+          sleep_hours?: number | null
+          sleep_quality?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          anxiety?: number | null
+          created_at?: string
+          date?: string
+          daytime_bed_sofa_time_minutes?: number | null
+          energy?: number | null
+          function_score?: number | null
+          getting_started?: number | null
+          guilt_selfcriticism?: number | null
+          hopelessness?: number | null
+          id?: string
+          meaningful_activity?: string | null
+          medication_taken?: string | null
+          mood_heaviness?: number | null
+          movement_today?: string | null
+          note?: string | null
+          safety_status?: string | null
+          sleep_hours?: number | null
+          sleep_quality?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      exercise_sessions: {
+        Row: {
+          anxiety_after: number | null
+          anxiety_before: number | null
+          created_at: string
+          date: string
+          energy_after: number | null
+          energy_before: number | null
+          exercise_id: string
+          id: string
+          mood_after: number | null
+          mood_before: number | null
+          note: string | null
+          user_id: string
+        }
+        Insert: {
+          anxiety_after?: number | null
+          anxiety_before?: number | null
+          created_at?: string
+          date?: string
+          energy_after?: number | null
+          energy_before?: number | null
+          exercise_id: string
+          id?: string
+          mood_after?: number | null
+          mood_before?: number | null
+          note?: string | null
+          user_id: string
+        }
+        Update: {
+          anxiety_after?: number | null
+          anxiety_before?: number | null
+          created_at?: string
+          date?: string
+          energy_after?: number | null
+          energy_before?: number | null
+          exercise_id?: string
+          id?: string
+          mood_after?: number | null
+          mood_before?: number | null
+          note?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercise_sessions_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exercises: {
+        Row: {
+          category: string
+          color: string
+          created_at: string
+          description: string
+          duration_minutes: number
+          id: string
+          not_recommended_for_json: Json
+          recommended_for_json: Json
+          steps_json: Json
+          title: string
+          type: string
+        }
+        Insert: {
+          category: string
+          color?: string
+          created_at?: string
+          description: string
+          duration_minutes: number
+          id?: string
+          not_recommended_for_json?: Json
+          recommended_for_json?: Json
+          steps_json?: Json
+          title: string
+          type: string
+        }
+        Update: {
+          category?: string
+          color?: string
+          created_at?: string
+          description?: string
+          duration_minutes?: number
+          id?: string
+          not_recommended_for_json?: Json
+          recommended_for_json?: Json
+          steps_json?: Json
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const
