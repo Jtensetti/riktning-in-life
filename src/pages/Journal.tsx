@@ -190,7 +190,9 @@ const Journal = () => {
         <Button
           disabled={!canSave || saving}
           onClick={save}
-          className="w-full h-12 rounded-full bg-foreground hover:bg-foreground/90 text-background font-extrabold text-[17px] press-soft"
+          variant="pill-brand"
+          size="pill"
+          className="w-full"
         >
           {saving ? "Sparar…" : "Spara"}
         </Button>
