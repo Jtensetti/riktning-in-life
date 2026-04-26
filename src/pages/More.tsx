@@ -39,14 +39,6 @@ const More = () => {
 
       <section className="mb-7 space-y-3">
         <Row
-          icon={<HeartPulse size={18} />}
-          iconBg="bg-green-recovery/15"
-          iconColor="text-green-recovery"
-          label="Hälsoanslutning"
-          sub="Synka steg, sömn och hjärtfrekvens"
-          onClick={() => navigate("/health")}
-        />
-        <Row
           icon={<SettingsIcon size={18} />}
           iconBg="bg-blue-calm/15"
           iconColor="text-blue-calm"
