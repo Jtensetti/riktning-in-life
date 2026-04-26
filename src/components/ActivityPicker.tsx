@@ -49,6 +49,70 @@ const moodFaces: { value: number; label: string; emoji: string }[] = [
 
 const durationPresets = [15, 30, 60, 90];
 
+/**
+ * PickerCard — locked spec per design plan:
+ *  - 96px h, radius 24, padding 16
+ *  - IconTile 44 in left
+ *  - title 18–20/800, max 2 rader, ellipsis
+ *  - star 28px, opacity 0.55 inactive, full opacity active
+ */
+const PickerCard = ({
+  item,
+  isFav,
+  onPick,
+  onToggleFav,
+  delayMs,
+}: {
+  item: CatalogItem;
+  isFav: boolean;
+  onPick: () => void;
+  onToggleFav: (e: React.MouseEvent) => void;
+  delayMs?: number;
+}) => (
+  <div
+    className={`relative shadow-card animate-fade-in-up ${colorBg(item.color)}`}
+    style={{
+      borderRadius: 24,
+      height: 96,
+      animationDelay: delayMs ? `${delayMs}ms` : undefined,
+    }}
+  >
+    <button
+      onClick={onPick}
+      className="w-full h-full text-left press-soft flex items-center gap-3"
+      style={{ padding: 16 }}
+    >
+      <div
+        className="shrink-0 grid place-items-center"
+        style={{
+          width: 44,
+          height: 44,
+          borderRadius: "var(--icon-tile-radius)",
+          background: "hsl(0 0% 100% / 0.22)",
+        }}
+        aria-hidden
+      >
+        <AbstractIcon name={item.icon as IconName} size={26} color="currentColor" inline />
+      </div>
+      <span className="font-extrabold text-[18px] leading-[22px] pr-7 line-clamp-2">
+        {item.label}
+      </span>
+    </button>
+    <button
+      onClick={onToggleFav}
+      aria-label={isFav ? "Ta bort favorit" : "Spara som favorit"}
+      className="absolute top-2 right-2 grid place-items-center press-soft"
+      style={{
+        width: 32,
+        height: 32,
+        opacity: isFav ? 1 : 0.55,
+      }}
+    >
+      <Star size={28} className={isFav ? "fill-current" : ""} strokeWidth={2.2} />
+    </button>
+  </div>
+);
+
 interface Props {
   open: boolean;
   onOpenChange: (o: boolean) => void;
