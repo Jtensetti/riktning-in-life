@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
-import { AbstractIcon } from "@/components/AbstractIcon";
+import { AbstractIcon, weatherIcon, weatherIconColor } from "@/components/AbstractIcon";
 import { HeroBanner } from "@/components/HeroBanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { ChevronLeft, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { loadReminders, saveReminders, resetOnboarded, type Reminders } from "@/lib/settings";
+import { useWeather, weatherLabel, isWeatherPermissionGranted, setWeatherPermissionGranted } from "@/lib/weather";
 
 const Settings = () => {
   const { user } = useAuth();
@@ -19,6 +20,8 @@ const Settings = () => {
   const [confirmText, setConfirmText] = useState("");
   const [showDelete, setShowDelete] = useState(false);
   const [busy, setBusy] = useState(false);
+  const { weather, status: weatherStatus, requestLocation } = useWeather(false);
+  const [locationGranted, setLocationGranted] = useState<boolean>(isWeatherPermissionGranted());
 
   const updateReminders = (r: Reminders) => {
     setReminders(r);
@@ -123,6 +126,57 @@ const Settings = () => {
           <ToggleRow label="Morgon-checkin" checked={reminders.morning_checkin} onChange={v => updateReminders({ ...reminders, morning_checkin: v })} />
           <ToggleRow label="Kvällsjournal" checked={reminders.evening_journal} onChange={v => updateReminders({ ...reminders, evening_journal: v })} />
           <ToggleRow label="Veckoformulär" checked={reminders.weekly_forms} onChange={v => updateReminders({ ...reminders, weekly_forms: v })} />
+        </div>
+      </section>
+
+      <section className="mb-7">
+        <h2 className="text-lg font-extrabold mb-3">Plats & väder</h2>
+        <div className="card-cream p-4">
+          <div className="flex items-start gap-3 mb-3">
+            <AbstractIcon
+              name={weather ? weatherIcon(weather.kind, weather.isDaylight) : "weather-partly"}
+              size={36}
+              color={weather ? weatherIconColor(weather.kind, weather.isDaylight) : "hsl(var(--orange-start))"}
+              accent="hsl(var(--cream-card))"
+            />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-extrabold">
+                {locationGranted ? "Plats aktiv" : "Plats avstängd"}
+              </p>
+              <p className="text-xs text-text-secondary mt-0.5">
+                {weather
+                  ? `${weatherLabel(weather.kind)} · ${Math.round(weather.tempC)}°`
+                  : "Anpassar tips och loggar vädret automatiskt."}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              onClick={async () => {
+                const w = await requestLocation();
+                setLocationGranted(isWeatherPermissionGranted());
+                if (w) toast.success("Plats uppdaterad");
+              }}
+              variant="secondary"
+              className="flex-1 h-11 rounded-full font-extrabold press-soft"
+              disabled={weatherStatus === "loading" || weatherStatus === "prompting"}
+            >
+              {locationGranted ? "Hämta igen" : "Tillåt plats"}
+            </Button>
+            {locationGranted && (
+              <Button
+                onClick={() => {
+                  setWeatherPermissionGranted(false);
+                  setLocationGranted(false);
+                  toast.success("Platsåtkomst avstängd");
+                }}
+                variant="secondary"
+                className="h-11 rounded-full font-extrabold press-soft"
+              >
+                Stäng av
+              </Button>
+            )}
+          </div>
         </div>
       </section>
 
