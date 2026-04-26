@@ -3,6 +3,7 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
 import { chartTokens, prefersReducedMotion, toneHsl } from "@/lib/chartColors";
+import { AnimatedChart, buildChartSignature } from "./AnimatedChart";
 
 export type DirectionPoint = {
   /** ISO-datum (YYYY-MM-DD) i kronologisk ordning. */
