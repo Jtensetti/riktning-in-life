@@ -246,6 +246,8 @@ export const AbstractIcon = ({
           <circle cx="29" cy="20" r="0.9" fill={a} opacity="0.6" />
         </svg>
       );
+
+    case "play-soft":
       return (
         <svg {...common}>
           {/* Mjuk halo bakom triangeln */}
