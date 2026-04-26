@@ -121,7 +121,10 @@ const Settings = () => {
       </section>
 
       <section className="mb-7">
-        <h2 className="text-lg font-extrabold mb-3">Påminnelser</h2>
+        <h2 className="text-lg font-extrabold mb-3 flex items-center gap-2">
+          <AbstractIcon name="clock-alarm" size={20} color="hsl(var(--orange-deep))" />
+          Påminnelser
+        </h2>
         <div className="space-y-3">
           <ToggleRow label="Morgon-checkin" checked={reminders.morning_checkin} onChange={v => updateReminders({ ...reminders, morning_checkin: v })} />
           <ToggleRow label="Kvällsjournal" checked={reminders.evening_journal} onChange={v => updateReminders({ ...reminders, evening_journal: v })} />
