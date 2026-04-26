@@ -152,12 +152,14 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
 
     setBusy(null);
     if (error || !inserted?.id) {
+      haptic("error");
       setFailed({ slug: item.slug, message: error?.message ?? "Okänt fel — försök igen." });
       toast.error(`Kunde inte logga ${item.label}`, {
         description: "Tryck på återförsök i kortet.",
       });
       return;
     }
+    haptic("success");
 
     onLogged?.();
 
