@@ -43,14 +43,17 @@ export const WeekDirectionChart = ({ data, height = 180 }: Props) => {
 
   const stroke = toneHsl("green");
 
+  const sig = buildChartSignature(data);
+
   return (
-    <div
-      style={{ height }}
-      role="img"
-      aria-label="Veckans riktning, sju dagar"
-    >
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={rows} margin={{ top: 8, right: 12, bottom: 8, left: -8 }}>
+    <AnimatedChart signature={sig}>
+      <div
+        style={{ height }}
+        role="img"
+        aria-label="Veckans riktning, sju dagar"
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={rows} margin={{ top: 8, right: 12, bottom: 8, left: -8 }}>
           <defs>
             <linearGradient id="dir-line" x1="0" y1="0" x2="1" y2="0">
               <stop offset="0%" stopColor={stroke} stopOpacity={0.85} />
