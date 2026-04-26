@@ -325,6 +325,7 @@ const Checkin = () => {
             <SliderField idx={1} label="Hur orolig är du?" value={form.anxiety} onChange={(v) => setForm(f => ({ ...f, anxiety: v }))} low="Lugn" high="Mycket orolig" />
             <SliderField idx={2} label="Är du hård mot dig själv?" value={form.guilt_selfcriticism} onChange={(v) => setForm(f => ({ ...f, guilt_selfcriticism: v }))} low="Mild" high="Skarp" />
             <SliderField idx={3} label="Känns det hopplöst?" value={form.hopelessness} onChange={(v) => setForm(f => ({ ...f, hopelessness: v }))} low="Det finns hopp" high="Tomt" />
+            <DeepQuestion field={deepField} value={deepAnswer} onChange={setDeepAnswer} />
           </>
         )}
 
