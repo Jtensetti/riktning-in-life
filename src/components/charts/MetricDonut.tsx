@@ -41,10 +41,12 @@ export const MetricDonut = ({
   const outer = size / 2 - 2;
 
   const total = useMemo(() => data.reduce((s, d) => s + d.value, 0), [data]);
+  const sig = buildChartSignature(data, `${size}-${innerPct}`);
 
   return (
-    <div className="relative" style={{ width: size, height: size }} role="img" aria-label="Fördelning">
-      <ResponsiveContainer width="100%" height="100%">
+    <AnimatedChart signature={sig} className="relative" >
+      <div className="relative" style={{ width: size, height: size }} role="img" aria-label="Fördelning">
+        <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Tooltip
             contentStyle={{
