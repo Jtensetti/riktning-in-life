@@ -76,24 +76,33 @@ const WeeklyReport = () => {
     if (!user) return;
     let cancelled = false;
     (async () => {
-      const since = isoDaysAgo(13); // 14 dagar för att kunna jämföra vecka mot vecka
-      const sinceWeek = isoDaysAgo(6);
-      const [c, f, m, ml, j, a] = await Promise.all([
-        supabase.from("daily_checkins").select("*").eq("user_id", user.id).gte("date", since).order("date"),
-        supabase.from("weekly_forms").select("type,total_score,date").eq("user_id", user.id).gte("date", since).order("date"),
-        supabase.from("medications").select("name,dose,active,date_started").eq("user_id", user.id),
-        supabase.from("medication_logs").select("taken_status,side_effects_json,date").eq("user_id", user.id).gte("date", since),
-        supabase.from("journal_entries").select("date,template_type,title,free_text").eq("user_id", user.id).eq("include_in_report", true).gte("date", sinceWeek).order("date"),
-        supabase.from("activity_logs").select("date,label,category,duration_minutes,mood_delta").eq("user_id", user.id).gte("date", sinceWeek).order("date"),
-      ]);
+      // Allt veckorapports-data hämtas i ett enda RPC-anrop. Funktionen
+      // get_weekly_report körs som SECURITY DEFINER och låser sig till
+      // auth.uid() — så vi kan aldrig av misstag läsa någon annans data.
+      const { data: payload, error } = await supabase.rpc("get_weekly_report" as never, {
+        target_date: new Date().toISOString().split("T")[0],
+      } as never);
       if (cancelled) return;
+      if (error || !payload) {
+        setData({ checkins: [], forms: [], meds: [], medLogs: [], journals: [], activities: [] });
+        setLoadingData(false);
+        return;
+      }
+      const p = payload as unknown as {
+        checkins: Checkin[];
+        forms: { type: string; total_score: number; date: string }[];
+        medications: { name: string; dose: string | null; active: boolean; date_started: string | null }[];
+        medication_logs: { taken_status: string; side_effects_json: unknown; date: string }[];
+        journals: { date: string; template_type: string; title: string | null; free_text: string | null }[];
+        activities: { date: string; label: string; category: string; duration_minutes: number | null; mood_delta: number | null }[];
+      };
       setData({
-        checkins: (c.data ?? []) as unknown as Checkin[],
-        forms: (f.data ?? []) as { type: string; total_score: number; date: string }[],
-        meds: (m.data ?? []) as { name: string; dose: string | null; active: boolean; date_started: string | null }[],
-        medLogs: (ml.data ?? []) as { taken_status: string; side_effects_json: unknown; date: string }[],
-        journals: (j.data ?? []) as { date: string; template_type: string; title: string | null; free_text: string | null }[],
-        activities: (a.data ?? []) as { date: string; label: string; category: string; duration_minutes: number | null; mood_delta: number | null }[],
+        checkins: p.checkins ?? [],
+        forms: p.forms ?? [],
+        meds: p.medications ?? [],
+        medLogs: p.medication_logs ?? [],
+        journals: p.journals ?? [],
+        activities: p.activities ?? [],
       });
       setLoadingData(false);
     })();
