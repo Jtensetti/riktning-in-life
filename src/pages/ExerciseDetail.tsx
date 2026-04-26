@@ -125,7 +125,7 @@ const ExerciseDetail = () => {
   if (!ex) return <div className="min-h-screen bg-background flex items-center justify-center text-text-secondary">Hämtar...</div>;
 
   const ill = categoryIll(ex.category);
-  const back = () => sequence ? navigate("/rutiner") : navigate("/ovningar");
+  const back = () => sequence ? navigate(`/rutiner/${sequence.slug}`) : navigate("/ovningar");
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -255,7 +255,7 @@ const ExerciseDetail = () => {
               Nästa: {nextEx.title} <ChevronRight size={18} />
             </Button>
             <Button
-              onClick={() => navigate("/rutiner")}
+              onClick={() => navigate(`/rutiner/${sequence.slug}`)}
               variant="secondary"
               className="w-full h-12 rounded-full font-extrabold press-soft"
             >
