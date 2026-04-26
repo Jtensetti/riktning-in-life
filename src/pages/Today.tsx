@@ -736,21 +736,20 @@ const Today = () => {
       </div>
     ) : null,
     todayRoutine: () => todayRoutine && todayRoutine.ids.length > 0 ? (
-      <section key="todayRoutine" className="mb-7 animate-pop-in">
-        <h3 className="text-xl mb-1">Dagens rutin</h3>
-        <p className="text-sm text-text-secondary mb-3">Tre små steg som hänger ihop</p>
+      <section key="todayRoutine" className="mb-8 animate-pop-in">
         <button
           onClick={() => navigate(`/ovningar/${todayRoutine.ids[0]}?seq=${todayRoutine.slug}`)}
-          className={`w-full ${colorBg(todayRoutine.color)} ${todayRoutine.color === "yellow" ? "text-foreground" : "text-white"} rounded-3xl p-5 text-left shadow-soft press-soft flex items-center gap-3`}
+          className={`relative overflow-hidden w-full ${colorBg(todayRoutine.color)} ${todayRoutine.color === "yellow" ? "text-foreground" : "text-white"} card-hero press-soft`}
         >
-          <div className={`shrink-0 w-12 h-12 grid place-items-center rounded-2xl ${todayRoutine.color === "yellow" ? "bg-foreground/10" : "bg-white/20"}`}>
-            <AbstractIcon name="play-soft-circle" size={22} color="currentColor" />
+          <span aria-hidden className="pointer-events-none absolute -bottom-12 -right-12 w-44 h-44 rounded-full bg-white/10" />
+          <div className="relative z-[1] flex items-end justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-extrabold uppercase tracking-wider opacity-80 mb-2">Dagens rutin</p>
+              <h3 className="text-2xl leading-[28px] font-extrabold mb-2">{todayRoutine.title}</h3>
+              <p className="text-sm opacity-90 line-clamp-2">{todayRoutine.description}</p>
+            </div>
+            <ChevronRight size={22} className="shrink-0 opacity-90" />
           </div>
-          <div className="flex-1 min-w-0">
-            <h4 className="text-[18px] leading-tight font-extrabold mb-0.5">{todayRoutine.title}</h4>
-            <p className="text-xs opacity-90">{todayRoutine.description}</p>
-          </div>
-          <ChevronRight size={20} className="shrink-0" />
         </button>
       </section>
     ) : null,
