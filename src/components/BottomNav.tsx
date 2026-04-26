@@ -57,22 +57,25 @@ export const BottomNav = () => {
       >
         {({ isActive }) => (
           <>
+            <AbstractIcon
+              name={icon}
+              size={20}
+              color={isActive ? activeColor : "hsl(var(--text-secondary))"}
+              inline
+            />
             <span
-              className={`grid place-items-center w-10 h-10 rounded-full transition-all duration-200 ${
-                isActive ? "animate-pop-in" : ""
+              className={`text-[11px] px-2 py-0.5 rounded-full transition-all ${
+                isActive ? "font-extrabold" : "font-semibold"
               }`}
               style={{
-                background: isActive ? `${activeColor.replace("hsl(", "hsla(").replace(")", " / 0.18)")}` : "transparent",
+                background: isActive
+                  ? `${activeColor.replace("hsl(", "hsla(").replace(")", " / 0.18)")}`
+                  : "transparent",
+                color: isActive ? activeColor : undefined,
               }}
             >
-              <AbstractIcon
-                name={icon}
-                size={isActive ? 24 : 22}
-                color={isActive ? activeColor : "hsl(var(--text-secondary))"}
-                inline
-              />
+              {label}
             </span>
-            <span className={`text-[11px] ${isActive ? "font-extrabold" : "font-semibold"}`}>{label}</span>
           </>
         )}
       </NavLink>
