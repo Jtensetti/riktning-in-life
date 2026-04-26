@@ -42,6 +42,8 @@ export type CheckinSignals = {
 export type RecentSession = {
   category: string;
   created_at: string;
+  /** Optional — when present, enables per-exercise repetition penalties. */
+  exercise_id?: string;
 };
 
 const CALM_CATS = new Set(["Lugna kroppen", "Bryt ältande", "Sov bättre"]);
