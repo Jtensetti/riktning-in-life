@@ -43,7 +43,7 @@ export const TodayStepCard = ({ exercises, todayCheckin, recentSessions, loggedT
   return (
     <button
       onClick={() => navigate(`/ovningar/${ex.id}`)}
-      className="w-full text-left rounded-3xl bg-orange-start text-white p-5 shadow-soft press-soft animate-pop-in flex flex-col gap-3 min-h-[160px] relative overflow-hidden"
+      className="w-full text-left rounded-3xl bg-orange-start text-white p-5 shadow-soft press-soft animate-pop-in flex flex-col gap-3 min-h-[184px] relative overflow-hidden"
       style={{ animationDelay: `var(--stagger-${Math.min(index, 4)})` }}
       aria-label={`Dagens lilla steg: ${ex.title}`}
     >
