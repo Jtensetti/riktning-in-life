@@ -19,6 +19,7 @@ import WeeklyReport from "./pages/WeeklyReport";
 import Learn from "./pages/Learn";
 import LearnArticle from "./pages/LearnArticle";
 import Sequences from "./pages/Sequences";
+import SequenceDetail from "./pages/SequenceDetail";
 import CrisisPlan from "./pages/CrisisPlan";
 import QuickLog from "./pages/QuickLog";
 import Health from "./pages/Health";
@@ -72,6 +73,7 @@ const App = () => {
           <Route path="/lar-dig" element={<Learn />} />
           <Route path="/lar-dig/:slug" element={<LearnArticle />} />
           <Route path="/rutiner" element={<Sequences />} />
+          <Route path="/rutiner/:slug" element={<SequenceDetail />} />
           <Route path="/krisplan" element={<CrisisPlan />} />
           <Route path="/snabblogg" element={<QuickLog />} />
           <Route path="/health" element={<Health />} />
