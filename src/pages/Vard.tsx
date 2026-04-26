@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronLeft, ChevronRight, Plus, Download, Trash2, FileDown, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { patchUserSettings } from "@/lib/userSettingsSync";
 import { FORMS, FormType, SIDE_EFFECTS } from "@/lib/forms";
 import { burdenScore, functionScore, recoveryScore, stabilityScore, stabilityLabel, pctChange, splitWeeks, type Checkin, type WeeklyFormScore } from "@/lib/metrics";
 import jsPDF from "jspdf";
