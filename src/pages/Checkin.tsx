@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useWeather, weatherLabel, type WeatherKind } from "@/lib/weather";
 import { AbstractIcon, weatherIcon, weatherIconColor, weatherIconAccent, type IconName } from "@/components/AbstractIcon";
 import { ActivityPicker, type ActivityDraft } from "@/components/ActivityPicker";
+import { refreshBaseline } from "@/lib/baseline";
 
 const colorBg = (color: string): string => {
   switch (color) {
