@@ -420,33 +420,35 @@ const Week = () => {
           </div>
 
           <div className="overflow-x-auto scrollbar-hide snap-x snap-mandatory flex gap-3 px-6 pb-3 -mb-3">
-            {suggestedActions.map(({ priority, exercise }, i) => (
-              <button
-                key={priority.key}
-                onClick={() => navigate(`/ovningar/${exercise.id}`)}
-                className={`shrink-0 w-[78%] snap-start rounded-3xl ${colorBg(priority.color)} p-5 text-left shadow-soft press-soft animate-pop-in flex flex-col gap-3 min-h-[200px] relative overflow-hidden`}
-                style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-1 rounded-full ${priority.color === "yellow" ? "bg-foreground/10" : "bg-white/20"}`}>
+            {suggestedActions.map(({ priority, exercise }, i) => {
+              const tone = asTone(priority.color);
+              const onYellow = tone === "yellow";
+              return (
+                <ColorCard
+                  key={priority.key}
+                  tone={tone}
+                  icon="spark"
+                  iconAccent={onYellow ? colorHsl("orange") : "hsl(var(--surface))"}
+                  size="lg"
+                  index={i}
+                  onClick={() => navigate(`/ovningar/${exercise.id}`)}
+                  ariaLabel={`${priority.title}: ${exercise.title}`}
+                  className="shrink-0 w-[78%] snap-start"
+                >
+                  <span className={`inline-block text-[10px] font-extrabold uppercase tracking-wider px-2 py-1 rounded-full mb-3 ${onYellow ? "bg-foreground/10" : "bg-white/20"}`}>
                     {priority.title}
                   </span>
-                </div>
-                <div className="absolute right-3 top-3 opacity-90 pointer-events-none">
-                  <AbstractIcon name="spark" size={48} color={priority.color === "yellow" ? colorHsl(priority.color) : "currentColor"} />
-                </div>
-                <div className="mt-auto">
                   <h4 className="text-[20px] leading-[24px] font-extrabold mb-1 pr-12">{exercise.title}</h4>
                   <p className="text-sm opacity-90 leading-snug mb-3">{priority.nudge}</p>
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-extrabold opacity-80">{exercise.duration_minutes} min · {exercise.category}</span>
-                    <span className={`shrink-0 grid place-items-center w-9 h-9 rounded-full ${priority.color === "yellow" ? "bg-foreground text-background" : "bg-white/25"}`}>
+                    <span className={`shrink-0 grid place-items-center w-9 h-9 rounded-full ${onYellow ? "bg-foreground text-background" : "bg-white/25"}`}>
                       <ChevronRight size={18} />
                     </span>
                   </div>
-                </div>
-              </button>
-            ))}
+                </ColorCard>
+              );
+            })}
           </div>
         </section>
       )}
