@@ -132,6 +132,44 @@
 }
 
 @layer components {
+  /* === Type scale (locked, 5 sizes only) === */
+  .text-h1          { font-size: 40px; line-height: 44px; font-weight: 800; letter-spacing: -0.01em; }
+  .text-h2          { font-size: 26px; line-height: 32px; font-weight: 800; letter-spacing: -0.01em; }
+  .text-card-title  { font-size: 22px; line-height: 28px; font-weight: 800; letter-spacing: -0.005em; }
+  .text-body        { font-size: 16px; line-height: 24px; font-weight: 600; }
+  .text-meta        { font-size: 12px; line-height: 16px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
+
+  /* === Card primitives (used by ui-kit components) === */
+  .ui-card-hero {
+    border-radius: var(--card-radius-hero);
+    padding: 24px;
+    box-shadow: var(--shadow-elev);
+  }
+  .ui-card-action {
+    border-radius: var(--card-radius-action);
+    padding: 20px;
+    box-shadow: var(--shadow-card);
+  }
+  .ui-card-list {
+    border-radius: var(--card-radius-list);
+    padding: 20px;
+    background: hsl(var(--surface));
+    box-shadow: var(--shadow-card);
+  }
+  .ui-card-insight {
+    border-radius: var(--card-radius-insight);
+    padding: 22px;
+    background: hsl(var(--cream-card));
+    box-shadow: var(--shadow-card);
+  }
+  .ui-card-clinical {
+    border-radius: 18px;
+    padding: 16px;
+    background: hsl(var(--surface));
+    border: 1px solid hsl(var(--border-soft));
+  }
+
+  /* === Legacy classes (kept until full migration) === */
   .card-soft {
     @apply rounded-3xl bg-surface;
     box-shadow: var(--shadow-card);
@@ -141,12 +179,10 @@
     background: hsl(var(--cream-card));
     box-shadow: var(--shadow-card);
   }
-  /* Stort, färgrikt hjältekort. En färg per kort, tjock typografi, ingen ikon-tile. */
   .card-hero {
     @apply rounded-[28px] p-7 text-left;
     box-shadow: var(--shadow-elev);
   }
-  /* Lugn typografi-ruta utan ikon. För insikter, mjuka påminnelser, status. */
   .card-quiet {
     @apply rounded-3xl p-5 text-left;
     background: hsl(var(--cream-card));
@@ -157,7 +193,6 @@
   .safe-bottom {
     padding-bottom: max(110px, env(safe-area-inset-bottom));
   }
-  /* Soft press effect for interactive cards */
   .press-soft {
     @apply transition-transform duration-150 active:scale-[0.98];
     -webkit-tap-highlight-color: transparent;
