@@ -475,10 +475,8 @@ const Week = () => {
       )}
 
       {!baselineComplete && (
-        <div className="card-quiet mb-6 animate-fade-in-up">
-          <p className="text-[11px] font-extrabold uppercase tracking-wider text-blue-calm mb-1">Bygger baslinje</p>
-          <p className="text-base font-extrabold leading-tight">Dag {total} av 14</p>
-          <p className="text-xs text-text-secondary leading-snug mt-1">Vi visar mönster och jämförelser när baslinjen är klar.</p>
+        <div className="mb-6 animate-fade-in-up">
+          <BaselineProgressCard daysLogged={total} />
         </div>
       )}
 
