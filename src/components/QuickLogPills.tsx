@@ -327,14 +327,15 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
             </DrawerDescription>
           </DrawerHeader>
 
-          <div className="px-4 pb-6 space-y-5">
+          <div className="px-4 pb-6 space-y-5" aria-busy={savingEdit || deleting}>
             {/* Tid */}
-            <div>
+            <div className={savingEdit || deleting ? "opacity-60 pointer-events-none" : ""}>
               <p className="text-[11px] font-extrabold uppercase tracking-wider text-text-secondary mb-2">Tid</p>
               <div className="flex items-center gap-3 bg-cream-card rounded-2xl p-3">
                 <button
                   onClick={() => setEditSheet(s => s ? { ...s, minutes: Math.max(1, s.minutes - 5) } : s)}
-                  className="shrink-0 w-10 h-10 rounded-full bg-foreground/10 grid place-items-center press-soft"
+                  disabled={savingEdit || deleting}
+                  className="shrink-0 w-10 h-10 rounded-full bg-foreground/10 grid place-items-center press-soft disabled:cursor-not-allowed"
                   aria-label="Minska 5 min"
                 >
                   <Minus size={16} />
@@ -345,7 +346,8 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
                 </div>
                 <button
                   onClick={() => setEditSheet(s => s ? { ...s, minutes: s.minutes + 5 } : s)}
-                  className="shrink-0 w-10 h-10 rounded-full bg-foreground/10 grid place-items-center press-soft"
+                  disabled={savingEdit || deleting}
+                  className="shrink-0 w-10 h-10 rounded-full bg-foreground/10 grid place-items-center press-soft disabled:cursor-not-allowed"
                   aria-label="Öka 5 min"
                 >
                   <Plus size={16} />
@@ -354,7 +356,7 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
             </div>
 
             {/* Känsla */}
-            <div>
+            <div className={savingEdit || deleting ? "opacity-60 pointer-events-none" : ""}>
               <p className="text-[11px] font-extrabold uppercase tracking-wider text-text-secondary mb-2">Hur kändes det?</p>
               <div className="grid grid-cols-1 gap-2">
                 {MOOD_OPTIONS.map((o, i) => {
@@ -363,7 +365,8 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
                     <button
                       key={o.delta}
                       onClick={() => setEditSheet(s => s ? { ...s, mood: o.delta } : s)}
-                      className={`w-full rounded-2xl px-4 py-3 flex items-center gap-4 press-soft border-2 ${
+                      disabled={savingEdit || deleting}
+                      className={`w-full rounded-2xl px-4 py-3 flex items-center gap-4 press-soft border-2 disabled:cursor-not-allowed ${
                         active ? "border-foreground" : "border-transparent"
                       } ${o.tone}`}
                       style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
