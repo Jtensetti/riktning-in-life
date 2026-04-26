@@ -1048,6 +1048,7 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
       return;
     }
     localStorage.setItem("riktning_doctor_email", trimmed);
+    void patchUserSettings({ doctor_email: trimmed });
     downloadPdf();
     const dateStr = new Date().toISOString().split("T")[0];
     const subject = `Klinisk rapport – ${days} dagar – ${dateStr}`;
