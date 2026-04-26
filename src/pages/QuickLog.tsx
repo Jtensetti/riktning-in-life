@@ -434,7 +434,7 @@ const SleepForm = ({ onSaved, userId }: { onSaved: () => void; userId: string | 
         </div>
       </div>
 
-      <Button onClick={save} disabled={busy} className="w-full h-14 rounded-2xl bg-foreground hover:bg-foreground/90 text-background text-base font-extrabold press-soft">
+      <Button onClick={save} disabled={busy} variant="pill-strong" size="pill-lg" className="w-full">
         Spara sömn
       </Button>
     </div>
@@ -529,7 +529,7 @@ const MovementForm = ({ onSaved, userId }: { onSaved: () => void; userId: string
         </div>
       </div>
 
-      <Button onClick={save} disabled={busy} className="w-full h-14 rounded-2xl bg-foreground hover:bg-foreground/90 text-background text-base font-extrabold press-soft">
+      <Button onClick={save} disabled={busy} variant="pill-strong" size="pill-lg" className="w-full">
         Spara rörelse
       </Button>
     </div>
@@ -586,7 +586,7 @@ const MoodForm = ({ onSaved, userId }: { onSaved: () => void; userId: string | u
       <Slider label="Tyngd / nedstämdhet" value={heaviness} set={setHeaviness} color="orange" />
       <Slider label="Oro / ångest" value={anxiety} set={setAnxiety} color="blue" />
       <Slider label="Energi" value={energy} set={setEnergy} color="pink" />
-      <Button onClick={save} disabled={busy} className="w-full h-14 rounded-2xl bg-foreground hover:bg-foreground/90 text-background text-base font-extrabold press-soft">
+      <Button onClick={save} disabled={busy} variant="pill-strong" size="pill-lg" className="w-full">
         Spara mående
       </Button>
     </div>
@@ -628,7 +628,7 @@ const MedicationForm = ({
         </div>
         <Button
           onClick={() => navigate("/vard")}
-          className="w-full h-14 rounded-2xl bg-foreground hover:bg-foreground/90 text-background text-base font-extrabold press-soft"
+          className="w-full"
         >
           Gå till Vård <ChevronRight size={18} />
         </Button>
@@ -682,7 +682,7 @@ const MedicationForm = ({
         </div>
       </div>
 
-      <Button onClick={save} disabled={busy || !pickedId} className="w-full h-14 rounded-2xl bg-foreground hover:bg-foreground/90 text-background text-base font-extrabold press-soft">
+      <Button onClick={save} disabled={busy || !pickedId} variant="pill-strong" size="pill-lg" className="w-full">
         Spara medicin
       </Button>
     </div>
