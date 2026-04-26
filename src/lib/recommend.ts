@@ -266,7 +266,7 @@ export const recommendForToday = (
     if (pool.length === 0) return null;
 
     const scored = pool
-      .map(ex => ({ ex, score: scoreExercise(ex, c, t, w, recent) }))
+      .map(ex => ({ ex, score: scoreExercise(ex, c, t, w, recent, history, forecast) }))
       .sort((a, b) => b.score - a.score);
 
     const best = scored[0];
