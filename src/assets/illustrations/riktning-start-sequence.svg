@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-labelledby="title desc">
+<title>Start sequence</title>
+<desc>Original geometric illustration for the Riktning recovery app.</desc>
+<style>
+  .stroke{fill:none;stroke:#2E2E32;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+  .stroke-soft{fill:none;stroke:#6F6A65;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+  .face{fill:none;stroke:#2E2E32;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+  .shadow{fill:#2E2E32;opacity:.08}
+</style>
+
+<rect x="20" y="122" width="230" height="18" rx="9" class="shadow"/>
+<path d="M22 132 C64 58 151 34 235 58 C278 70 303 103 300 142 L22 142 Z" fill="#FF7A1A"/>
+<circle cx="226" cy="76" r="54" fill="#FFC928"/>
+<path d="M92 141 V72 C92 61 101 52 112 52 H156 C167 52 176 61 176 72 V141" fill="#FFFDF9" opacity=".94"/>
+<rect x="112" y="78" width="44" height="63" rx="13" fill="#D66A24"/>
+<circle cx="148" cy="111" r="4" fill="#FFC928"/>
+<rect x="184" y="107" width="38" height="34" rx="12" fill="#1677F2"/>
+<path d="M190 103 H216 L211 94 H195 Z" fill="#2157D6"/>
+<path d="M215 78 q10 11 20 0" class="face"/>
+<path d="M228 78 q10 11 20 0" class="face"/>
+<path d="M71 94 C55 99 48 112 50 127" class="stroke-soft" opacity=".45"/>
+<circle cx="61" cy="82" r="7" fill="#FFFDF9" opacity=".75"/>
+<circle cx="280" cy="112" r="5" fill="#FFFDF9" opacity=".7"/>
+
+</svg>

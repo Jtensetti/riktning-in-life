@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-labelledby="title desc">
+<title>Safety support</title>
+<desc>Original geometric illustration for the Riktning recovery app.</desc>
+<style>
+  .stroke{fill:none;stroke:#2E2E32;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+  .stroke-soft{fill:none;stroke:#6F6A65;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+  .face{fill:none;stroke:#2E2E32;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+  .shadow{fill:#2E2E32;opacity:.08}
+</style>
+
+<rect x="38" y="34" width="244" height="112" rx="30" fill="#FDECEC"/>
+<circle cx="105" cy="86" r="34" fill="#D64545" opacity=".88"/>
+<path d="M92 83 q8 9 16 0" class="face"/>
+<path d="M114 83 q8 9 16 0" class="face"/>
+<path d="M155 111 C164 96 176 89 194 91 C214 93 222 109 219 124 C204 130 181 132 155 111 Z" fill="#FFFDF9"/>
+<path d="M190 91 C195 75 208 65 225 65 C246 65 261 81 260 101 C259 123 239 135 218 126" fill="#FFFDF9" stroke="#E8E1D9" stroke-width="4"/>
+<path d="M212 93 h28" class="stroke-soft" opacity=".55"/>
+<path d="M206 108 h36" class="stroke-soft" opacity=".55"/>
+<path d="M83 124 C97 138 119 139 135 126" fill="none" stroke="#2E2E32" stroke-width="6" stroke-linecap="round" opacity=".75"/>
+<circle cx="69" cy="55" r="7" fill="#D64545" opacity=".35"/>
+<circle cx="270" cy="49" r="5" fill="#D64545" opacity=".35"/>
+
+</svg>

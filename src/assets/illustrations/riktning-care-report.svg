@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-labelledby="title desc">
+<title>Care report</title>
+<desc>Original geometric illustration for the Riktning recovery app.</desc>
+<style>
+  .stroke{fill:none;stroke:#2E2E32;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+  .stroke-soft{fill:none;stroke:#6F6A65;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+  .face{fill:none;stroke:#2E2E32;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+  .shadow{fill:#2E2E32;opacity:.08}
+</style>
+
+<rect x="83" y="28" width="154" height="126" rx="22" fill="#FFFDF9" stroke="#E8E1D9" stroke-width="4"/>
+<rect x="111" y="48" width="74" height="10" rx="5" fill="#1677F2" opacity=".9"/>
+<rect x="111" y="72" width="98" height="8" rx="4" fill="#E8E1D9"/>
+<rect x="111" y="91" width="74" height="8" rx="4" fill="#E8E1D9"/>
+<rect x="111" y="110" width="92" height="8" rx="4" fill="#E8E1D9"/>
+<path d="M115 136 C130 121 143 123 156 132 C171 142 185 137 204 116" fill="none" stroke="#058C4C" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="220" cy="45" r="24" fill="#1677F2"/>
+<path d="M211 44 h18" stroke="#FFFDF9" stroke-width="5" stroke-linecap="round"/>
+<path d="M220 35 v18" stroke="#FFFDF9" stroke-width="5" stroke-linecap="round"/>
+<circle cx="75" cy="67" r="18" fill="#FFC928" opacity=".75"/>
+<circle cx="248" cy="128" r="14" fill="#3B1B73" opacity=".28"/>
+
+</svg>
