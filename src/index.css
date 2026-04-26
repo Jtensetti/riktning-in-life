@@ -71,7 +71,7 @@
     --sidebar-accent: 26 41% 94%;
     --sidebar-accent-foreground: 240 4% 19%;
     --sidebar-border: 32 24% 88%;
-    --sidebar-ring: 23 100% 55%;
+    --sidebar-ring: 19 100% 55%;
 
     /* Shadows */
     --shadow-soft: 0 8px 24px hsl(240 4% 19% / 0.08);
@@ -94,7 +94,7 @@
     --card-foreground: 36 38% 95%;
     --popover: 261 28% 14%;
     --popover-foreground: 36 38% 95%;
-    --primary: 23 100% 62%;
+    --primary: 19 100% 62%;
     --primary-foreground: 261 35% 9%;
     --secondary: 261 24% 18%;
     --secondary-foreground: 36 38% 95%;
