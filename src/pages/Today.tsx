@@ -316,6 +316,12 @@ const Today = () => {
   const showSafety = checkin?.safety_status === "active_thoughts" || checkin?.safety_status === "acute";
   const rec = showSafety ? null : recommend(checkin, time, weather);
 
+  // Smart "För dig just nu"-rekommendationer
+  const recentForRec = recent
+    .filter(s => s.exercises)
+    .map(s => ({ category: s.exercises!.category, created_at: s.created_at }));
+  const picks: Pick[] = showSafety ? [] : recommendForToday(library, checkin, time, weather, recentForRec);
+
   // 7-day insights
   const moodTrend = computeTrend(trendData, c => c.mood_heaviness, true);
   const sleepTrend = computeTrend(trendData, c => c.sleep_hours == null ? null : Number(c.sleep_hours), false);
