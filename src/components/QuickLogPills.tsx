@@ -248,9 +248,14 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
               const isLocked = !!busy && !isBusy; // another pill is saving
               const isFailed = failed?.slug === f.slug;
               return (
-                <div
+                <button
                   key={f.slug}
-                  className={`relative overflow-hidden ${colorBg(f.color)} rounded-2xl shadow-card animate-pop-in ${isLocked ? "opacity-60" : ""}`}
+                  type="button"
+                  onClick={() => quickLog(f)}
+                  disabled={isBusy || isLocked}
+                  aria-busy={isBusy}
+                  aria-label={`Logga ${f.label}, ${f.default_minutes} minuter`}
+                  className={`relative overflow-hidden block w-full text-left ${colorBg(f.color)} rounded-2xl shadow-card animate-pop-in press-soft disabled:cursor-not-allowed ${isLocked ? "opacity-60" : ""} ${isBusy ? "opacity-80" : ""}`}
                   style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
                 >
                   {/* Mjuka blob-bakgrunder för visuell rytm */}
@@ -262,12 +267,7 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
                     aria-hidden
                     className="pointer-events-none absolute -top-6 -left-8 w-20 h-20 rounded-full bg-white/10"
                   />
-                  <button
-                    onClick={() => quickLog(f)}
-                    disabled={isBusy || isLocked}
-                    className={`relative z-[1] w-full px-4 pt-3 pb-2 flex items-center gap-3 press-soft text-left disabled:cursor-not-allowed ${isBusy ? "opacity-80" : ""}`}
-                    aria-busy={isBusy}
-                  >
+                  <div className="relative z-[1] w-full px-4 pt-3 pb-2 flex items-center gap-3">
                     <div className="shrink-0 w-10 h-10 rounded-full bg-white/25 grid place-items-center">
                       {isBusy ? (
                         <Loader2 size={20} className="animate-spin" />
@@ -278,13 +278,13 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
                     <div className="flex-1 min-w-0">
                       <p className="font-extrabold text-[15px] leading-tight truncate">{f.label}</p>
                       <p className="text-[11px] opacity-90 font-bold">
-                        {isBusy ? "Sparar…" : isLocked ? "Vänta…" : `${f.default_minutes} min · ett klick = loggad`}
+                        {isBusy ? "Sparar…" : isLocked ? "Vänta…" : `${f.default_minutes} min · tryck för att logga`}
                       </p>
                     </div>
                     <div className="shrink-0 w-8 h-8 rounded-full bg-white/25 grid place-items-center">
                       {isBusy ? <Loader2 size={14} className="animate-spin" /> : <Plus size={16} />}
                     </div>
-                  </button>
+                  </div>
 
                   {isFailed ? (
                     <div className="relative z-[1] mx-3 mb-2 px-3 py-2 rounded-2xl bg-white/95 text-foreground flex items-center gap-2">
@@ -292,13 +292,16 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
                       <p className="flex-1 min-w-0 text-[11px] font-bold leading-tight truncate">
                         Loggning misslyckades. {failed?.message}
                       </p>
-                      <button
-                        onClick={() => quickLog(f)}
-                        disabled={isBusy || isLocked}
-                        className="shrink-0 h-7 px-3 rounded-full bg-foreground text-background text-[11px] font-extrabold press-soft inline-flex items-center gap-1 disabled:opacity-60"
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => { e.stopPropagation(); quickLog(f); }}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); quickLog(f); } }}
+                        aria-disabled={isBusy || isLocked}
+                        className="shrink-0 h-7 px-3 rounded-full bg-foreground text-background text-[11px] font-extrabold press-soft inline-flex items-center gap-1 cursor-pointer aria-disabled:opacity-60"
                       >
                         <RefreshCw size={11} /> Försök igen
-                      </button>
+                      </span>
                     </div>
                   ) : (
                     <div className="relative z-[1] mx-3 mb-2 px-3 py-1.5 rounded-full bg-white/20 flex items-center gap-1.5">
@@ -312,7 +315,7 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
                       </p>
                     </div>
                   )}
-                </div>
+                </button>
               );
             })}
           </div>
