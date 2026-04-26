@@ -11,6 +11,15 @@ import {
 import { AnimatedChart, buildChartSignature } from "./AnimatedChart";
 import { ThemedGrid, ThemedTooltip, ThemedXAxis, ThemedYAxis } from "./ChartPrimitives";
 
+/** Recharts dot-render callback ger position + payload per punkt. */
+interface DirectionDotProps {
+  cx?: number;
+  cy?: number;
+  index?: number;
+  payload?: { value: number | null };
+  fill?: string;
+}
+
 export type DirectionPoint = {
   /** ISO-datum (YYYY-MM-DD) i kronologisk ordning. */
   date: string;
