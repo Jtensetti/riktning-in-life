@@ -214,14 +214,14 @@ const WeeklyReport = () => {
       const size = opts.size ?? 10;
       doc.setFont("helvetica", opts.bold ? "bold" : "normal");
       doc.setFontSize(size);
-      doc.setTextColor(...(opts.muted ? PDF_COLORS.inkSoft : PDF_COLORS.ink));
+      setPdfText(doc, opts.muted ? PDF_COLORS.inkSoft : PDF_COLORS.ink);
       const wrapped = doc.splitTextToSize(text, maxW);
       for (const w of wrapped) {
         ensureSpace(size + 4);
         doc.text(w, margin, y);
         y += size + 4;
       }
-      doc.setTextColor(...PDF_COLORS.ink);
+      setPdfText(doc, PDF_COLORS.ink);
       if (opts.gap) y += opts.gap;
     };
 
@@ -397,7 +397,7 @@ const WeeklyReport = () => {
     for (const b of blocks) {
       ensureSpace(b.lines * 18 + 30);
       writeLine(b.title, { bold: true, size: 11 });
-      doc.setDrawColor(...PDF_COLORS.rule);
+      setPdfDraw(doc, PDF_COLORS.rule);
       doc.setLineWidth(0.5);
       for (let i = 0; i < b.lines; i++) {
         ensureSpace(20);
