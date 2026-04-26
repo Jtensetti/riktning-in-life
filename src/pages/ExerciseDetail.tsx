@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Check } from "lucide-react";
+import { ArrowLeft, Check, ChevronRight } from "lucide-react";
 import { Illustration, categoryIll } from "@/components/Illustrations";
+import { MechanismCard, type Evidence } from "@/components/MechanismCard";
 import { toast } from "sonner";
 
 type Exercise = {
@@ -18,6 +19,14 @@ type Exercise = {
   description: string;
   steps_json: string[];
   color: string;
+  mechanism: string | null;
+  evidence_json: Evidence[];
+};
+
+type Sequence = {
+  slug: string;
+  title: string;
+  exercise_ids: string[];
 };
 
 const colorBg = (c: string) => {
@@ -35,10 +44,14 @@ const colorText = (c: string) => (c === "yellow" ? "text-foreground" : "text-whi
 
 const ExerciseDetail = () => {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const seqSlug = searchParams.get("seq");
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [ex, setEx] = useState<Exercise | null>(null);
-  const [phase, setPhase] = useState<"intro" | "before" | "doing" | "after">("intro");
+  const [sequence, setSequence] = useState<Sequence | null>(null);
+  const [nextEx, setNextEx] = useState<{ id: string; title: string } | null>(null);
+  const [phase, setPhase] = useState<"intro" | "before" | "doing" | "after" | "done">("intro");
   const [before, setBefore] = useState({ anxiety: 5, energy: 5, mood: 5 });
   const [after, setAfter] = useState({ anxiety: 5, energy: 5, mood: 5 });
   const [note, setNote] = useState("");
@@ -51,9 +64,37 @@ const ExerciseDetail = () => {
   useEffect(() => {
     if (!id) return;
     supabase.from("exercises").select("*").eq("id", id).maybeSingle().then(({ data }) => {
-      if (data) setEx({ ...data, steps_json: (data.steps_json as string[]) ?? [] });
+      if (data) setEx({
+        ...data,
+        steps_json: (data.steps_json as string[]) ?? [],
+        evidence_json: ((data.evidence_json as unknown) as Evidence[]) ?? [],
+      });
     });
   }, [id]);
+
+  useEffect(() => {
+    if (!seqSlug) { setSequence(null); setNextEx(null); return; }
+    supabase
+      .from("exercise_sequences")
+      .select("slug,title,exercise_ids_json")
+      .eq("slug", seqSlug)
+      .maybeSingle()
+      .then(async ({ data }) => {
+        if (!data) return;
+        const ids = (data.exercise_ids_json as unknown as string[]) ?? [];
+        setSequence({ slug: data.slug, title: data.title, exercise_ids: ids });
+        const idx = id ? ids.indexOf(id) : -1;
+        if (idx >= 0 && idx < ids.length - 1) {
+          const nextId = ids[idx + 1];
+          const { data: nx } = await supabase.from("exercises").select("id,title").eq("id", nextId).maybeSingle();
+          if (nx) setNextEx({ id: nx.id, title: nx.title });
+        } else {
+          setNextEx(null);
+        }
+      });
+  }, [seqSlug, id]);
+
+  const stepIndex = sequence && id ? sequence.exercise_ids.indexOf(id) : -1;
 
   const save = async () => {
     if (!user || !ex) return;
@@ -72,22 +113,32 @@ const ExerciseDetail = () => {
       return;
     }
     toast.success("Bra jobbat. Sparat.");
-    navigate("/ovningar");
+    if (sequence && nextEx) {
+      setPhase("done");
+    } else {
+      navigate("/ovningar");
+    }
   };
 
   if (!ex) return <div className="min-h-screen bg-background flex items-center justify-center text-text-secondary">Hämtar...</div>;
 
   const ill = categoryIll(ex.category);
+  const back = () => sequence ? navigate("/rutiner") : navigate("/ovningar");
 
   return (
     <div className="min-h-screen bg-background pb-24">
       <div className={`${colorBg(ex.color)} ${colorText(ex.color)} px-6 pt-8 pb-10 rounded-b-[40px]`}>
         <button
-          onClick={() => navigate("/ovningar")}
+          onClick={back}
           className="flex items-center gap-1 text-sm font-bold mb-4 opacity-90"
         >
           <ArrowLeft size={18} /> Tillbaka
         </button>
+        {sequence && stepIndex >= 0 && (
+          <div className="inline-flex items-center gap-2 bg-white/20 rounded-full px-3 py-1 mb-3 text-[11px] font-extrabold uppercase tracking-wider">
+            {sequence.title} · Steg {stepIndex + 1} av {sequence.exercise_ids.length}
+          </div>
+        )}
         <div className="rounded-2xl overflow-hidden mb-4 bg-white/10">
           <Illustration name={ill} className="w-full h-auto" />
         </div>
@@ -102,6 +153,7 @@ const ExerciseDetail = () => {
             <div className="card-soft p-5 mb-4">
               <p className="text-base text-foreground/80 leading-relaxed">{ex.description}</p>
             </div>
+            <MechanismCard mechanism={ex.mechanism} evidence={ex.evidence_json} />
             <h3 className="text-lg mb-3">Steg</h3>
             <ol className="space-y-3 mb-6">
               {ex.steps_json.map((s, i) => (
@@ -178,6 +230,30 @@ const ExerciseDetail = () => {
               className="w-full h-14 rounded-full bg-orange-start hover:bg-orange-deep text-white font-extrabold text-[17px] press-soft"
             >
               {saving ? "Sparar..." : "Spara"}
+            </Button>
+          </div>
+        )}
+
+        {phase === "done" && sequence && nextEx && (
+          <div className="animate-fade-in-up">
+            <div className="card-cream p-5 mb-4 text-center">
+              <h3 className="text-xl mb-1">Bra jobbat</h3>
+              <p className="text-sm text-text-secondary">
+                Steg {stepIndex + 1} av {sequence.exercise_ids.length} klart.
+              </p>
+            </div>
+            <Button
+              onClick={() => navigate(`/ovningar/${nextEx.id}?seq=${sequence.slug}`)}
+              className="w-full h-14 rounded-full bg-foreground hover:bg-foreground/90 text-background font-extrabold text-[17px] press-soft mb-2"
+            >
+              Nästa: {nextEx.title} <ChevronRight size={18} />
+            </Button>
+            <Button
+              onClick={() => navigate("/rutiner")}
+              variant="secondary"
+              className="w-full h-12 rounded-full font-extrabold press-soft"
+            >
+              Pausa rutinen
             </Button>
           </div>
         )}

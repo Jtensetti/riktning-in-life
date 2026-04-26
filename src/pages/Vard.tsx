@@ -76,6 +76,23 @@ const Vard = () => {
       </header>
 
       <section className="mb-7">
+        <button
+          onClick={() => navigate("/krisplan")}
+          className="w-full rounded-3xl bg-red-bg border-2 border-red-risk/30 p-4 text-left press-soft animate-pop-in flex items-center gap-3"
+        >
+          <div className="w-12 h-12 rounded-2xl bg-red-risk/15 grid place-items-center shrink-0">
+            <AbstractIcon name="heart-pulse" size={22} color="hsl(var(--red-risk))" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] font-extrabold uppercase tracking-wider text-red-risk mb-0.5">När det blir svårt</p>
+            <p className="text-[15px] font-extrabold">Min krisplan</p>
+            <p className="text-xs text-text-secondary">Förbered i lugnt läge — använd när det behövs.</p>
+          </div>
+          <ChevronRight size={18} className="text-text-secondary shrink-0" />
+        </button>
+      </section>
+
+      <section className="mb-7">
         <h2 className="text-lg font-extrabold mb-3">Veckoskattningar</h2>
         <div className="space-y-3">
           {(["phq9", "gad7", "who5"] as FormType[]).map((t, i) => {
