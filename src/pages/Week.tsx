@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,9 +18,27 @@ import { refreshBaseline, loadBaseline, thresholdsFromBaseline } from "@/lib/bas
 import { buildDayHighlights, buildLiftSummary } from "@/lib/dayInsights";
 import { DayHighlightCards } from "@/components/DayHighlightCards";
 import { ChartCard } from "@/components/charts/ChartCard";
-import { ActivityBars } from "@/components/charts/ActivityBars";
-import { StackedRecovery, type RecoveryDay } from "@/components/charts/StackedRecovery";
-import { Sparkline } from "@/components/charts/Sparkline";
+// Bara WeekDirectionChart syns ovan kollapsen — resten lazy-laddas när
+// "Återhämtningshistorik" öppnas. Det halverar Recharts-overhead på
+// initial load av Insikter-vyn (~100 kB gzip skickas inte i onödan).
+import type { RecoveryDay } from "@/components/charts/StackedRecovery";
+const ActivityBars = lazy(() =>
+  import("@/components/charts/ActivityBars").then((m) => ({ default: m.ActivityBars })),
+);
+const StackedRecovery = lazy(() =>
+  import("@/components/charts/StackedRecovery").then((m) => ({ default: m.StackedRecovery })),
+);
+const Sparkline = lazy(() =>
+  import("@/components/charts/Sparkline").then((m) => ({ default: m.Sparkline })),
+);
+/** Lättviktig placeholder så layout inte hoppar medan chart-chunken hämtas. */
+const ChartFallback = ({ height = 128 }: { height?: number }) => (
+  <div
+    className="w-full rounded-xl bg-surface-alt animate-pulse"
+    style={{ height }}
+    aria-hidden
+  />
+);
 import { WeekDirectionChart, type DirectionPoint } from "@/components/charts/WeekDirectionChart";
 import { TodayStepCard } from "@/components/TodayStepCard";
 import {
