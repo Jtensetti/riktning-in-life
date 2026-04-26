@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { toneHsl, chartTokens, prefersReducedMotion, toneSoftBg, type ChartTone } from "@/lib/chartColors";
+import { AnimatedChart, buildChartSignature } from "./AnimatedChart";
 
 export type MetricSlice = {
   label: string;
