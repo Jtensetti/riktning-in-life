@@ -53,6 +53,27 @@ export type Database = {
         }
         Relationships: []
       }
+      activity_favorites: {
+        Row: {
+          activity_slug: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          activity_slug: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          activity_slug?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       activity_logs: {
         Row: {
           activity_slug: string
