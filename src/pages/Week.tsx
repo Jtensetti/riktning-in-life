@@ -685,24 +685,26 @@ const Week = () => {
                   index={1}
                   className="mb-3"
                 >
-                  <StackedRecovery
-                    data={timeline.map<RecoveryDay>((d) => {
-                      const sleep = d.checkin?.sleep_hours ? Math.round(Number(d.checkin.sleep_hours) * 60) : 0;
-                      const movement = d.acts
-                        .filter((a) => a.color === "pink" || a.color === "green")
-                        .reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
-                      const mood = d.acts
-                        .filter((a) => a.color === "orange" || a.color === "yellow")
-                        .reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
-                      const recovery =
-                        d.sess.reduce((s, x) => s + (x.exercises?.duration_minutes ?? 0), 0) +
-                        d.acts
-                          .filter((a) => a.color === "blue" || a.color === "purple")
+                  <Suspense fallback={<ChartFallback height={150} />}>
+                    <StackedRecovery
+                      data={timeline.map<RecoveryDay>((d) => {
+                        const sleep = d.checkin?.sleep_hours ? Math.round(Number(d.checkin.sleep_hours) * 60) : 0;
+                        const movement = d.acts
+                          .filter((a) => a.color === "pink" || a.color === "green")
                           .reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
-                      return { iso: d.iso, sleep, movement, mood, recovery };
-                    })}
-                    height={150}
-                  />
+                        const mood = d.acts
+                          .filter((a) => a.color === "orange" || a.color === "yellow")
+                          .reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
+                        const recovery =
+                          d.sess.reduce((s, x) => s + (x.exercises?.duration_minutes ?? 0), 0) +
+                          d.acts
+                            .filter((a) => a.color === "blue" || a.color === "purple")
+                            .reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
+                        return { iso: d.iso, sleep, movement, mood, recovery };
+                      })}
+                      height={150}
+                    />
+                  </Suspense>
                 </ChartCard>
               )}
             </>
