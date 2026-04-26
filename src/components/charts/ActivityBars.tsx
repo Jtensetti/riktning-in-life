@@ -97,6 +97,7 @@ export const ActivityBars = ({ data, height = 128, emptyMin = 4 }: Props) => {
           </Bar>
         </BarChart>
       </ResponsiveContainer>
-    </div>
+      </div>
+    </AnimatedChart>
   );
 };
