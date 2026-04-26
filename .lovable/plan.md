@@ -1,124 +1,116 @@
-## Utgångsläge — vad vi redan har
+# Iterationsplan — Riktning
 
-Den deterministiska motorn är redan stark:
+Inget ombyggt från grunden. Visuell riktning, modulnamn, navigering och datalager behålls. Detta är en **kurerings- och polishpass** som gör Today dynamisk-men-lugn, fyller i några saknade fält, och städar några påtagliga svagheter i Vård/medicin/krisplan.
 
-- `timeContext` (morgon/midday/eftermiddag/kväll/natt + säsong + helg)
-- `weather` med outdoor-friendly + dagsljusflagga
-- `recommendForToday` med slot-modell, repetitionsstraff, energibudget
-- `buildEveningPrediction` + `buildDayHighlights` + `buildLiftSummary`
-- `PersonalBaseline` med median+IQR per fält
-- `streakCounts` per check-in/aktivitet/session
-
-**Diagnos:** Appen *räknar* mycket — men UI:t reagerar lite. Du ser samma hero, samma rubrik, samma struktur oavsett om det är tisdag morgon med solsken eller söndag kväll efter en tung vecka. Det är där känslan av "den känner mig" tappas.
-
-Sex spår, från mest till minst synligt. Allt deterministiskt — inga AI-anrop, ingen ny tabell om vi inte måste.
+Brief:en täcker nästan hela appen. Jag har grupperat förslagen i tydliga vågor så du kan stryka det du inte vill ha. Jag rekommenderar att vi kör **Våg 1 + Våg 2** i en omgång och låter Våg 3 + 4 vänta tills vi sett resultatet.
 
 ---
 
-### Spår 1 — Levande hero ("appen ser likadan ut" → "appen andas med dagen")
+## Våg 1 — Today som kuraterad startsida (kärnan i briefen)
 
-**Idag:** `HeroBanner` på Today får `tone = heroToneFor(partOfDay)` och en fast ikon. Två av fem tider använder samma orange.
+**Mål:** "max 5 synliga block innan scroll, en primär handling, max 2 sekundära." Idag visar `Today.tsx` typiskt 8–10 block (state, quick log, ForYou-karusell, evening prediction, forecast + evidence, klinisk veckorapport-genväg, rec, dagens rutin, learn, veckans riktning, senaste aktivitet). Allt finns kvar — men vi sätter en **synlig prioriteringsmotor** ovanför alla optional moduler.
 
-**Förändring:**
-- Bredda paletten: morgon=orange, midday=yellow, eftermiddag=blue, kväll=purple, natt=djup-purple. Lägg in **säsongstint** ovanpå (vinter = kallare blå-undertone, sommar = varmare). En liten subtil shift, inte en ny färg.
-- **Dynamisk ikon** på heron: `sun` på morgonen, `moon-stars` på kvällen, `cloud-soft` vid mulet väder, `rain-drop` vid regn, `snow` vintertid med kyla, `leaf` höst. Vi har redan ikonbiblioteket i `AbstractIcon`.
-- **Float-amplitud** följer energin: låg energi → långsammare, mjukare animation; hög energi → snabbare. CSS-variabel `--float-duration` styrd från React.
-- **Pattern-cirklar** på/av baserat på `safety_status` — ingen lekfullhet vid akut signal.
+### 1.1 Ny `src/lib/todayLayout.ts` — modulväljare
+Ren funktion (testbar) som tar `{ checkin, time, weather, recent7, picks, forecast, eveningPrediction, baselineDays, hasReport, daysSinceLastSeen, safetyFlag }` och returnerar en ordnad lista av `ModuleId`:
+- `header`, `safety`, `weatherPermission`, `streak`, `eveningWindDown`, `state`, `quickLog`, `primary`, `forYou`, `eveningPrediction`, `forecast`, `reportShortcut`, `todayRoutine`, `learn`, `weekDirection`, `latestActivity`.
 
-**UI-arbete:** Liten utvidgning av `HeroBanner` (lägg till `mood?: "calm" | "neutral" | "lively"`-prop), ny helper `heroVisualsFor(time, weather, checkin, season)`. Inga nya assets.
+Regler (deterministiska, dokumenterade i kommentarer):
+- **Säkerhetsläge** ⇒ `safety` + `state` + `quickLog` only. Allt annat döljs.
+- **Frånvaro 3+ dagar** (`lastSeen`) ⇒ Header-greeting redan klar; lägg till compact "Välkommen tillbaka"-mikrokort ovanför state. Hide forecast/learn.
+- **Inget check-in idag** ⇒ Primary = "Logga dagen" (tona som idag), häng på en *enda* sekundär (time-of-day mikrohandling). Hide weekDirection, learn, todayRoutine.
+- **Check-in finns** ⇒ Primary = från `recommend()` (befintlig). Tillåt max 2 sekundära av: `forYou`, `eveningPrediction|forecast`, `todayRoutine`, `learn`, `reportShortcut` — vald av prioritet nedan.
+- **Sekundär-prioritet** (välj topp 2 i ordning): `eveningPrediction` > `forecast` > `todayRoutine` (om matchar partOfDay) > `forYou` > `reportShortcut` (bara om PHQ/GAD due eller ≥7d sedan export) > `learn`.
+- **Baseline < 14 dgr** ⇒ Hide `weekDirection`, visa istället en kompakt baseline-rad ("Dag X av 14") under state.
+- **`reportShortcut`** visas inte dagligen — bara: (a) inga export senaste 14 dagarna OCH ≥7 dagar med data, eller (b) PHQ-9/GAD-7 förfallen (>14 dgr), eller (c) `safety_status` ≠ none senaste 7d. Annars dolt.
+- **`learn`** högst 1, aldrig ovanför primary. Roteras (befintlig logik), men endast om vi har plats kvar i sekundär-budgeten.
 
----
+### 1.2 `Today.tsx` — refaktor mot module map
+- Behåll all rendering-JSX för varje modul, men flytta dem till en `MODULE_RENDERERS: Record<ModuleId, () => JSX>` map.
+- Rendera bara det som `todayLayout` returnerar.
+- Resultat: filen blir mindre, dynamiken blir explicit och testbar, inga visuella ändringar för det som faktiskt visas.
 
-### Spår 2 — "Välkommen tillbaka" (kontinuitet mellan besök)
+### 1.3 Tydligare *time-of-day primary* när check-in saknas
+Idag väljer `recommend()` även när `checkin == null`. Vi:
+- Behåller `recommend()` för "rekommenderat-just-nu"-kortet.
+- Lägger till **"Välj en liten start"** mikro-band (3 chips) under state-kortet bara när `!checkin`, mappad mot partOfDay (morgon: 3 min upp / 8 min start / dagsljus 15; dag: snabblogg / rörelse 10 / bryt ältande; kväll: tre rader / kvällslandning / spara dagen; natt: andning 4 / imorgon-lista). Chipsen länkar redan rätt — bara ny copy + filtrering på partOfDay i en hjälpare `src/lib/quickStarts.ts`.
 
-**Idag:** Hälsningen är `"God morgon"` oavsett om du var här för 10 min sen eller 4 dagar sen.
+### 1.4 Test
+Lägg till `src/test/todayLayout.test.ts` med 8–10 fall (safety, no-checkin morning, evening with low sleep, returnee 3+d, baseline-not-ready, etc.). Snabba enhetstester.
 
-**Förändring:** Spara `lastSeenAt` i `localStorage` vid varje Today-render. När den nästa gång läses, härled:
-- `<2h sedan` → ingen ändring
-- `samma dag, >4h` → "Välkommen tillbaka" istället för standardhälsning
-- `igår` → "Välkommen tillbaka. Igår var en {bästa/tyngsta/stabil} dag." (vi har `buildDayHighlights`)
-- `>2 dagar` → "Skönt att se dig igen. Vi väntade." (varm, aldrig skuldbeläggande)
-- `>7 dagar` → "Välkommen tillbaka. Vi börjar om mjukt — bara en check-in idag räcker." + döljer nästan allt utom QuickLog och en enda mjuk övning.
-
-**UI-arbete:** Ny `src/lib/lastSeen.ts` (~20 rader) + ersätt rubriken på Today.
-
----
-
-### Spår 3 — Kontextkänslig öppningssektion ("vad du först ser")
-
-**Idag:** Today renderar alltid samma sektioner i samma ordning: Hero → State → För dig → Highlights → Quicklog osv.
-
-**Förändring:** Inför en **"Top of mind"-slot** allra först (efter hero, före allt annat). Vad som hamnar där bestäms av en enkel prioritetsfunktion `topOfMindFor(time, weather, checkin, baseline, lastSeen)`:
-
-| Trigger | Visas |
-|---|---|
-| `safety_status` = akut/aktiv | Direkt safety-card, inget annat ovan |
-| Ingen check-in idag + det är >12 | "Hur är dagen så här långt?" — direkt-inline check-in (3 sliders, save inline) |
-| Ingen check-in idag + morgon | "En mjuk start: bara välj en känsla." — 5 emoji-knappar som triggar QuickLog |
-| Hög oro idag (>baseline) | EveningPredictionCard flyttas upp + ett andnings-CTA |
-| Solen är ute + ingen rörelse loggad + dagtid | "Solen är uppe nu. 10 min ute räknas." — direkt CTA till promenadövning |
-| Tidigare i veckan: kort sömn 2 nätter + det är kväll | "Du har sovit kort. Här är din kvällsritual." |
-| Inget av ovan | Standardflöde |
-
-**UI-arbete:** En ny komponent `TopOfMind.tsx` (renderar alltid bara *en* sak), ny helper `src/lib/topOfMind.ts` med ren beslutslogik (lätt att enhetstesta). Återanvänder befintliga ColorCard/QuickLogPills.
+**Filer:** `src/lib/todayLayout.ts` (ny), `src/lib/quickStarts.ts` (ny), `src/pages/Today.tsx` (refaktor), `src/test/todayLayout.test.ts` (ny).
 
 ---
 
-### Spår 4 — Mikro-läroögonblick (knyt data till kunskap)
+## Våg 2 — Klinisk integritet (snabba vinster)
 
-**Idag:** `Learn`-artiklar finns men ligger i sin egen flik. Du får ingen artikel *när den är relevant*.
+### 2.1 Medicinduplikatskydd
+Briefen: "Prevent duplicate active medication with same name + dose."
+- I `Vard.tsx` `addMed`: innan insert, kör `select` på `(user_id, name ILIKE ?, coalesce(dose,'') = ?, active = true)`. Om träff: visa toast "Den här medicinen finns redan aktiv." och avbryt.
+- Lägg också på en **partial unique index** i migration: `CREATE UNIQUE INDEX medications_user_active_namedose_uq ON public.medications (user_id, lower(name), coalesce(lower(dose),'')) WHERE active = true;`
+- I daglig medicinlogg: bara visa aktiva mediciner (det görs redan? — verifiera och fix om inte).
 
-**Förändring:** När en daglig signal triggar något specifikt, visa en lågmäld **läs-1-min-rad** under det relaterade kortet:
-- Hög oro 3+ dagar → "Varför andning faktiskt funkar (1 min)" (länk till befintlig artikel)
-- Kort sömn 2+ nätter → "Vad sömnskuld gör med oron (1 min)"
-- Mycket säng/soffa → "Aktiveringsspiralen — och vägen ut (1 min)"
+### 2.2 Krisplan: kollapsbara sektioner + akut alltid öppen
+- Använd existerande `components/ui/collapsible.tsx`. Wrappa varje sektion (varningssignaler, vad hjälper, undvik, stödpersoner, professionella, säkra platser, skäl att fortsätta) i `Collapsible`. **Akut/professionella kontakter** är defaultöppen.
+- Lägg till statiskt mikro-block överst med 112 / 1177 / Mind 90101 / Jourhavande medmänniska 08-702 16 80 (klickbara `tel:`-länkar).
+- Liten varningsremsa: "Kontrollera att telefonnummer och kontakter stämmer."
 
-Vi har redan `learn_articles`-tabellen och `read_minutes`. Det vi behöver är en koppling: en `topic_tag` per artikel (`"anxiety" | "sleep" | "activation" | ...`) och en helper som matchar mot dagens dominanta signal.
+### 2.3 Rapport — ärligare tomt läge
+- I `WeeklyReport.tsx` och `Vard.tsx` rapport-fliken: om `daysWithData < 3` eller ingen weekly_form senaste 30 dgr ⇒ visa block:
+  > "För lite data ännu. Rapporten blir mer användbar efter några dagars loggning och minst en veckoskattning."
+  Och inaktivera "Generera PDF" med tooltip-text (men tillåt alltid manuell override-knapp "Generera ändå").
 
-**UI-arbete:** Migration som lägger `topic_tag text` på `learn_articles` (nullable, sätts manuellt), ny `src/lib/learnMatch.ts`, en liten inline-rad i Today-flödet.
+### 2.4 PHQ-9 fråga 9 follow-up
+- Efter spara av PHQ-9 där svar #9 > 0: visa modal/sheet med tre val (Öppna krisplan / Lägg till anteckning till rapport / Fortsätt). Anteckning sparas som `journal_entries` med `template_type = "report_note"` och `include_in_report = true`.
 
----
-
-### Spår 5 — Levande streak-feedback
-
-**Idag:** `StreakRing` visar siffror men berättar inget om *betydelse*.
-
-**Förändring:** När `streakCounts.checkin >= 5/7`, visa under ringen: "Veckor då du loggar ofta tenderar att kännas lättare för dig." (bara om vi har data som styrker det — annars en mjuk default: "Loggandet är hur vi ser mönster.")
-
-Lägg också in **micro-celebration**: när en streak passerar 3 / 7 / 14 / 30 dagar, en kort konfetti-fri animation (mjuk pulse + en rad text). Använder befintlig `animate-pop-in` + ny `streakMilestone()`-helper.
-
-**UI-arbete:** Liten extension av `StreakRing` + `useEffect` som detekterar tröskelpassage via `localStorage`-snapshot.
+**Filer:** `src/pages/Vard.tsx`, `src/pages/CrisisPlan.tsx`, `src/pages/WeeklyReport.tsx`, ny migration `add_medications_unique_active`, ev. liten `<SafetyFollowUpSheet/>`.
 
 ---
 
-### Spår 6 — Adaptiv ton i copy
+## Våg 3 — Väder som data (inte bara dekor)
 
-**Idag:** Copy är genomgående mjuk och fin — men *samma* mjukhet vid 4h sömn som vid 8h sömn.
+Briefen ber om explicit fältset. Idag finns bara `weather_kind` + `weather_temp_c`. Förslag:
 
-**Förändring:** Inför `src/lib/tone.ts` med `getToneFor(checkin, baseline) → "tender" | "steady" | "energized"`. Tre varianter av varje rubrik på Today:
-- `tender` (hög tyngd/oro/kort sömn): "Idag räcker det att andas."
-- `steady` (i baslinjen): "Det här räcker idag."
-- `energized` (över baslinjen, god sömn): "Bra ingång — använd det."
+### 3.1 Migration — utöka `daily_checkins`
+```sql
+ALTER TABLE public.daily_checkins
+  ADD COLUMN IF NOT EXISTS daylight_level text,         -- low|medium|high
+  ADD COLUMN IF NOT EXISTS precipitation text,          -- none|light|heavy
+  ADD COLUMN IF NOT EXISTS weather_source text,         -- automatic|manual|none
+  ADD COLUMN IF NOT EXISTS weather_location_label text;
+```
+(Vi mappar Open-Meteo: `daylight_level` från `is_day` + month/UV-proxy; `precipitation` från weather_code-buckets.)
 
-**UI-arbete:** Ren copy-tabell + en helper. Ingen ny komponent.
+### 3.2 `lib/weather.ts` — utökad `Weather` + en hjälpare `toCheckinFields(w, source)`.
+
+### 3.3 `Checkin.tsx` — skriver de nya fälten vid spara.
+
+### 3.4 (Senare, inte nu) Veckans väder-insikt
+Bara om ≥10 dagar med både weather + checkin: snäll insikt på Vecka-tabben ("Dagar med lågt dagsljus sammanfaller ofta med lägre energi"). Märkt explicit som "preliminärt" — ingen kausalitet.
+
+**Filer:** ny migration, `src/lib/weather.ts`, `src/pages/Checkin.tsx`. Inget UI-byte i Today (`WeatherChip` förblir).
 
 ---
 
-## Vad jag *inte* föreslår
+## Våg 4 — Polish som väntar (inte nu om vi inte hinner)
 
-- **Inga push-notiser eller bakgrundsjobb** — appen är fortfarande klient-only utan service workers; vi gör allt vid render.
-- **Ingen AI-genererad copy** — risk för svaj ton, allt deterministiskt.
-- **Ingen ny "feed"-modell** — vi använder befintliga sektioner och bara *ordnar om* + lägger en topp-slot.
-- **Inga procent ut till användaren** ("47% bättre") — håller oss till "ofta", "tendens", "verkar" som idag.
+Listas så du vet att jag sett dem; lägg till med en kommentar om du vill ha med dem nu istället för senare.
+- **Quick log Mood-modal** — finns redan i Pills, ingen åtgärd om vi inte vill bygga ut SömnQuick / RörelseQuick / MedicinQuick som dedikerade bottom sheets med chips (5/6/7/8/9 timmar etc.). Stor i scope.
+- **Activity picker — gruppering + "Senast använda" + "Skapa egen"** — meningsfullt men ~en halv dag ensamt.
+- **Checkin: kollapsbara sektioner** (Mående / Vardag / Säkerhet+Anteckning) — låg risk men skiftar layout märkbart, vill helst göra som egen runda.
+- **Typografi: Nunito Sans** — kräver byte av font-stack i `tailwind.config.ts` + verifiera kontrast/vikt på alla kort. Egen runda.
+- **Vecka-tabben: tomma chart-skeletons med förklarande text** istället för dotted blanka diagram — verifiera först vad som faktiskt visas vid 0 datapunkter.
+- **Journal: "markera för vårdrapport"-toggle direkt i listan** — finns delvis (`include_in_report`-fält). Kan göra om brieferna prioriterar.
 
 ---
 
-## Förslag på leveranspaket
+## Vad som *inte* görs i den här rundan (medvetet)
+- Ingen ombyggnad av navigationen — 5 tabs är redan rätt.
+- Ingen ny `weather_logs`-tabell. Vädret bor på `daily_checkins` (en rad per dag räcker tills vi vet att vi behöver tidsserier per timme).
+- Ingen ändring av baseline-algoritm eller recommend-scoring — de fungerar.
 
-Tre möjliga storlekar:
+---
 
-1. **Snabb effekt (spår 1 + 2 + 6)** — hero andas, hälsningen minns dig, copy anpassas. Ingen migration, allt i lib + Today + HeroBanner.
-2. **Medel (1+2+3+6)** — också "Top of mind"-sektionen som faktiskt byter vad du ser först.
-3. **Hela paketet (1–6)** — också mikro-lärande och streak-firande. Kräver en liten migration på `learn_articles.topic_tag`.
+## Leverans
+**Föreslagen scope för kommande implementation: Våg 1 + Våg 2 + Våg 3.** Ger den största upplevelsemässiga effekten ("Today väljer åt mig") plus stänger två tydliga kliniska luckor (medicin-dedupe, ärligt rapport-tomtläge) och fyller i väderfälten utan UI-skifte.
 
-Säg vilket paket du vill köra på, eller plocka enskilda spår — så bygger jag i nästa steg.
+Säg till om du vill stryka något, eller dra in delar av Våg 4.
