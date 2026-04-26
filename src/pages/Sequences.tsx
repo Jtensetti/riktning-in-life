@@ -111,8 +111,8 @@ const Sequences = () => {
               <h3 className="text-[20px] leading-[24px] font-extrabold mb-1">{s.title}</h3>
               <p className="text-sm opacity-90 leading-snug">{s.description}</p>
             </div>
-            <div className="shrink-0 grid place-items-center w-10 h-10 rounded-full bg-white/20">
-              <ChevronRight size={20} />
+            <div className="shrink-0 grid place-items-center w-11 h-11 rounded-full bg-white/20">
+              <AbstractIcon name="play-soft-circle" size={26} color="currentColor" />
             </div>
           </button>
         ))}
