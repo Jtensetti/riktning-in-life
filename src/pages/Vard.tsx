@@ -542,6 +542,16 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
     const j = (journals.data ?? []) as any[];
     const acts = (activities.data ?? []) as any[];
 
+    // Föregående period (för trender i sammanfattningsblocket).
+    const prevSince = new Date(Date.now() - days * 2 * 86400000).toISOString().split("T")[0];
+    const prevUntil = since;
+    const [prevCheckins, prevMedLogs] = await Promise.all([
+      supabase.from("daily_checkins").select("sleep_hours,movement_today").eq("user_id", user.id).gte("date", prevSince).lt("date", prevUntil),
+      supabase.from("medication_logs").select("taken_status,date").eq("user_id", user.id).gte("date", prevSince).lt("date", prevUntil),
+    ]);
+    const cPrev = (prevCheckins.data ?? []) as any[];
+    const mlPrev = (prevMedLogs.data ?? []) as any[];
+
     const avg = (arr: any[], k: string) => {
       const xs = arr.map(r => r[k]).filter((v): v is number => typeof v === "number");
       if (!xs.length) return null;
