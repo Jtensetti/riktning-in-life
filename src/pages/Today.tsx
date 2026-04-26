@@ -15,7 +15,13 @@ import { getTimeContext, type TimeContext } from "@/lib/timeContext";
 import { useWeather, isOutdoorFriendly, weatherLabel, hasAskedWeatherPermission, isWeatherPermissionGranted, type Weather } from "@/lib/weather";
 import { ForYouCarousel } from "@/components/ForYouCarousel";
 import { recommendForToday, type Exercise as RecExercise, type Pick } from "@/lib/recommend";
-import { BookOpen, Sparkles } from "lucide-react";
+import { BookOpen, Sparkles, Moon } from "lucide-react";
+import { StreakRing } from "@/components/StreakRing";
+import { QuickLogPills } from "@/components/QuickLogPills";
+import { QuickLogFab } from "@/components/QuickLogFab";
+import { ActivityPicker, type ActivityDraft } from "@/components/ActivityPicker";
+import { countDaysInWindow, type StreakCounts } from "@/lib/streaks";
+import { toast } from "sonner";
 
 type Checkin = {
   id: string;
@@ -223,6 +229,9 @@ const Today = () => {
   const [time, setTime] = useState<TimeContext>(() => getTimeContext());
   const { weather, status: weatherStatus, requestLocation } = useWeather(true);
   const [permissionDismissed, setPermissionDismissed] = useState(false);
+  const [streakCounts, setStreakCounts] = useState<StreakCounts>({ checkin: 0, activity: 0, session: 0 });
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [streakReloadKey, setStreakReloadKey] = useState(0);
 
   // Refresh time context every minute so partOfDay stays accurate without reload.
   useEffect(() => {
@@ -304,6 +313,51 @@ const Today = () => {
     };
     load();
   }, [user]);
+
+  // Ladda kedjor (3 vanor × senaste 7 dagar). Separat så snabbloggning kan trigga reload utan att röra resten.
+  useEffect(() => {
+    if (!user) return;
+    const since = (() => {
+      const d = new Date();
+      d.setDate(d.getDate() - 6);
+      return d.toISOString().split("T")[0];
+    })();
+    const sinceTs = new Date(Date.now() - 7 * 86_400_000).toISOString();
+    (async () => {
+      const [ci, al, es] = await Promise.all([
+        supabase.from("daily_checkins").select("date").eq("user_id", user.id).gte("date", since),
+        supabase.from("activity_logs").select("date").eq("user_id", user.id).gte("date", since),
+        supabase.from("exercise_sessions").select("created_at").eq("user_id", user.id).gte("created_at", sinceTs),
+      ]);
+      setStreakCounts({
+        checkin: countDaysInWindow((ci.data ?? []) as any[]),
+        activity: countDaysInWindow((al.data ?? []) as any[]),
+        session: countDaysInWindow((es.data ?? []) as any[]),
+      });
+    })();
+  }, [user, streakReloadKey]);
+
+  const handleQuickAdd = async (a: ActivityDraft) => {
+    if (!user) return;
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.(10);
+    const { error } = await supabase.from("activity_logs").insert({
+      user_id: user.id,
+      date: new Date().toISOString().split("T")[0],
+      activity_slug: a.slug,
+      label: a.label,
+      category: a.category,
+      icon: a.icon,
+      color: a.color,
+      duration_minutes: a.duration_minutes,
+      mood_delta: a.mood_delta,
+    });
+    if (error) {
+      toast.error("Kunde inte logga. Försök igen.");
+      return;
+    }
+    toast.success(`${a.label} loggad`);
+    setStreakReloadKey((k) => k + 1);
+  };
 
   if (loading || fetching) {
     return (
@@ -405,6 +459,29 @@ const Today = () => {
         </div>
       )}
 
+      {!showSafety && <StreakRing counts={streakCounts} className="mb-5" />}
+
+      {/* Kvällsläge: efter kl 20 lyfter vi fram "Stäng dagen mjukt" istället för full check-in. */}
+      {!showSafety && !checkin && (time.partOfDay === "evening" || time.partOfDay === "night") && (
+        <section className="rounded-3xl bg-purple-sleep text-white p-5 mb-6 animate-pop-in shadow-soft">
+          <div className="flex items-start gap-3 mb-3">
+            <div className="shrink-0 w-12 h-12 rounded-2xl bg-white/20 grid place-items-center">
+              <Moon size={22} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-[20px] leading-tight font-extrabold mb-1">Stäng dagen mjukt</h3>
+              <p className="text-sm opacity-90">Tre snabba reglage. Ingen prestation — bara en mjuk avslutning.</p>
+            </div>
+          </div>
+          <Button
+            onClick={() => navigate("/checkin")}
+            className="w-full h-12 rounded-full bg-white text-foreground hover:bg-white/90 font-extrabold press-soft"
+          >
+            Logga kvällen
+          </Button>
+        </section>
+      )}
+
       {/* State card — compact horizontal layout */}
       <section className="card-cream p-5 mb-7 animate-pop-in">
         <div className="flex items-start gap-3 mb-4">
@@ -429,6 +506,13 @@ const Today = () => {
           {checkin ? "Uppdatera dagen" : "Logga dagen"}
         </Button>
       </section>
+
+      {!showSafety && (
+        <QuickLogPills
+          onOpenPicker={() => setPickerOpen(true)}
+          onLogged={() => setStreakReloadKey((k) => k + 1)}
+        />
+      )}
 
       {!showSafety && picks.length > 0 && (
         <ForYouCarousel picks={picks} />
@@ -615,6 +699,9 @@ const Today = () => {
           </ul>
         </section>
       )}
+
+      {!showSafety && <QuickLogFab onClick={() => setPickerOpen(true)} />}
+      <ActivityPicker open={pickerOpen} onOpenChange={setPickerOpen} onAdd={handleQuickAdd} />
     </AppShell>
   );
 };
