@@ -386,9 +386,16 @@ const Today = () => {
           </p>
           <Button
             onClick={() => navigate("/vard")}
-            className="bg-red-risk hover:bg-red-risk/90 text-white rounded-full font-extrabold press-soft"
+            className="bg-red-risk hover:bg-red-risk/90 text-white rounded-full font-extrabold press-soft mr-2"
           >
             Gå till Vård
+          </Button>
+          <Button
+            onClick={() => navigate("/krisplan")}
+            variant="secondary"
+            className="rounded-full font-extrabold press-soft mt-2"
+          >
+            Öppna min krisplan
           </Button>
         </div>
       )}
