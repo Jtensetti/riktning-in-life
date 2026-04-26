@@ -491,4 +491,63 @@ const SegField = ({ label, value, onChange, opts }: { label: string; value: stri
   </div>
 );
 
+/**
+ * Adaptiv djupfråga — visas bara när vi har en personlig baslinje och kan se
+ * vilket fält som varierar mest. Frågan är fri-text (tags) och sparas i note
+ * som "#deep:<field>=<svar>" — ingen schemändring krävs.
+ */
+const DEEP_QUESTIONS: Record<VarianceField, { label: string; placeholder: string; hint: string }> = {
+  sleep_hours: {
+    label: "Hur var sömnen i kväll/morse?",
+    placeholder: "T.ex. somnade sent, vaknade flera gånger, drömde mycket",
+    hint: "Sömnen varierar mest för dig — kvalitet och mönster säger ofta mer än timmarna.",
+  },
+  anxiety: {
+    label: "Vad triggade oron mest idag?",
+    placeholder: "T.ex. mejl, kvällstankar, fysiskt obehag",
+    hint: "Din oro varierar mycket. Att namnge triggers hjälper oss se mönster.",
+  },
+  daytime_bed_sofa_time_minutes: {
+    label: "Hur mycket tid i sängen/soffan idag (minuter)?",
+    placeholder: "T.ex. 90",
+    hint: "Stillatid varierar mycket för dig — bra att följa över tid.",
+  },
+  energy: {
+    label: "När var energin som lägst/högst idag?",
+    placeholder: "T.ex. dipp efter lunch, lyft på kvällen",
+    hint: "Energin svänger för dig — timing kan ge ledtrådar.",
+  },
+  mood_heaviness: {
+    label: "Vad färgade dagen mest — något särskilt?",
+    placeholder: "T.ex. ett samtal, väder, en tanke",
+    hint: "Tyngden varierar mycket för dig. Korta noteringar bygger mönster.",
+  },
+};
+
+const DeepQuestion = ({
+  field,
+  value,
+  onChange,
+}: {
+  field: VarianceField | null;
+  value: string;
+  onChange: (v: string) => void;
+}) => {
+  if (!field) return null;
+  const q = DEEP_QUESTIONS[field];
+  return (
+    <div className="card-cream p-5 mb-4 animate-fade-in-up" style={{ animationDelay: "var(--stagger-4)" }}>
+      <label className="text-sm font-extrabold mb-1 block">{q.label}</label>
+      <p className="text-xs text-text-secondary mb-3">{q.hint}</p>
+      <Textarea
+        rows={2}
+        placeholder={q.placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="bg-surface border-border-soft"
+      />
+    </div>
+  );
+};
+
 export default Checkin;
