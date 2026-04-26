@@ -63,6 +63,8 @@ type DayEntry = {
 };
 
 // === Page ===
+type MoodEdit = { id: string; heaviness: number; anxiety: number; energy: number };
+
 const QuickLog = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -72,6 +74,8 @@ const QuickLog = () => {
   const [meds, setMeds] = useState<{ id: string; name: string; dose: string | null }[]>([]);
   const [fetching, setFetching] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
+  const [moodEdit, setMoodEdit] = useState<MoodEdit | null>(null);
+  const [savingMoodEdit, setSavingMoodEdit] = useState(false);
 
   useEffect(() => { if (!loading && !user) navigate("/auth"); }, [user, loading, navigate]);
 
@@ -195,6 +199,40 @@ const QuickLog = () => {
     setOpenTpl(null);
     setReloadKey(k => k + 1);
     if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.(10);
+  };
+
+  /** Anropas av MoodForm efter spara — visar toast med "Ändra känsla"-action
+   *  som öppnar samma typ av redigeringsdrawer som aktivitets-snabbloggen. */
+  const onMoodSaved = (id: string, heaviness: number, anxiety: number, energy: number) => {
+    setOpenTpl(null);
+    setReloadKey(k => k + 1);
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.(10);
+    toast.success("Mående loggat", {
+      description: `Tyngd ${heaviness} · Oro ${anxiety} · Energi ${energy}`,
+      action: {
+        label: "Ändra känsla",
+        onClick: () => setMoodEdit({ id, heaviness, anxiety, energy }),
+      },
+    });
+  };
+
+  const saveMoodEdit = async () => {
+    if (!moodEdit || !user || savingMoodEdit) return;
+    setSavingMoodEdit(true);
+    const { error } = await supabase
+      .from("daily_checkins")
+      .update({
+        mood_heaviness: moodEdit.heaviness,
+        anxiety: moodEdit.anxiety,
+        energy: moodEdit.energy,
+      })
+      .eq("id", moodEdit.id)
+      .eq("user_id", user.id);
+    setSavingMoodEdit(false);
+    if (error) { toast.error("Kunde inte spara"); return; }
+    toast.success("Känsla uppdaterad");
+    setMoodEdit(null);
+    setReloadKey(k => k + 1);
   };
 
   const deleteEntry = async (e: DayEntry) => {
@@ -335,8 +373,48 @@ const QuickLog = () => {
           </DrawerHeader>
           {openTpl === "sleep" && <SleepForm onSaved={onSaved} userId={user?.id} />}
           {openTpl === "movement" && <MovementForm onSaved={onSaved} userId={user?.id} />}
-          {openTpl === "mood" && <MoodForm onSaved={onSaved} userId={user?.id} />}
+          {openTpl === "mood" && <MoodForm onSaved={onMoodSaved} userId={user?.id} />}
           {openTpl === "medication" && <MedicationForm onSaved={onSaved} userId={user?.id} meds={meds} />}
+        </DrawerContent>
+      </Drawer>
+
+      {/* === MOOD EDIT DRAWER — samma "Ändra känsla"-mönster som aktivitetsloggen === */}
+      <Drawer open={!!moodEdit} onOpenChange={(o) => !o && !savingMoodEdit && setMoodEdit(null)}>
+        <DrawerContent className="px-5 pb-8 max-h-[88vh]">
+          <DrawerHeader className="px-0 pt-2">
+            <DrawerTitle className="text-2xl">Ändra känsla</DrawerTitle>
+          </DrawerHeader>
+          {moodEdit && (
+            <div className="space-y-5">
+              <MoodSliderRow
+                label="Tyngd / nedstämdhet"
+                value={moodEdit.heaviness}
+                set={(n) => setMoodEdit(s => s ? { ...s, heaviness: n } : s)}
+                tone="orange"
+              />
+              <MoodSliderRow
+                label="Oro / ångest"
+                value={moodEdit.anxiety}
+                set={(n) => setMoodEdit(s => s ? { ...s, anxiety: n } : s)}
+                tone="blue"
+              />
+              <MoodSliderRow
+                label="Energi"
+                value={moodEdit.energy}
+                set={(n) => setMoodEdit(s => s ? { ...s, energy: n } : s)}
+                tone="pink"
+              />
+              <Button
+                onClick={saveMoodEdit}
+                disabled={savingMoodEdit}
+                variant="pill-strong"
+                size="pill-lg"
+                className="w-full"
+              >
+                {savingMoodEdit ? "Sparar…" : "Spara ändring"}
+              </Button>
+            </div>
+          )}
         </DrawerContent>
       </Drawer>
     </AppShell>
@@ -539,7 +617,34 @@ const MovementForm = ({ onSaved, userId }: { onSaved: () => void; userId: string
 // ====================================================================
 // === FORM: MOOD ===
 // ====================================================================
-const MoodForm = ({ onSaved, userId }: { onSaved: () => void; userId: string | undefined }) => {
+/** Delad slider-rad för både MoodForm (nylog) och mood-edit-drawern. */
+const MoodSliderRow = ({
+  label, value, set, tone,
+}: { label: string; value: number; set: (n: number) => void; tone: Tone }) => (
+  <div>
+    <div className="flex items-baseline justify-between mb-2">
+      <p className="text-xs font-extrabold uppercase tracking-wider text-text-secondary">{label}</p>
+      <p className="text-base font-extrabold tabular-nums">{value}/10</p>
+    </div>
+    <div className="grid grid-cols-11 gap-1">
+      {Array.from({ length: 11 }, (_, n) => (
+        <button key={n}
+          onClick={() => set(n)}
+          className={`aspect-square rounded-xl text-xs font-extrabold tabular-nums press-soft ${
+            value === n ? toneBg(tone) : "bg-surface-alt text-foreground"
+          }`}
+        >{n}</button>
+      ))}
+    </div>
+  </div>
+);
+
+const MoodForm = ({
+  onSaved, userId,
+}: {
+  onSaved: (id: string, heaviness: number, anxiety: number, energy: number) => void;
+  userId: string | undefined;
+}) => {
   const [heaviness, setHeaviness] = useState<number>(5);
   const [anxiety, setAnxiety] = useState<number>(5);
   const [energy, setEnergy] = useState<number>(5);
@@ -553,39 +658,28 @@ const MoodForm = ({ onSaved, userId }: { onSaved: () => void; userId: string | u
       .from("daily_checkins").select("id").eq("user_id", userId).eq("date", today).maybeSingle();
 
     const payload: any = { mood_heaviness: heaviness, anxiety, energy };
-    const { error } = existing
-      ? await supabase.from("daily_checkins").update(payload).eq("id", existing.id)
-      : await supabase.from("daily_checkins").insert({ ...payload, user_id: userId, date: today });
+    let savedId: string | null = existing?.id ?? null;
+    if (existing) {
+      const { error } = await supabase.from("daily_checkins").update(payload).eq("id", existing.id);
+      if (error) { setBusy(false); toast.error("Kunde inte spara"); return; }
+    } else {
+      const { data: ins, error } = await supabase
+        .from("daily_checkins")
+        .insert({ ...payload, user_id: userId, date: today })
+        .select("id").maybeSingle();
+      if (error || !ins?.id) { setBusy(false); toast.error("Kunde inte spara"); return; }
+      savedId = ins.id;
+    }
     setBusy(false);
-    if (error) { toast.error("Kunde inte spara"); return; }
-    toast.success("Mående loggat");
-    onSaved();
+    if (!savedId) return;
+    onSaved(savedId, heaviness, anxiety, energy);
   };
-
-  const Slider = ({ label, value, set, color }: { label: string; value: number; set: (n: number) => void; color: Tone }) => (
-    <div>
-      <div className="flex items-baseline justify-between mb-2">
-        <p className="text-xs font-extrabold uppercase tracking-wider text-text-secondary">{label}</p>
-        <p className="text-base font-extrabold tabular-nums">{value}/10</p>
-      </div>
-      <div className="grid grid-cols-11 gap-1">
-        {Array.from({ length: 11 }, (_, n) => (
-          <button key={n}
-            onClick={() => set(n)}
-            className={`aspect-square rounded-xl text-xs font-extrabold tabular-nums press-soft ${
-              value === n ? toneBg(color) : "bg-surface-alt text-foreground"
-            }`}
-          >{n}</button>
-        ))}
-      </div>
-    </div>
-  );
 
   return (
     <div className="space-y-5">
-      <Slider label="Tyngd / nedstämdhet" value={heaviness} set={setHeaviness} color="orange" />
-      <Slider label="Oro / ångest" value={anxiety} set={setAnxiety} color="blue" />
-      <Slider label="Energi" value={energy} set={setEnergy} color="pink" />
+      <MoodSliderRow label="Tyngd / nedstämdhet" value={heaviness} set={setHeaviness} tone="orange" />
+      <MoodSliderRow label="Oro / ångest" value={anxiety} set={setAnxiety} tone="blue" />
+      <MoodSliderRow label="Energi" value={energy} set={setEnergy} tone="pink" />
       <Button onClick={save} disabled={busy} variant="pill-strong" size="pill-lg" className="w-full">
         Spara mående
       </Button>
