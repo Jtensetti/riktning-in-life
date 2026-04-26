@@ -16,6 +16,7 @@ import { ChartCard } from "@/components/charts/ChartCard";
 import { ActivityBars } from "@/components/charts/ActivityBars";
 import { StackedRecovery, type RecoveryDay } from "@/components/charts/StackedRecovery";
 import { Sparkline } from "@/components/charts/Sparkline";
+import { TodayStepCard } from "@/components/TodayStepCard";
 
 type ExerciseLite = { id: string; title: string; category: string; duration_minutes: number; color: string };
 type SessionLite = {
