@@ -6,6 +6,7 @@ import { AppShell } from "@/components/AppShell";
 import { Input } from "@/components/ui/input";
 import { Search, ChevronRight } from "lucide-react";
 import { Illustration, categoryIll } from "@/components/Illustrations";
+import { AbstractIcon } from "@/components/AbstractIcon";
 
 type Exercise = {
   id: string;
@@ -17,14 +18,14 @@ type Exercise = {
   color: string;
 };
 
-const categories = [
-  { name: "Kom igång", color: "bg-orange-start text-white" },
-  { name: "Lugna kroppen", color: "bg-blue-calm text-white" },
-  { name: "Bryt ältande", color: "bg-yellow-journal text-foreground" },
-  { name: "Sov bättre", color: "bg-purple-sleep text-white" },
-  { name: "Rör dig mjukt", color: "bg-pink-move text-white" },
-  { name: "Skriv av dig", color: "bg-cream-card text-foreground" },
-  { name: "Förbered vårdkontakt", color: "bg-green-recovery text-white" },
+const categories: { name: string; bg: string; text: string }[] = [
+  { name: "Kom igång", bg: "bg-orange-start", text: "text-white" },
+  { name: "Lugna kroppen", bg: "bg-blue-calm", text: "text-white" },
+  { name: "Bryt ältande", bg: "bg-yellow-journal", text: "text-foreground" },
+  { name: "Sov bättre", bg: "bg-purple-sleep", text: "text-white" },
+  { name: "Rör dig mjukt", bg: "bg-pink-move", text: "text-white" },
+  { name: "Skriv av dig", bg: "bg-cream-card", text: "text-foreground" },
+  { name: "Förbered vårdkontakt", bg: "bg-green-recovery", text: "text-white" },
 ];
 
 const colorBg = (color: string) => {
@@ -70,53 +71,62 @@ const Exercises = () => {
       <h1 className="text-[32px] leading-[38px] mb-1">Övningar</h1>
       <p className="text-sm text-text-secondary mb-6">Små handlingar. Välj en som passar nu.</p>
 
+      {/* Rounder, friendlier search */}
       <div className="relative mb-6">
-        <Search size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-text-secondary" />
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 grid place-items-center w-9 h-9 rounded-full bg-surface-alt">
+          <Search size={16} className="text-text-secondary" strokeWidth={2.4} />
+        </span>
         <Input
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Sök övning, känsla eller situation"
-          className="h-16 pl-14 pr-5 rounded-2xl border-2 border-border-soft bg-surface text-base"
+          className="h-14 pl-14 pr-5 rounded-full border border-border-soft bg-surface text-base shadow-card"
         />
       </div>
 
       {!q && (
         <>
           <h2 className="text-xl mb-3">Kategorier</h2>
-          <div className="grid grid-cols-2 gap-3 mb-7">
-            {categories.map(({ name, color }) => (
+          {/* Single-column horizontal cards — Headspace-inspired */}
+          <div className="space-y-3 mb-7">
+            {categories.map(({ name, bg, text }, i) => (
               <button
                 key={name}
                 onClick={() => setActive(active === name ? null : name)}
-                className={`relative rounded-3xl ${color} p-3 text-left overflow-hidden shadow-card transition ${
-                  active === name ? "ring-4 ring-foreground/20 scale-[0.98]" : ""
+                className={`relative w-full rounded-3xl ${bg} ${text} px-5 py-4 text-left overflow-hidden shadow-card press-soft animate-fade-in-up flex items-center justify-between gap-3 ${
+                  active === name ? "ring-4 ring-foreground/15" : ""
                 }`}
+                style={{ animationDelay: `${i * 50}ms`, minHeight: "84px" }}
               >
-                <Illustration name={categoryIll(name)} className="w-full h-auto rounded-2xl mb-2" />
-                <span className="font-extrabold text-sm leading-snug block px-1 pb-1">{name}</span>
+                <span className="font-extrabold text-[17px] leading-tight relative z-10 max-w-[60%]">{name}</span>
+                <div className="shrink-0 w-24 h-16 rounded-2xl overflow-hidden opacity-95">
+                  <Illustration name={categoryIll(name)} className="w-full h-full object-cover" />
+                </div>
               </button>
             ))}
           </div>
         </>
       )}
 
-      <h2 className="text-xl mb-3">
+      <h2 className="text-xl mb-3 flex items-center gap-2">
+        <AbstractIcon name="spark" size={20} color="hsl(var(--orange-start))" />
         {active ? active : q ? "Sökresultat" : "Alla övningar"}
         {active && (
-          <button onClick={() => setActive(null)} className="ml-3 text-sm font-bold text-text-secondary underline">
+          <button onClick={() => setActive(null)} className="ml-2 text-sm font-bold text-text-secondary underline">
             visa alla
           </button>
         )}
       </h2>
 
       <div className="space-y-3">
-        {filtered.map((ex) => (
+        {filtered.map((ex, i) => (
           <button
             key={ex.id}
             onClick={() => navigate(`/ovningar/${ex.id}`)}
-            className="w-full text-left rounded-3xl bg-surface border border-border-soft p-3 flex items-center gap-3 shadow-card hover:scale-[0.99] transition"
+            className="w-full text-left rounded-3xl bg-surface border border-border-soft p-3 flex items-center gap-3 shadow-card press-soft animate-fade-in-up"
+            style={{ animationDelay: `${i * 40}ms` }}
           >
-            <div className={`w-20 h-14 rounded-2xl shrink-0 overflow-hidden ${colorBg(ex.color)}`}>
+            <div className={`w-20 h-16 rounded-2xl shrink-0 overflow-hidden ${colorBg(ex.color)}`}>
               <Illustration name={categoryIll(ex.category)} className="w-full h-full object-cover" />
             </div>
             <div className="flex-1 min-w-0">

@@ -130,4 +130,20 @@
   .safe-bottom {
     padding-bottom: max(110px, env(safe-area-inset-bottom));
   }
+  /* Soft press effect for interactive cards */
+  .press-soft {
+    @apply transition-transform duration-150 active:scale-[0.98];
+  }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-up,
+  .animate-fade-up,
+  .animate-pop-in,
+  .animate-float,
+  .animate-breathe,
+  .animate-wiggle-soft {
+    animation: none !important;
+  }
+}
+

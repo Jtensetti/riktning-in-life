@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Illustration, colorIll } from "@/components/Illustrations";
+import { AbstractIcon } from "@/components/AbstractIcon";
 import { ChevronRight, Settings as SettingsIcon } from "lucide-react";
 import { isOnboarded } from "@/lib/settings";
 
@@ -213,22 +214,34 @@ const Today = () => {
 
   return (
     <AppShell>
-      <header className="flex items-start justify-between mb-6">
-        <div>
-          <h1 className="text-[32px] leading-[38px]">Idag</h1>
-          <p className="text-sm font-semibold text-text-secondary capitalize mt-1">{formatDate()}</p>
+      {/* Hero banner with floating blob — Headspace-style warm intro */}
+      <div className="-mx-6 -mt-8 mb-6 relative overflow-hidden rounded-b-[36px]"
+           style={{ background: "linear-gradient(180deg, hsl(var(--orange-start)) 0%, hsl(var(--orange-start) / 0.55) 55%, hsl(var(--background)) 100%)" }}>
+        <div className="h-40 relative">
+          <button
+            onClick={() => navigate("/installningar")}
+            className="absolute top-4 left-4 z-10 w-10 h-10 grid place-items-center rounded-full bg-surface shadow-card press-soft"
+            aria-label="Inställningar"
+          >
+            <SettingsIcon size={18} className="text-foreground" strokeWidth={2.4} />
+          </button>
+          <div className="absolute left-1/2 -translate-x-1/2 top-6 animate-float">
+            <AbstractIcon name="blob-smile" size={84} color="hsl(var(--orange-deep))" />
+          </div>
+          {/* Decorative arcs */}
+          <svg className="absolute inset-x-0 bottom-0 w-full" viewBox="0 0 400 60" preserveAspectRatio="none" aria-hidden>
+            <path d="M0 60 Q200 0 400 60 Z" fill="hsl(var(--background))" />
+          </svg>
         </div>
-        <button
-          onClick={() => navigate("/installningar")}
-          className="p-2 rounded-full hover:bg-surface-alt"
-          aria-label="Inställningar"
-        >
-          <SettingsIcon size={20} className="text-text-secondary" strokeWidth={2.2} />
-        </button>
+      </div>
+
+      <header className="mb-6">
+        <h1 className="text-[32px] leading-[38px]">Idag</h1>
+        <p className="text-sm font-semibold text-text-secondary capitalize mt-1">{formatDate()}</p>
       </header>
 
       {showSafety && (
-        <div className="rounded-3xl border-2 border-red-risk bg-red-bg p-5 mb-7">
+        <div className="rounded-3xl border-2 border-red-risk bg-red-bg p-5 mb-7 animate-pop-in">
           <div className="mb-3 -mx-1">
             <Illustration name="safety" className="w-full h-auto rounded-2xl" />
           </div>
@@ -238,20 +251,24 @@ const Today = () => {
           </p>
           <Button
             onClick={() => navigate("/vard")}
-            className="bg-red-risk hover:bg-red-risk/90 text-white rounded-full font-extrabold"
+            className="bg-red-risk hover:bg-red-risk/90 text-white rounded-full font-extrabold press-soft"
           >
             Gå till Vård
           </Button>
         </div>
       )}
 
-      {/* State card with illustration */}
-      <section className="card-cream p-5 mb-7">
-        <div className="-mx-1 mb-4">
-          <Illustration name="checkin" className="w-full h-auto rounded-2xl" />
+      {/* State card — compact horizontal layout */}
+      <section className="card-cream p-5 mb-7 animate-pop-in">
+        <div className="flex items-start gap-3 mb-4">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-2xl mb-1">{state.title}</h2>
+            <p className="text-sm text-text-secondary">{state.sub}</p>
+          </div>
+          <div className="shrink-0 -mr-1 -mt-1">
+            <AbstractIcon name="blob-smile" size={68} color="hsl(var(--orange-start))" />
+          </div>
         </div>
-        <h2 className="text-2xl mb-1">{state.title}</h2>
-        <p className="text-sm text-text-secondary mb-5">{state.sub}</p>
         <div className="grid grid-cols-2 gap-2 mb-5">
           <Pill label="Belastning" value={burdenLabel(checkin)} />
           <Pill label="Funktion" value={fnLabel(checkin)} />
@@ -260,7 +277,7 @@ const Today = () => {
         </div>
         <Button
           onClick={() => navigate("/checkin")}
-          className="w-full h-12 rounded-full bg-foreground hover:bg-foreground/90 text-background font-extrabold text-[17px]"
+          className="w-full h-12 rounded-full bg-foreground hover:bg-foreground/90 text-background font-extrabold text-[17px] press-soft"
         >
           {checkin ? "Uppdatera dagen" : "Logga dagen"}
         </Button>
@@ -298,29 +315,35 @@ const Today = () => {
           <h3 className="text-xl mb-1">Nya insikter</h3>
           <p className="text-sm text-text-secondary mb-3">Riktning senaste 7 dagarna</p>
           <div className="grid grid-cols-3 gap-3">
-            <InsightCard
-              label="Humör"
-              value={moodTrend.value}
-              suffix="/10"
-              invert
-              trend={moodTrend.trend}
-              colorClass="bg-orange-start"
-            />
-            <InsightCard
-              label="Sömn"
-              value={sleepTrend.value}
-              suffix=" h"
-              decimals={1}
-              trend={sleepTrend.trend}
-              colorClass="bg-purple-sleep"
-            />
-            <InsightCard
-              label="Funktion"
-              value={funcTrend.value}
-              suffix="/10"
-              trend={funcTrend.trend}
-              colorClass="bg-green-recovery"
-            />
+            <div className="animate-pop-in" style={{ animationDelay: "0ms" }}>
+              <InsightCard
+                label="Humör"
+                value={moodTrend.value}
+                suffix="/10"
+                invert
+                trend={moodTrend.trend}
+                colorClass="bg-orange-start"
+              />
+            </div>
+            <div className="animate-pop-in" style={{ animationDelay: "80ms" }}>
+              <InsightCard
+                label="Sömn"
+                value={sleepTrend.value}
+                suffix=" h"
+                decimals={1}
+                trend={sleepTrend.trend}
+                colorClass="bg-purple-sleep"
+              />
+            </div>
+            <div className="animate-pop-in" style={{ animationDelay: "160ms" }}>
+              <InsightCard
+                label="Funktion"
+                value={funcTrend.value}
+                suffix="/10"
+                trend={funcTrend.trend}
+                colorClass="bg-green-recovery"
+              />
+            </div>
           </div>
         </section>
       )}
@@ -330,10 +353,21 @@ const Today = () => {
           <h3 className="text-xl mb-3">Senaste aktivitet</h3>
           <ul className="relative pl-5 space-y-2">
             <span className="absolute left-1.5 top-2 bottom-2 w-px border-l-2 border-dashed border-[#D7D0C9]" aria-hidden />
-            {recent.map(s => {
+            {recent.map((s, i) => {
               const ex = s.exercises;
               if (!ex) return null;
               const dot = colorBg(ex.color);
+              const blobColor = (() => {
+                switch (ex.color) {
+                  case "orange": return "hsl(var(--orange-start))";
+                  case "blue": return "hsl(var(--blue-calm))";
+                  case "yellow": return "hsl(var(--yellow-journal))";
+                  case "purple": return "hsl(var(--purple-sleep))";
+                  case "pink": return "hsl(var(--pink-move))";
+                  case "green": return "hsl(var(--green-recovery))";
+                  default: return "hsl(var(--orange-start))";
+                }
+              })();
               const dateStr = new Date(s.created_at).toLocaleDateString("sv-SE", { day: "numeric", month: "short" });
               const deltas: { letter: string; delta: number; tone: "good" | "warn" }[] = [];
               const pushDelta = (letter: string, before: number | null, after: number | null, goodWhenLower: boolean) => {
@@ -348,11 +382,13 @@ const Today = () => {
               pushDelta("E", s.energy_before, s.energy_after, false);
 
               return (
-                <li key={s.id} className="relative">
-                  <span className={`absolute -left-[18px] top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full ${dot}`} aria-hidden />
+                <li key={s.id} className="relative animate-fade-in-up" style={{ animationDelay: `${i * 60}ms` }}>
+                  <span className="absolute -left-[22px] top-1/2 -translate-y-1/2" aria-hidden>
+                    <AbstractIcon name="blob-smile" size={18} color={blobColor} />
+                  </span>
                   <button
                     onClick={() => navigate("/ovningar")}
-                    className="w-full text-left rounded-2xl bg-surface border border-border-soft py-2.5 px-3 flex items-center gap-2 shadow-card"
+                    className="w-full text-left rounded-2xl bg-surface border border-border-soft py-2.5 px-3 flex items-center gap-2 shadow-card press-soft"
                   >
                     <span className="text-[11px] font-extrabold text-text-secondary tabular-nums shrink-0 w-12">{dateStr}</span>
                     <span className="text-sm font-extrabold truncate flex-1 min-w-0">{ex.title}</span>
