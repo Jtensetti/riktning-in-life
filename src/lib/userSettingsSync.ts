@@ -59,7 +59,16 @@ const writeLocal = (row: UserSettingsRow): void => {
     if (row.last_seen_at) localStorage.setItem(LS_KEYS.lastSeen, row.last_seen_at);
     if (row.baseline) localStorage.setItem(LS_KEYS.baseline, JSON.stringify(row.baseline));
   } catch { /* quota — ignorera */ }
+  // Notifiera UI:t att synkad serverdata nu finns i cachen — komponenter som
+  // läser via synkrona getters kan då tvinga omläsning utan att veta att de
+  // låg på en ny enhet.
+  try {
+    window.dispatchEvent(new CustomEvent("riktning:settings-hydrated", { detail: row }));
+  } catch { /* SSR-säkerhet — ignorera */ }
 };
+
+/** Event som fires när serverdata har skrivits till lokal cache. */
+export const SETTINGS_HYDRATED_EVENT = "riktning:settings-hydrated";
 
 /**
  * Anropas en gång efter inloggning. Hämtar serverraden, skapar den om den
