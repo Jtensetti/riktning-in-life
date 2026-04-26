@@ -319,6 +319,7 @@ const Today = () => {
         </section>
       )}
 
+      {recent.length > 0 && (
         <section className="mb-4">
           <h3 className="text-xl mb-3">Senaste aktivitet</h3>
           <ul className="relative pl-5 space-y-3">
