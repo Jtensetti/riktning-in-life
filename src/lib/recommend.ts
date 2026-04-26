@@ -46,6 +46,24 @@ export type RecentSession = {
   exercise_id?: string;
 };
 
+/**
+ * Personlig effekt-historik: hur en specifik övning eller kategori brukar
+ * påverka dig. Värden i grova skalsteg (positivt = lyfter, negativt = drar ner).
+ * Optional — fungerar som mjuk bias och bryter ingen befintlig logik.
+ */
+export type EffectHistory = {
+  /** key = exercise.id eller exercise.title — vi försöker båda. */
+  byExerciseId?: Record<string, { avgDelta: number; count: number }>;
+  byExerciseTitle?: Record<string, { avgDelta: number; count: number }>;
+  byCategory?: Record<string, { avgDelta: number; count: number }>;
+};
+
+/** Forecast-signal för riktad rekommendation (t.ex. tvinga calm vid morgon-oro). */
+export type ForecastSignal = {
+  kind: "anxiety" | "sleep" | "both" | null;
+  partOfDay: "morning" | "midday" | "afternoon" | "evening" | "night";
+};
+
 const CALM_CATS = new Set(["Lugna kroppen", "Bryt ältande", "Sov bättre"]);
 const LIFT_CATS = new Set(["Rör dig mjukt", "Kom igång", "Mat & humör", "Sociala mikrosteg"]);
 const LAND_MAX_MIN = 3;
@@ -103,7 +121,9 @@ const scoreExercise = (
   c: CheckinSignals | null,
   t: TimeContext,
   w: Weather | null,
-  recent: RecentSession[]
+  recent: RecentSession[],
+  history?: EffectHistory,
+  forecast?: ForecastSignal,
 ): number => {
   let score = 30; // baseline
 
@@ -178,6 +198,27 @@ const scoreExercise = (
 
   // 6) Säkerhetsnät: om allt scoreas ner ska land-kategorin (mycket korta) ändå alltid få en chans.
   if (ex.duration_minutes <= 3 && score < 25) score = 25;
+
+  // 7) PERSONLIG EFFEKT-BIAS — boosta övningar som visat sig lyfta dig, dra av de som inte gjort det.
+  //    Kräver ≥3 observationer för att alls räknas (annars är signalen brus).
+  if (history) {
+    const stat =
+      history.byExerciseId?.[ex.id] ??
+      history.byExerciseTitle?.[ex.title] ??
+      history.byCategory?.[ex.category];
+    if (stat && stat.count >= 3) {
+      if (stat.avgDelta >= 1) score += 15;
+      else if (stat.avgDelta <= -0.5) score -= 20;
+      else if (stat.avgDelta >= 0.4) score += 7;
+    }
+  }
+
+  // 8) FORECAST-TRIGGER: vid morgon-oro tvinga fram korta andnings-/lugna-passar.
+  if (forecast && forecast.kind === "anxiety" && forecast.partOfDay === "morning") {
+    if ((ex.category === "Lugna kroppen" || ex.category === "Bryt ältande") && ex.duration_minutes <= 5) {
+      score += 18;
+    }
+  }
 
   return Math.max(0, Math.min(100, score));
 };

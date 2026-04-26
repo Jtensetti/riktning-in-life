@@ -17,6 +17,8 @@ import { buildPriorities, type Priority } from "@/lib/priorities";
 import { refreshBaseline, loadBaseline, thresholdsFromBaseline } from "@/lib/baseline";
 import { buildDayHighlights, buildLiftSummary } from "@/lib/dayInsights";
 import { DayHighlightCards } from "@/components/DayHighlightCards";
+import { detectPatterns } from "@/lib/patterns";
+import { PatternsSection } from "@/components/PatternsSection";
 import { ChartCard } from "@/components/charts/ChartCard";
 // Bara WeekDirectionChart syns ovan kollapsen — resten lazy-laddas när
 // "Återhämtningshistorik" öppnas. Det halverar Recharts-overhead på
@@ -129,8 +131,9 @@ const Week = () => {
   const [exercises, setExercises] = useState<ExerciseLite[]>([]);
   const [fetching, setFetching] = useState(true);
   // Råa 30-dagars samlingar för "Vad lyfter dig?"-evidens (Spår A)
-  const [activitiesAll, setActivitiesAll] = useState<{ activity_slug: string; label: string; icon: string; color: string; mood_delta: number | null }[]>([]);
-  const [sessionsAll, setSessionsAll] = useState<{ exercises: { title: string; category: string; color: string } | null; mood_before: number | null; mood_after: number | null; anxiety_before: number | null; anxiety_after: number | null }[]>([]);
+  const [activitiesAll, setActivitiesAll] = useState<{ activity_slug: string; label: string; icon: string; color: string; mood_delta: number | null; date: string }[]>([]);
+  const [sessionsAll, setSessionsAll] = useState<{ exercises: { title: string; category: string; color: string } | null; mood_before: number | null; mood_after: number | null; anxiety_before: number | null; anxiety_after: number | null; created_at: string }[]>([]);
+  const [medLogsAll, setMedLogsAll] = useState<{ date: string; taken_status: string }[]>([]);
   const [historyFilter, setHistoryFilter] = useState<"all" | "checkins" | "exercises" | "activeTime">("all");
   // Toggle persistas i localStorage så användaren slipper öppna detaljerna
   // varje gång de navigerar tillbaka till Insikter.
@@ -163,7 +166,7 @@ const Week = () => {
       const since30 = isoDaysAgo(29);
       const sinceTs = new Date(Date.now() - 30 * 86_400_000).toISOString();
 
-      const [checkinsRes, formsRes, sessRes, actsRes, exRes, actsAllRes, sessAllRes] = await Promise.all([
+      const [checkinsRes, formsRes, sessRes, actsRes, exRes, actsAllRes, sessAllRes, medLogsRes] = await Promise.all([
         supabase
           .from("daily_checkins")
           .select("id,date,mood_heaviness,anxiety,guilt_selfcriticism,hopelessness,energy,getting_started,function_score,daytime_bed_sofa_time_minutes,sleep_hours,sleep_quality,movement_today,meaningful_activity,safety_status")
@@ -185,12 +188,16 @@ const Week = () => {
           .select("id,title,category,duration_minutes,color"),
         supabase
           .from("activity_logs")
-          .select("activity_slug,label,icon,color,mood_delta")
+          .select("activity_slug,label,icon,color,mood_delta,date")
           .eq("user_id", user.id).gte("date", since30),
         supabase
           .from("exercise_sessions")
-          .select("mood_before,mood_after,anxiety_before,anxiety_after,exercises(title,category,color)")
+          .select("created_at,mood_before,mood_after,anxiety_before,anxiety_after,exercises(title,category,color)")
           .eq("user_id", user.id).gte("created_at", sinceTs),
+        supabase
+          .from("medication_logs")
+          .select("date,taken_status")
+          .eq("user_id", user.id).gte("date", since30),
       ]);
 
       setCheckins((checkinsRes.data ?? []) as Checkin[]);
@@ -199,6 +206,7 @@ const Week = () => {
       setExercises((exRes.data ?? []) as ExerciseLite[]);
       setActivitiesAll((actsAllRes.data ?? []) as any[]);
       setSessionsAll((sessAllRes.data ?? []) as any[]);
+      setMedLogsAll((medLogsRes.data ?? []) as any[]);
 
       // Spår D: uppdatera personlig baslinje när vi har ≥14 dagar.
       refreshBaseline((checkinsRes.data ?? []) as Checkin[]);
@@ -265,6 +273,31 @@ const Week = () => {
     () => buildLiftSummary(activitiesAll, sessionsAll),
     [activitiesAll, sessionsAll],
   );
+
+  // Spår 1: deterministisk mönsterdetektor över rullande 28 dagar.
+  const patterns = useMemo(() => {
+    const sessionsForPatterns = sessionsAll.map((s) => ({
+      date: (s.created_at ?? "").split("T")[0],
+      category: s.exercises?.category ?? null,
+      title: s.exercises?.title ?? null,
+      mood_before: s.mood_before,
+      mood_after: s.mood_after,
+      anxiety_before: s.anxiety_before,
+      anxiety_after: s.anxiety_after,
+    }));
+    return detectPatterns({
+      checkins,
+      activities: activitiesAll.map((a) => ({
+        date: a.date,
+        activity_slug: a.activity_slug,
+        label: a.label,
+        mood_delta: a.mood_delta,
+      })),
+      sessions: sessionsForPatterns,
+      medLogs: medLogsAll,
+      thresholds,
+    });
+  }, [checkins, activitiesAll, sessionsAll, medLogsAll, thresholds]);
 
   /** Per-dag Riktning (0–100, högre = bättre) för senaste 7 dagar.
    *  Riktning = 100 − burden för dagens checkin. Saknas dagen → null. */
@@ -425,8 +458,11 @@ const Week = () => {
       <h1 className="text-[32px] leading-[38px] mb-1">Insikter</h1>
       <p className="text-sm text-text-secondary mb-6">Vad veckan visar — på en skärm.</p>
 
-      {/* Mönster — lyft fram det mest mänskliga längst upp */}
-      {insights.length > 0 && (
+      {/* Spår 1: bevisbaserade mönster från senaste 28 dagarna. */}
+      <PatternsSection patterns={patterns} />
+
+      {/* Mjuk fallback: korta heuristik-insikter när vi inte hittat starka mönster ännu. */}
+      {patterns.length === 0 && insights.length > 0 && (
         <section className="mb-6 animate-pop-in">
           <p className="text-[11px] font-extrabold uppercase tracking-wider text-orange-deep mb-2">Vi ser ett mönster</p>
           <div className="card-quiet">

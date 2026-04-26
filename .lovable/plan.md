@@ -1,65 +1,112 @@
+
 ## Mål
-Göra appen **lugnare, mer kort-driven och mer färgrik** — bort från dashboard-känslan med många små ikoner, mätare och chart-kort på rad. En skärm = en känsla, inte en kontrollpanel.
+Använda data du redan samlar (check-ins, activity_logs, exercise_sessions, weekly_forms, journal, medication_logs, väder) på ett mer ändamålsenligt sätt — utan att bygga nya fluffiga ytor. Fokus: **rätt signal vid rätt tillfälle, förklarad i din egen data**.
 
-## Designprinciper (nya, gäller hela appen)
-1. **Ett stort kort > fyra små.** Hellre ett 1-kolumns hjältekort som tar hela bredden än 2×2 grid med småmetriker.
-2. **Färg bär hierarkin, inte ikonen.** Färgade ytor (hela kortets bakgrund) får göra jobbet. Ikoner används bara där de tillför mening — aldrig som dekorativ "chip-prick" bredvid varje rad.
-3. **Typografi bär informationen.** Stora siffror/ord (text-[40-56px]) ersätter små metric-bricks med mini-ikoner.
-4. **Max 1 ikon per kort.** Och då stor (32–40 px), inte 16–22 px.
-5. **Luft.** Mer vertikal padding (p-6/p-7) i kort, mer mellanrum mellan sektioner (mb-8/mb-10), färre rader per skärm.
-6. **Inga lucide-ikoner i listrader.** ChevronRight som "klickbar"-signal får finnas, men inga dekorativa Cog/Heart/Clock i rader.
+Det finns redan stark logik (`buildForecast`, `buildEveningPrediction`, `buildLiftSummary`, `buildDayHighlights`, `recommendForToday`, personlig baslinje). Mycket är dock antingen **inte ihopkopplat**, **bara visat på en yta**, eller **saknar en feedback-loop** som gör det smartare över tid. Det här åtgärdar det.
 
-## Skärm-för-skärm
+---
 
-### 1. Today (`src/pages/Today.tsx`) — största förändringen
-**Bort:** små metrik-kort (Burden/Function/Recovery/Risk-rutorna), StreakRing-ringen i headern, ForecastEvidenceStrip, EveningPredictionCard som extra block, mini-ikon bredvid väder-chip.
+## Spår 1 — Mönsterdetektor (ny `lib/patterns.ts`)
+Deterministisk korrelations-/sekvensdetektor över rullande 28 dagar.
 
-**Kvar/förstärkt:**
-- **Hero-kort i full bredd** överst: stor färgad yta i dagens ton (morgon=orange, kväll=lila), enda rubrik "God morgon, [namn]" + en mening om hur du har det. Ingen ikon, bara färg + typografi.
-- **Dagens enda rekommendation som stort kort** (full bredd, p-7, 56px-rubrik). Ersätter dagens metric-grid.
-- **For You-carousell** kvar (du gillade den) men kort blir större och färre ikoner per kort.
-- **QuickLogPills** kvar men blir text-pills utan ikoner.
-- Ta bort "Dagens steg"-kortet om checkin redan finns — visa istället ett mjukt status-kort i en lugn färg.
+Letar efter sex klassiska mönster och ger varje en *evidensnivå* (obs-antal + effektstorlek):
 
-### 2. Insikter / Week (`src/pages/Week.tsx`)
-**Bort:** stack av 4–5 chart-kort på rad (ChartCard × ActivityBars × StackedRecovery × Sparkline × WeekDirectionChart).
+1. **"X följs ofta av tyngre dag"** — koppla `activity_logs` / fritext-tags / sömntimmar / koffein-loggar till nästa dags `mood_heaviness` & `anxiety`.
+2. **"Y lyfter konsekvent"** — utvidga `buildLiftSummary` till att även titta på *nästa dag* (fördröjd effekt), inte bara samma session.
+3. **"Sömn under Z h ger oro nästa dag"** — personlig tröskel via `baseline.ts`.
+4. **"Veckodag-mönster"** — söndag/måndag-dippar, fredag-uppgångar.
+5. **"Stillasittande > N min korrelerar med tyngd"** — använder `daytime_bed_sofa_time_minutes`.
+6. **"Medicin-missar följs av X"** — `medication_logs.taken_status`.
 
-**Nytt:**
-- **Ett stort "Riktning"-kort** överst (full bredd, färgad bakgrund) med en enda stor siffra (0–100) + en mening: "Senaste veckan rör sig åt rätt håll".
-- **En enda graf** (WeekDirectionChart) under, som ett stort kort.
-- **Två insikt-kort** i lugna kreamfärger med textuell insikt ("Du sov bättre på dagar du rörde dig" etc.) — ingen graf, bara typografi.
-- Övriga charts flyttas till en separat **"Visa detaljer"-vy** (collapsible eller egen route `/insikter/detaljer`) så huvudvyn andas.
-- Kliniskt-rapport-kortet flyttas längst ner som en lugn länk, inte en featured CTA.
+Tröskel för att alls visas: **n ≥ 5 observationer** och **|effekt| ≥ 1 skalsteg** (= aldrig spekulativa "AI tror"-påståenden).
 
-### 3. Explore (`src/pages/Explore.tsx`)
-- Carousell med övningar: gör korten större (w-[80%] istället för 72%), ta bort kategori-eyebrow-pillen — kategorin syns i färgen.
-- Rutiner & Lär dig-rader: **ta bort de små 12×12 ikonrutorna** till vänster. Hela kortet får istället bakgrundsfärg från rutinen och en stor siffra/symbol om någon (t.ex. "AM" / "PM" / läs-minuter som stor text).
+Surfas på två ytor:
+- **Vecka → ny sektion "Mönster vi sett"** (max 3 st, sorterat efter evidens).
+- **Today → integreras i `forYou`** ("Du loggade kort sömn igår — det brukar ge oro idag").
 
-### 4. More (`src/pages/More.tsx`)
-- Krisplan-kortet får vara stort & röd-tonat — det är bra som det är.
-- Ta bort Settings-cog-ikonen i Inställningar-raden. Listan blir ren typografi + chevron.
-- "Om Riktning" får vara en mjuk crémeruta utan ikon.
+Inget AI-anrop, allt körs lokalt → snabbt och förklarbart.
 
-### 5. AppShell / global
-- Bottom-nav: behåll men gör ikonerna något mindre (20px) och låt aktiv flik markeras med färgad pill bakom labeln istället för stor ikon-cirkel — labeln blir hjälte.
+---
 
-## Konkret arbete
-1. **Today.tsx**: ta bort metric-grid, StreakRing-i-header, ForecastEvidenceStrip; ersätt med ett stort hero-statuskort + ett stort rekommendation-kort. Behåll carousell + QuickLogPills.
-2. **Week.tsx**: kollapsa charts till 1 huvudgraf + 2 textinsikt-kort; flytta resten till expanderbar sektion.
-3. **Explore.tsx**: ta bort små ikonrutor i Rutiner/Lär dig-rader, gör hela kortet färgat, större typografi.
-4. **More.tsx**: städa Row-komponenten, ta bort dekorativa ikoner.
-5. **QuickLogPills**: text-only variant.
-6. **BottomNav**: aktiv-state via färgad pill bakom label, mindre ikoner.
-7. **index.css**: lägg till en `.card-hero` utility (p-7, rounded-[28px], stor färg) och `.card-quiet` (kreamruta, bara typografi).
+## Spår 2 — AI-veckosammanfattning (ny edge function `weekly-insight`)
+Kör Lovable AI (`google/gemini-3-flash-preview`) **en gång per vecka** mot `get_weekly_report`-RPC:n som redan finns. Returnerar ett JSON-objekt via tool-calling:
 
-## Vad jag *inte* ändrar
-- Färgpaletten (orange/blå/lila/grön/gul/rosa) — den är redan stark.
-- Sitemap/navigation — den är nyligen omstrukturerad.
-- Datalagret (Supabase, baseline, sync) — bara presentations-lagret rörs.
-- AbstractIcon-paketet — bara *användningen* glesas ut.
+```
+{
+  headline: string,           // "En lugnare vecka — sömnen lyfte tisdag"
+  trend_summary: string,      // 2-3 meningar, 2:a person, varm ton
+  bright_spot: string,        // 1 mening om något som gick bra
+  one_thing_to_try: string,   // konkret förslag nästa vecka
+  flags: string[]             // valfri lista, t.ex. "möjlig sömnskuld"
+}
+```
 
-## Risk
-- Insikter-vyn tappar djup om man bara vill se rena charts — därför läggs detaljvyn som expanderbar/separat route, inget data försvinner.
-- Användare som vant sig vid metric-grid på Today kan sakna siffrorna. Lösning: dom finns kvar i Insikter, bara ett swipe bort.
+- Cachas i ny tabell `weekly_insights(user_id, week_start, payload jsonb, created_at)` med RLS `auth.uid() = user_id`.
+- Visas på `/vecka` *och* i `WeeklyReport.tsx`-PDF-flödet.
+- Strikt prompt: får aldrig diagnostisera, får aldrig vara alarmerande, måste citera siffror från payloaden.
+- 402/429 fångas och visas som mjuk toast — appen fungerar utan.
 
-Säg till om du vill att jag drar igång hela rensningen, eller börjar med bara **Today + BottomNav** först som en första våg så vi kan se känslan innan resten städas.
+---
+
+## Spår 3 — Smartare rekommendationer (utöka `lib/recommend.ts`)
+Lägg till tre signaler som redan finns men inte används i scoring:
+
+1. **Effekt-bias från historik** — om en övning har `avgDelta ≥ +1` för dig (från `buildLiftSummary`), boosta den med +15 poäng. Om `≤ -0.5`, dra av 20.
+2. **Bryt mönster vid trigger** — när `forecast.kind === "anxiety"` och tid = morgon, tvinga `calm`-slot till en kort andning (≤5 min) oavsett standard sweet-spot.
+3. **Continuity** — om användaren startade en sequence igår men inte slutförde, föreslå nästa steg i den (read från `exercise_sessions`).
+
+Alla tre är additiva — bryter inte befintlig logik, fångas av befintliga tester.
+
+---
+
+## Spår 4 — Adaptiva check-in-frågor
+Idag visar `Checkin.tsx` samma uppsättning frågor varje gång. Gör så här:
+
+- **Kärnfrågor alltid**: tyngd, oro, energi, funktion, sömn (4 st sliders, ~30s).
+- **Roterande "djupfrågor"** (1–2 st per check-in) baserat på vad baslinjen visar är *mest variabelt för dig*:
+  - Hög varians på sömn → fråga kvalitet + sänggåendetid.
+  - Hög varians på oro → fråga "vad triggade?" (taggar).
+  - Stillasittande hög → fråga `daytime_bed_sofa_time_minutes`.
+- Ingen ny tabell — använd `daily_checkins` befintliga kolumner; det vi inte har plats för läggs i `note` som JSON-tags.
+
+---
+
+## Spår 5 — Daglig auto-baseline-refresh
+Idag triggas `refreshBaseline()` bara på Today-mount. Lägg till:
+- Kör om i `Checkin.tsx` direkt efter sparad check-in.
+- Trigger via `riktning:settings-hydrated`-eventet på nya enheter så baslinjen rekomputeras med serverdata, inte bara cache.
+
+Liten ändring, men säkrar att alla tröskelvärden alltid är färska.
+
+---
+
+## Vad som **inte** ändras
+- Ingen ny tabell utöver `weekly_insights`.
+- Ingen ny route, inga nya sidor.
+- Ingen ändring av `daily_checkins`-schemat.
+- Inga nya stora UI-block — befintliga `forYou`, Vecka, WeeklyReport återanvänds.
+- Säkerhetsmodellen (RLS) är oförändrad.
+
+---
+
+## Leveranser per filtyp
+
+**Nya filer**
+- `src/lib/patterns.ts` — mönsterdetektor + tester.
+- `src/components/PatternsSection.tsx` — UI på Vecka.
+- `src/components/WeeklyAIInsight.tsx` — kortet på Vecka + i rapport.
+- `supabase/functions/weekly-insight/index.ts` — Lovable AI-anrop med tool calling.
+- `supabase/migrations/<ts>_weekly_insights.sql` — ny tabell + RLS.
+
+**Ändrade filer**
+- `src/lib/recommend.ts` — tre nya scoring-signaler.
+- `src/lib/baseline.ts` — exporta varianskvot per fält (för adaptiva frågor).
+- `src/pages/Checkin.tsx` — adaptiv frågerotation.
+- `src/pages/Today.tsx` — koppla in mönstersignaler i `TodayContext`.
+- `src/pages/Week.tsx` — `<PatternsSection>` + `<WeeklyAIInsight>`.
+- `src/pages/WeeklyReport.tsx` — visa AI-sammanfattning i PDF-flödet.
+
+---
+
+## Ungefärlig storlek
+~6 nya filer, ~7 ändrade filer. Inga schema-ändringar utöver `weekly_insights`. Lovable AI används bara på en yta (en funktion, batch-vänlig, billig modell) — exponering minimal, värde högt.
