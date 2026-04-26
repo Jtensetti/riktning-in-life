@@ -5,11 +5,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { Illustration } from "@/components/Illustrations";
 import { AbstractIcon } from "@/components/AbstractIcon";
+import { HeroBanner } from "@/components/HeroBanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronLeft, ChevronRight, FileText, Pill as PillIcon, ClipboardList, Plus, Download, Trash2, FileDown } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Download, Trash2, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { FORMS, FormType, SIDE_EFFECTS } from "@/lib/forms";
 import jsPDF from "jspdf";
@@ -63,18 +64,11 @@ const Vard = () => {
 
   return (
     <AppShell>
-      {/* Soft blue hero */}
-      <div className="-mx-6 -mt-8 mb-6 relative overflow-hidden rounded-b-[36px]"
-           style={{ background: "linear-gradient(180deg, hsl(var(--blue-calm)) 0%, hsl(var(--blue-calm) / 0.5) 55%, hsl(var(--background)) 100%)" }}>
-        <div className="h-32 relative">
-          <div className="absolute left-1/2 -translate-x-1/2 top-5 animate-float">
-            <AbstractIcon name="heart-pulse" size={64} color="hsl(var(--surface))" />
-          </div>
-          <svg className="absolute inset-x-0 bottom-0 w-full" viewBox="0 0 400 60" preserveAspectRatio="none" aria-hidden>
-            <path d="M0 60 Q200 0 400 60 Z" fill="hsl(var(--background))" />
-          </svg>
-        </div>
-      </div>
+      <HeroBanner
+        tone="var(--blue-calm)"
+        icon="heart-pulse"
+        iconColor="hsl(var(--surface))"
+      />
 
       <header className="mb-6">
         <h1 className="text-[32px] leading-[38px] mb-1">Vård</h1>
