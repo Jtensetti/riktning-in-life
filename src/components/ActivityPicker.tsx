@@ -202,6 +202,16 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
               >
                 Alla
               </button>
+              {favoriteItems.length > 0 && (
+                <button
+                  onClick={() => setActiveCat(activeCat === "__fav__" ? null : "__fav__")}
+                  className={`shrink-0 rounded-full px-4 py-2 text-xs font-extrabold press-soft border-2 inline-flex items-center gap-1 ${
+                    activeCat === "__fav__" ? "bg-foreground text-background border-foreground" : "bg-surface text-foreground border-border-soft"
+                  }`}
+                >
+                  <Star size={12} className="fill-current" /> Favoriter
+                </button>
+              )}
               {categories.map((c) => (
                 <button
                   key={c}
@@ -215,20 +225,60 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
               ))}
             </div>
 
+            {favoriteItems.length > 0 && !activeCat && !q.trim() && (
+              <div className="mb-4">
+                <p className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-2 inline-flex items-center gap-1">
+                  <Star size={12} className="fill-current" /> Dina favoriter
+                </p>
+                <div className="grid grid-cols-2 gap-2.5">
+                  {favoriteItems.map((item) => (
+                    <div key={`fav-${item.slug}`} className={`relative rounded-2xl shadow-card ${colorBg(item.color)}`}>
+                      <button
+                        onClick={() => pick(item)}
+                        className="w-full p-3 text-left press-soft flex items-center gap-2.5 min-h-[70px]"
+                      >
+                        <div className="shrink-0 w-10 h-10 rounded-full bg-white/25 grid place-items-center">
+                          <AbstractIcon name={item.icon as IconName} size={22} color="currentColor" />
+                        </div>
+                        <span className="font-extrabold text-[13px] leading-tight pr-6">{item.label}</span>
+                      </button>
+                      <button
+                        onClick={(e) => toggleFavorite(item.slug, e)}
+                        aria-label="Ta bort favorit"
+                        className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-white/30 grid place-items-center press-soft"
+                      >
+                        <Star size={14} className="fill-current" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-2.5 pb-4">
-              {filtered.map((item, i) => (
-                <button
-                  key={item.slug}
-                  onClick={() => pick(item)}
-                  className={`rounded-2xl p-3 text-left press-soft animate-fade-in-up shadow-card flex items-center gap-2.5 min-h-[70px] ${colorBg(item.color)}`}
-                  style={{ animationDelay: `${Math.min(i, 8) * 25}ms` }}
-                >
-                  <div className="shrink-0 w-10 h-10 rounded-full bg-white/25 grid place-items-center">
-                    <AbstractIcon name={item.icon as IconName} size={22} color="currentColor" />
+              {filtered.map((item, i) => {
+                const isFav = favorites.has(item.slug);
+                return (
+                  <div key={item.slug} className={`relative rounded-2xl shadow-card animate-fade-in-up ${colorBg(item.color)}`} style={{ animationDelay: `${Math.min(i, 8) * 25}ms` }}>
+                    <button
+                      onClick={() => pick(item)}
+                      className="w-full p-3 text-left press-soft flex items-center gap-2.5 min-h-[70px]"
+                    >
+                      <div className="shrink-0 w-10 h-10 rounded-full bg-white/25 grid place-items-center">
+                        <AbstractIcon name={item.icon as IconName} size={22} color="currentColor" />
+                      </div>
+                      <span className="font-extrabold text-[13px] leading-tight pr-6">{item.label}</span>
+                    </button>
+                    <button
+                      onClick={(e) => toggleFavorite(item.slug, e)}
+                      aria-label={isFav ? "Ta bort favorit" : "Spara som favorit"}
+                      className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-white/25 grid place-items-center press-soft"
+                    >
+                      <Star size={14} className={isFav ? "fill-current" : ""} />
+                    </button>
                   </div>
-                  <span className="font-extrabold text-[13px] leading-tight">{item.label}</span>
-                </button>
-              ))}
+                );
+              })}
               {filtered.length === 0 && q.trim() && (
                 <div className="col-span-2 card-cream p-4">
                   <p className="text-sm font-extrabold mb-2">Inget i listan?</p>
