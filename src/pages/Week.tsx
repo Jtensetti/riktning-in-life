@@ -127,7 +127,7 @@ const Week = () => {
         <>
           <h2 className="text-xl mb-3">Jämfört med förra veckan</h2>
           <div className="grid grid-cols-2 gap-3 mb-6">
-            <div className="animate-pop-in" style={{ animationDelay: "0ms" }}>
+            <div className="animate-pop-in" style={{ animationDelay: "var(--stagger-0)" }}>
               <MetricCard
                 title="Belastning"
                 current={burdenC.value}
@@ -137,13 +137,13 @@ const Week = () => {
                 gated={!baselineComplete}
               />
             </div>
-            <div className="animate-pop-in" style={{ animationDelay: "70ms" }}>
+            <div className="animate-pop-in" style={{ animationDelay: "var(--stagger-1)" }}>
               <MetricCard title="Funktion" current={fnC} prev={fnP} gated={!baselineComplete} />
             </div>
-            <div className="animate-pop-in" style={{ animationDelay: "140ms" }}>
+            <div className="animate-pop-in" style={{ animationDelay: "var(--stagger-2)" }}>
               <MetricCard title="Återhämtning" current={recC} prev={recP} gated={!baselineComplete} />
             </div>
-            <div className="animate-pop-in" style={{ animationDelay: "210ms" }}>
+            <div className="animate-pop-in" style={{ animationDelay: "var(--stagger-3)" }}>
               <MetricCard
                 title="Stabilitet"
                 current={stabC}
@@ -155,7 +155,7 @@ const Week = () => {
             </div>
           </div>
 
-          <div className="card-soft p-4 mb-6 animate-fade-in-up" style={{ animationDelay: "260ms" }}>
+          <div className="card-soft p-4 mb-6 animate-fade-in-up" style={{ animationDelay: "var(--stagger-4)" }}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-base font-extrabold">Senaste 7 dagar</h3>
               <Illustration name="week" className="w-16 h-auto" />
@@ -193,14 +193,14 @@ const Week = () => {
           </div>
 
           <div className="grid grid-cols-2 gap-3 mb-6">
-            <div className="card-cream p-4 flex items-start justify-between gap-2 animate-pop-in">
+            <div className="card-cream p-4 flex items-start justify-between gap-2 animate-pop-in" style={{ animationDelay: "var(--stagger-0)" }}>
               <div>
                 <p className="text-[11px] font-bold text-text-secondary uppercase tracking-wider mb-1">Sömn / natt</p>
                 <p className="text-2xl font-extrabold">{avgSleep != null ? `${avgSleep.toFixed(1)} h` : "—"}</p>
               </div>
               <AbstractIcon name="moon-soft" size={28} color="hsl(var(--purple-sleep))" />
             </div>
-            <div className="card-cream p-4 flex items-start justify-between gap-2 animate-pop-in" style={{ animationDelay: "70ms" }}>
+            <div className="card-cream p-4 flex items-start justify-between gap-2 animate-pop-in" style={{ animationDelay: "var(--stagger-1)" }}>
               <div>
                 <p className="text-[11px] font-bold text-text-secondary uppercase tracking-wider mb-1">Rörelsedagar</p>
                 <p className="text-2xl font-extrabold">{movementDays} / {current.length}</p>
@@ -220,7 +220,7 @@ const Week = () => {
                   <div
                     key={i}
                     className="card-cream p-4 flex gap-3 items-start animate-fade-in-up"
-                    style={{ animationDelay: `${i * 60}ms` }}
+                    style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
                   >
                     <AbstractIcon name="blob-smile" size={18} color="hsl(var(--orange-start))" />
                     <p className="text-sm font-semibold leading-snug">{s}</p>
