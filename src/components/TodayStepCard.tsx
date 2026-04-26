@@ -66,7 +66,7 @@ export const TodayStepCard = ({ exercises, todayCheckin, recentSessions, loggedT
       </div>
 
       <div className="relative z-[1] mt-auto">
-        <h4 className="text-[20px] leading-[24px] font-extrabold mb-1 pr-12">{ex.title}</h4>
+        <h4 className="text-[20px] leading-[24px] font-extrabold mb-1 pr-24">{ex.title}</h4>
         <p className="text-sm opacity-90 leading-snug mb-3">{pick.reasonLong}</p>
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs font-extrabold opacity-90">
