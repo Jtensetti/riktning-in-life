@@ -448,7 +448,7 @@ const MovementForm = ({ onSaved, userId }: { onSaved: () => void; userId: string
   const presets: { slug: string; label: string; icon: IconName; mins: number; category: string }[] = [
     { slug: "walk", label: "Promenad", icon: "bike", mins: 30, category: "Rörelse" },
     { slug: "outdoor", label: "Ute i ljuset", icon: "weather-sun", mins: 15, category: "Rörelse" },
-    { slug: "stretch", label: "Stretch", icon: "spark", mins: 10, category: "Rörelse" },
+    { slug: "stretch", label: "Stretch", icon: "stretch-figure", mins: 10, category: "Rörelse" },
     { slug: "household", label: "Hushåll", icon: "house-soft", mins: 20, category: "Rörelse" },
     { slug: "bike", label: "Cykla", icon: "bike", mins: 30, category: "Rörelse" },
     { slug: "workout", label: "Träning", icon: "spark", mins: 45, category: "Rörelse" },
