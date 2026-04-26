@@ -134,7 +134,7 @@ export const AbstractIcon = ({
 
   const body = ICON_BODY[name];
   const bg = ICON_BG[name];
-  const showBg = size >= INLINE_THRESHOLD;
+  const showBg = !inline && size >= INLINE_THRESHOLD;
 
   return (
     <svg
