@@ -315,29 +315,35 @@ const Today = () => {
           <h3 className="text-xl mb-1">Nya insikter</h3>
           <p className="text-sm text-text-secondary mb-3">Riktning senaste 7 dagarna</p>
           <div className="grid grid-cols-3 gap-3">
-            <InsightCard
-              label="Humör"
-              value={moodTrend.value}
-              suffix="/10"
-              invert
-              trend={moodTrend.trend}
-              colorClass="bg-orange-start"
-            />
-            <InsightCard
-              label="Sömn"
-              value={sleepTrend.value}
-              suffix=" h"
-              decimals={1}
-              trend={sleepTrend.trend}
-              colorClass="bg-purple-sleep"
-            />
-            <InsightCard
-              label="Funktion"
-              value={funcTrend.value}
-              suffix="/10"
-              trend={funcTrend.trend}
-              colorClass="bg-green-recovery"
-            />
+            <div className="animate-pop-in" style={{ animationDelay: "0ms" }}>
+              <InsightCard
+                label="Humör"
+                value={moodTrend.value}
+                suffix="/10"
+                invert
+                trend={moodTrend.trend}
+                colorClass="bg-orange-start"
+              />
+            </div>
+            <div className="animate-pop-in" style={{ animationDelay: "80ms" }}>
+              <InsightCard
+                label="Sömn"
+                value={sleepTrend.value}
+                suffix=" h"
+                decimals={1}
+                trend={sleepTrend.trend}
+                colorClass="bg-purple-sleep"
+              />
+            </div>
+            <div className="animate-pop-in" style={{ animationDelay: "160ms" }}>
+              <InsightCard
+                label="Funktion"
+                value={funcTrend.value}
+                suffix="/10"
+                trend={funcTrend.trend}
+                colorClass="bg-green-recovery"
+              />
+            </div>
           </div>
         </section>
       )}
@@ -347,10 +353,21 @@ const Today = () => {
           <h3 className="text-xl mb-3">Senaste aktivitet</h3>
           <ul className="relative pl-5 space-y-2">
             <span className="absolute left-1.5 top-2 bottom-2 w-px border-l-2 border-dashed border-[#D7D0C9]" aria-hidden />
-            {recent.map(s => {
+            {recent.map((s, i) => {
               const ex = s.exercises;
               if (!ex) return null;
               const dot = colorBg(ex.color);
+              const blobColor = (() => {
+                switch (ex.color) {
+                  case "orange": return "hsl(var(--orange-start))";
+                  case "blue": return "hsl(var(--blue-calm))";
+                  case "yellow": return "hsl(var(--yellow-journal))";
+                  case "purple": return "hsl(var(--purple-sleep))";
+                  case "pink": return "hsl(var(--pink-move))";
+                  case "green": return "hsl(var(--green-recovery))";
+                  default: return "hsl(var(--orange-start))";
+                }
+              })();
               const dateStr = new Date(s.created_at).toLocaleDateString("sv-SE", { day: "numeric", month: "short" });
               const deltas: { letter: string; delta: number; tone: "good" | "warn" }[] = [];
               const pushDelta = (letter: string, before: number | null, after: number | null, goodWhenLower: boolean) => {
@@ -365,11 +382,13 @@ const Today = () => {
               pushDelta("E", s.energy_before, s.energy_after, false);
 
               return (
-                <li key={s.id} className="relative">
-                  <span className={`absolute -left-[18px] top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full ${dot}`} aria-hidden />
+                <li key={s.id} className="relative animate-fade-in-up" style={{ animationDelay: `${i * 60}ms` }}>
+                  <span className="absolute -left-[22px] top-1/2 -translate-y-1/2" aria-hidden>
+                    <AbstractIcon name="blob-smile" size={18} color={blobColor} />
+                  </span>
                   <button
                     onClick={() => navigate("/ovningar")}
-                    className="w-full text-left rounded-2xl bg-surface border border-border-soft py-2.5 px-3 flex items-center gap-2 shadow-card"
+                    className="w-full text-left rounded-2xl bg-surface border border-border-soft py-2.5 px-3 flex items-center gap-2 shadow-card press-soft"
                   >
                     <span className="text-[11px] font-extrabold text-text-secondary tabular-nums shrink-0 w-12">{dateStr}</span>
                     <span className="text-sm font-extrabold truncate flex-1 min-w-0">{ex.title}</span>
