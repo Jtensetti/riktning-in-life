@@ -15,6 +15,7 @@ import ExerciseDetail from "./pages/ExerciseDetail";
 import Week from "./pages/Week";
 import Journal from "./pages/Journal";
 import Vard from "./pages/Vard";
+import WeeklyReport from "./pages/WeeklyReport";
 import Learn from "./pages/Learn";
 import LearnArticle from "./pages/LearnArticle";
 import Sequences from "./pages/Sequences";
@@ -61,6 +62,7 @@ const App = () => {
           <Route path="/vecka" element={<Week />} />
           <Route path="/journal" element={<Journal />} />
           <Route path="/vard" element={<Vard />} />
+          <Route path="/rapport/vecka" element={<WeeklyReport />} />
           <Route path="/lar-dig" element={<Learn />} />
           <Route path="/lar-dig/:slug" element={<LearnArticle />} />
           <Route path="/rutiner" element={<Sequences />} />
