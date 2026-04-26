@@ -12,7 +12,7 @@ import { WeatherPermissionCard } from "@/components/WeatherPermissionCard";
 import { ChevronRight, Settings as SettingsIcon } from "lucide-react";
 import { isOnboarded } from "@/lib/settings";
 import { getTimeContext, type TimeContext } from "@/lib/timeContext";
-import { useWeather, isOutdoorFriendly, weatherLabel, hasAskedWeatherPermission, isWeatherPermissionGranted, type Weather } from "@/lib/weather";
+import { useWeather, isOutdoorFriendly, weatherLabel, hasAskedWeatherPermission, isWeatherPermissionGranted, isWeatherPermissionDismissed, dismissWeatherPermission, type Weather } from "@/lib/weather";
 import { ForYouCarousel } from "@/components/ForYouCarousel";
 import { recommendForToday, type Exercise as RecExercise, type Pick } from "@/lib/recommend";
 import { Moon } from "lucide-react";
@@ -241,7 +241,7 @@ const Today = () => {
   const [fetching, setFetching] = useState(true);
   const [time, setTime] = useState<TimeContext>(() => getTimeContext());
   const { weather, status: weatherStatus, requestLocation } = useWeather(true);
-  const [permissionDismissed, setPermissionDismissed] = useState(false);
+  const [permissionDismissed, setPermissionDismissed] = useState(() => isWeatherPermissionDismissed());
   const [streakCounts, setStreakCounts] = useState<StreakCounts>({ checkin: 0, activity: 0, session: 0 });
   const [pickerOpen, setPickerOpen] = useState(false);
   const [streakReloadKey, setStreakReloadKey] = useState(0);
@@ -564,7 +564,7 @@ const Today = () => {
       <WeatherPermissionCard
         key="weatherPermission"
         onAllow={() => requestLocation()}
-        onDismiss={() => setPermissionDismissed(true)}
+        onDismiss={() => { dismissWeatherPermission(); setPermissionDismissed(true); }}
       />
     ),
     safety: () => (
