@@ -13,12 +13,11 @@ export const EveningPredictionCard = ({ prediction }: { prediction: EveningPredi
       <h3 className="text-xl mb-3">Riktning ikväll</h3>
       <ColorCard
         tone={prediction.tone as CardTone}
-        icon="moon-stars"
-        iconAccent="hsl(var(--surface))"
         size="md"
         onClick={() => navigate(`/ovningar?cat=${encodeURIComponent(prediction.matchCategory)}`)}
         ariaLabel={`${prediction.headline}. ${prediction.reason}`}
         eyebrow={{ label: "Tipset till imorgon" }}
+        lead={{ value: "Ikväll", unit: prediction.matchCategory }}
         title={prediction.headline}
         reason={prediction.reason}
         metaLeft={prediction.matchCategory}
