@@ -4,7 +4,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { AbstractIcon, type IconName } from "./AbstractIcon";
-import { Search, Plus, Minus, Check } from "lucide-react";
+import { Search, Plus, Minus, Check, Star } from "lucide-react";
 
 export type CatalogItem = {
   slug: string;
@@ -56,6 +56,7 @@ interface Props {
 
 export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [q, setQ] = useState("");
   const [activeCat, setActiveCat] = useState<string | null>(null);
   const [selected, setSelected] = useState<CatalogItem | null>(null);
@@ -72,7 +73,30 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
       .then(({ data }) => {
         if (data) setCatalog(data as any);
       });
+    supabase
+      .from("activity_favorites")
+      .select("activity_slug")
+      .then(({ data }) => {
+        if (data) setFavorites(new Set(data.map((d: any) => d.activity_slug)));
+      });
   }, [open]);
+
+  const toggleFavorite = async (slug: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData.user?.id;
+    if (!uid) return;
+    const next = new Set(favorites);
+    if (favorites.has(slug)) {
+      next.delete(slug);
+      setFavorites(next);
+      await supabase.from("activity_favorites").delete().eq("user_id", uid).eq("activity_slug", slug);
+    } else {
+      next.add(slug);
+      setFavorites(next);
+      await supabase.from("activity_favorites").insert({ user_id: uid, activity_slug: slug });
+    }
+  };
 
   // Reset internal state when closed
   useEffect(() => {
@@ -96,11 +120,17 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
 
   const filtered = useMemo(() => {
     return catalog.filter((c) => {
-      if (activeCat && c.category !== activeCat) return false;
+      if (activeCat && activeCat !== "__fav__" && c.category !== activeCat) return false;
+      if (activeCat === "__fav__" && !favorites.has(c.slug)) return false;
       if (q && !`${c.label} ${c.category} ${(c.tags_json || []).join(" ")}`.toLowerCase().includes(q.toLowerCase())) return false;
       return true;
     });
-  }, [catalog, activeCat, q]);
+  }, [catalog, activeCat, q, favorites]);
+
+  const favoriteItems = useMemo(
+    () => catalog.filter((c) => favorites.has(c.slug)),
+    [catalog, favorites]
+  );
 
   const pick = (item: CatalogItem) => {
     setSelected(item);
