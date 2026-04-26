@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { Illustration } from "@/components/Illustrations";
 import { AbstractIcon } from "@/components/AbstractIcon";
-import { HeroBanner } from "@/components/HeroBanner";
+import { ScreenHeader } from "@/components/ui-kit/ScreenHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -83,16 +83,11 @@ const Vard = () => {
 
   return (
     <AppShell>
-      <HeroBanner
-        tone="var(--blue-calm)"
-        icon="stethoscope"
-        iconColor="hsl(var(--surface))"
+      <ScreenHeader
+        screen="care"
+        title="Vård"
+        subtitle="Skattningar, läkemedel och rapport till vården."
       />
-
-      <header className="mb-6">
-        <h1 className="text-[32px] leading-[38px] mb-1">Vård</h1>
-        <p className="text-sm text-text-secondary">Skattningar, läkemedel och rapport till vården.</p>
-      </header>
 
       <section className="mb-7">
         <button

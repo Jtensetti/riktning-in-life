@@ -7,7 +7,7 @@ import { Illustration } from "@/components/Illustrations";
 import { AbstractIcon, type IconName } from "@/components/AbstractIcon";
 import { iconForActivity } from "@/lib/icons";
 import { ColorCard, type CardTone } from "@/components/ColorCard";
-import { HeroBanner } from "@/components/HeroBanner";
+import { ScreenHeader } from "@/components/ui-kit/ScreenHeader";
 import { ArrowDown, ArrowUp, ChevronRight, Minus, Sparkles } from "lucide-react";
 import {
   burdenScore, functionScore, recoveryScore, stabilityScore, stabilityLabel,
@@ -449,15 +449,11 @@ const Week = () => {
 
   return (
     <AppShell>
-      <HeroBanner
-        tone="var(--green-recovery)"
-        icon="pie"
-        iconColor="hsl(var(--surface))"
-        iconAccent="hsl(var(--yellow-journal))"
+      <ScreenHeader
+        screen="insights"
+        title="Insikter"
+        subtitle="Vad veckan visar — på en skärm."
       />
-
-      <h1 className="text-[32px] leading-[38px] mb-1">Insikter</h1>
-      <p className="text-sm text-text-secondary mb-6">Vad veckan visar — på en skärm.</p>
 
       {/* AI-veckosammanfattning — varm sammanfattning baserad på riktig data. Göms tyst om AI inte svarar. */}
       <WeeklyAIInsight />

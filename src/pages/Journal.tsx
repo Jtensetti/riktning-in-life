@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { AbstractIcon, type IconName } from "@/components/AbstractIcon";
-import { HeroBanner } from "@/components/HeroBanner";
+import { ScreenHeader } from "@/components/ui-kit/ScreenHeader";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -202,16 +202,11 @@ const Journal = () => {
 
   return (
     <AppShell>
-      <HeroBanner
-        tone="var(--yellow-journal)"
-        icon="pencil-soft"
-        iconColor="hsl(var(--orange-start))"
+      <ScreenHeader
+        screen="journal"
+        title="Journal"
+        subtitle="Spara dagen som den var."
       />
-
-      <header className="mb-6">
-        <h1 className="text-[32px] leading-[38px] mb-1">Journal</h1>
-        <p className="text-sm text-text-secondary">Spara dagen som den var.</p>
-      </header>
 
       <h2 className="text-lg font-extrabold mb-3">Mallar</h2>
       <div className="grid grid-cols-2 gap-3 mb-8">
