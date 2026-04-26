@@ -442,12 +442,32 @@ const QuickLog = () => {
       </Drawer>
 
       {/* === MOOD EDIT DRAWER — samma "Ändra känsla"-mönster som aktivitetsloggen === */}
-      <Drawer open={!!moodEdit} onOpenChange={(o) => !o && !savingMoodEdit && setMoodEdit(null)}>
+      <Drawer
+        open={!!moodEdit}
+        onOpenChange={(o) => {
+          if (o) return;
+          if (savingMoodEdit || moodEditSaved) return;
+          setMoodEdit(null);
+        }}
+      >
         <DrawerContent className="px-5 pb-8 max-h-[88vh]">
           <DrawerHeader className="px-0 pt-2">
-            <DrawerTitle className="text-2xl">Ändra känsla</DrawerTitle>
+            <DrawerTitle className="text-2xl">
+              {moodEditSaved ? "Sparat" : "Ändra känsla"}
+            </DrawerTitle>
           </DrawerHeader>
-          {moodEdit && (
+
+          {moodEditSaved ? (
+            <div className="py-6 flex flex-col items-center text-center animate-fade-in-up">
+              <div className="w-16 h-16 rounded-full bg-green-soft grid place-items-center mb-4">
+                <Check size={32} strokeWidth={3} className="text-green-strong" />
+              </div>
+              <p className="text-lg font-medium mb-1">Känsla uppdaterad</p>
+              <p className="text-sm text-text-secondary">
+                Tyngd {moodEditSaved.heaviness} · Oro {moodEditSaved.anxiety} · Energi {moodEditSaved.energy}
+              </p>
+            </div>
+          ) : moodEdit && (
             <div className="space-y-5">
               <MoodSliderRow
                 label="Tyngd / nedstämdhet"
