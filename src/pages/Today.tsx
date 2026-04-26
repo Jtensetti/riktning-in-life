@@ -418,6 +418,24 @@ const Today = () => {
     }
   }, [trendData]);
 
+  // Räkna om baselinen när serverhydration sker (ny enhet) — så att tröskelvärden
+  // baseras på serverdata istället för cache. Fire-and-forget.
+  useEffect(() => {
+    if (!user) return;
+    const handler = async () => {
+      const since = new Date();
+      since.setDate(since.getDate() - 30);
+      const { data } = await supabase
+        .from("daily_checkins")
+        .select("date,mood_heaviness,anxiety,energy,sleep_hours,function_score,daytime_bed_sofa_time_minutes")
+        .eq("user_id", user.id)
+        .gte("date", since.toISOString().split("T")[0]);
+      if (data) refreshBaseline(data as any);
+    };
+    window.addEventListener("riktning:settings-hydrated", handler);
+    return () => window.removeEventListener("riktning:settings-hydrated", handler);
+  }, [user]);
+
   if (loading || fetching) {
     return (
       <AppShell>
