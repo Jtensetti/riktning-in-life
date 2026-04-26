@@ -261,7 +261,7 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
                   <button
                     onClick={() => quickLog(f)}
                     disabled={isBusy}
-                    className={`w-full px-4 pt-3 pb-2 flex items-center gap-3 press-soft text-left ${isBusy ? "opacity-80" : ""}`}
+                    className={`relative z-[1] w-full px-4 pt-3 pb-2 flex items-center gap-3 press-soft text-left ${isBusy ? "opacity-80" : ""}`}
                     aria-busy={isBusy}
                   >
                     <div className="shrink-0 w-10 h-10 rounded-full bg-white/25 grid place-items-center">
