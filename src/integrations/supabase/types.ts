@@ -14,6 +14,90 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_catalog: {
+        Row: {
+          category: string
+          color: string
+          created_at: string
+          default_minutes: number
+          icon: string
+          id: string
+          label: string
+          slug: string
+          sort_order: number
+          tags_json: Json
+        }
+        Insert: {
+          category: string
+          color?: string
+          created_at?: string
+          default_minutes?: number
+          icon?: string
+          id?: string
+          label: string
+          slug: string
+          sort_order?: number
+          tags_json?: Json
+        }
+        Update: {
+          category?: string
+          color?: string
+          created_at?: string
+          default_minutes?: number
+          icon?: string
+          id?: string
+          label?: string
+          slug?: string
+          sort_order?: number
+          tags_json?: Json
+        }
+        Relationships: []
+      }
+      activity_logs: {
+        Row: {
+          activity_slug: string
+          category: string
+          color: string
+          created_at: string
+          date: string
+          duration_minutes: number | null
+          icon: string
+          id: string
+          label: string
+          mood_delta: number | null
+          note: string | null
+          user_id: string
+        }
+        Insert: {
+          activity_slug: string
+          category: string
+          color?: string
+          created_at?: string
+          date?: string
+          duration_minutes?: number | null
+          icon?: string
+          id?: string
+          label: string
+          mood_delta?: number | null
+          note?: string | null
+          user_id: string
+        }
+        Update: {
+          activity_slug?: string
+          category?: string
+          color?: string
+          created_at?: string
+          date?: string
+          duration_minutes?: number | null
+          icon?: string
+          id?: string
+          label?: string
+          mood_delta?: number | null
+          note?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       crisis_plans: {
         Row: {
           avoid_json: Json
