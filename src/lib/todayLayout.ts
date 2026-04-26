@@ -138,8 +138,8 @@ export const decideTodayLayout = (ctx: TodayContext): LayoutDecision => {
   // Sekundär 2: forecast om vi inte redan tagit eveningPrediction
   if (!ctx.hasEveningPrediction) tryAdd("forecast", ctx.hasForecast, "tomorrow forecast confident");
 
-  // forYou-karusellen — bara om check-in finns (innan dess är fokus "logga dagen")
-  tryAdd("forYou", ctx.hasCheckin && ctx.hasPicks, "personalized picks");
+  // forYou-karusellen — alltid när vi har picks (primär ingång till handling)
+  tryAdd("forYou", ctx.hasPicks, "personalized picks");
 
   // Dagens rutin matchar partOfDay (vi har redan filtrerat i query)
   tryAdd("todayRoutine", ctx.hasCheckin && ctx.hasTodayRoutine, "matches part of day");

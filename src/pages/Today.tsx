@@ -18,7 +18,7 @@ import { recommendForToday, type Exercise as RecExercise, type Pick } from "@/li
 import { Moon } from "lucide-react";
 import { StreakRing } from "@/components/StreakRing";
 import { QuickLogPills } from "@/components/QuickLogPills";
-import { QuickLogFab } from "@/components/QuickLogFab";
+
 import { ActivityPicker, type ActivityDraft } from "@/components/ActivityPicker";
 import { countDaysInWindow, type StreakCounts } from "@/lib/streaks";
 import { useRecentCheckins, seriesForField } from "@/hooks/useRecentCheckins";
@@ -907,9 +907,9 @@ const Today = () => {
         pattern={hero.pattern}
         topLeft={
           <button
-            onClick={() => navigate("/installningar")}
+            onClick={() => navigate("/mer")}
             className="w-10 h-10 grid place-items-center rounded-full bg-surface shadow-card press-soft"
-            aria-label="Inställningar"
+            aria-label="Mer"
           >
             <SettingsIcon size={18} className="text-foreground" strokeWidth={2.4} />
           </button>
@@ -926,12 +926,13 @@ const Today = () => {
         )}
       </header>
 
-      {decision.modules.map((id) => {
-        const node = MODULES[id]?.();
-        return node ?? null;
-      })}
+      {decision.modules
+        .filter((id) => id !== "reportShortcut" && id !== "learn")
+        .map((id) => {
+          const node = MODULES[id]?.();
+          return node ?? null;
+        })}
 
-      {!showSafety && <QuickLogFab onClick={() => setPickerOpen(true)} />}
       <ActivityPicker open={pickerOpen} onOpenChange={setPickerOpen} onAdd={handleQuickAdd} />
     </AppShell>
   );

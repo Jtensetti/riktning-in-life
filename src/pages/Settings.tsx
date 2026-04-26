@@ -8,7 +8,7 @@ import { HeroBanner } from "@/components/HeroBanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { ChevronLeft, ChevronRight, LogOut, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { loadReminders, saveReminders, resetOnboarded, type Reminders } from "@/lib/settings";
 import { useWeather, weatherLabel, isWeatherPermissionGranted, setWeatherPermissionGranted } from "@/lib/weather";
@@ -183,35 +183,6 @@ const Settings = () => {
         </div>
       </section>
 
-      <section className="mb-7">
-        <h2 className="text-lg font-extrabold mb-3">Mer i appen</h2>
-        <div className="space-y-3">
-          <LinkRow
-            icon={<AbstractIcon name="book-open" size={18} color="currentColor" />}
-            iconBg="bg-blue-calm/15"
-            iconColor="text-blue-calm"
-            label="Lär dig"
-            sub="Korta artiklar med forskningsstöd"
-            onClick={() => navigate("/lar-dig")}
-          />
-          <LinkRow
-            icon={<Sparkles size={18} />}
-            iconBg="bg-orange-start/15"
-            iconColor="text-orange-deep"
-            label="Rutiner"
-            sub="Färdiga paket för morgon, dag och kväll"
-            onClick={() => navigate("/rutiner")}
-          />
-          <LinkRow
-            icon={<AbstractIcon name="shield-soft" size={18} color="currentColor" />}
-            iconBg="bg-red-risk/15"
-            iconColor="text-red-risk"
-            label="Min krisplan"
-            sub="Förbered i lugnt läge — för svåra stunder"
-            onClick={() => navigate("/krisplan")}
-          />
-        </div>
-      </section>
 
       <section className="mb-7">
         <h2 className="text-lg font-extrabold mb-3">Din data</h2>
