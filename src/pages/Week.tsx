@@ -917,6 +917,19 @@ const Week = () => {
           )}
         </section>
       )}
+
+      {/* Klinisk veckorapport — lugn länkrad längst ner, inte CTA */}
+      <button
+        onClick={() => navigate("/rapport/vecka")}
+        className="w-full card-quiet flex items-center justify-between gap-3 press-soft mb-2"
+      >
+        <div className="text-left">
+          <p className="text-[11px] font-extrabold uppercase tracking-wider text-blue-calm mb-1">För vården</p>
+          <p className="text-base font-extrabold">Klinisk veckorapport</p>
+          <p className="text-xs text-text-secondary mt-0.5">Senaste 7 dagar som PDF.</p>
+        </div>
+        <ChevronRight size={20} className="shrink-0 text-text-secondary" />
+      </button>
     </AppShell>
   );
 };
