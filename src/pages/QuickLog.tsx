@@ -490,6 +490,19 @@ const QuickLog = () => {
                 tone="pink"
                 disabled={savingMoodEdit}
               />
+              {savingMoodEdit && (
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="flex items-center gap-2 text-sm font-bold text-text-secondary animate-fade-in-up"
+                >
+                  <span
+                    aria-hidden
+                    className="w-3.5 h-3.5 rounded-full border-2 border-text-secondary/30 border-t-text-secondary animate-spin"
+                  />
+                  Sparar ändringar…
+                </div>
+              )}
               <Button
                 onClick={saveMoodEdit}
                 disabled={savingMoodEdit}
