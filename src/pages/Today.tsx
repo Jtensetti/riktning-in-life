@@ -363,6 +363,31 @@ const Today = () => {
     setStreakReloadKey((k) => k + 1);
   };
 
+  const saveEveningGoal = async () => {
+    if (!user || savingEveningGoal) return;
+    setSavingEveningGoal(true);
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.(10);
+    const { error } = await supabase.from("activity_logs").insert({
+      user_id: user.id,
+      date: new Date().toISOString().split("T")[0],
+      activity_slug: "evening-wind-down",
+      label: "Mjuk kvällsstund",
+      category: "Sov bättre",
+      icon: "moon-soft",
+      color: "purple",
+      duration_minutes: 10,
+      mood_delta: 1,
+      note: "Auto-sparat kvällsmål",
+    });
+    setSavingEveningGoal(false);
+    if (error) {
+      toast.error("Kunde inte spara kvällsmålet.");
+      return;
+    }
+    toast.success("Kvällsmål sparat 🌙", { description: "En liten sak räknas. Sov gott." });
+    setStreakReloadKey((k) => k + 1);
+  };
+
   if (loading || fetching) {
     return (
       <AppShell>
