@@ -28,7 +28,7 @@ const avgNum = (xs: (number | null)[]): number | null => {
 const dayCount = (cs: Checkin[], pred: (c: Checkin) => boolean): number =>
   cs.filter(pred).length;
 
-export const buildPriorities = (cs: Checkin[]): Priority[] => {
+export const buildPriorities = (cs: Checkin[], thresholds: PersonalThresholds = GLOBAL_DEFAULTS): Priority[] => {
   if (cs.length === 0) {
     return [{
       key: "stable",
@@ -41,17 +41,20 @@ export const buildPriorities = (cs: Checkin[]): Priority[] => {
   }
 
   const out: Omit<Priority, "rank">[] = [];
+  const t = thresholds;
+  // Härled "väldigt högt" från användarens egen tröskel.
+  const veryHighAnx = Math.min(10, t.highAnxiety + 1);
 
-  // 1. SÖMN — högsta prioritet om <6h snitt eller 3+ nätter <5h
+  // 1. SÖMN — högsta prioritet om snittet under shortSleep+1 eller 3+ nätter under shortSleep
   const sleepVals = cs.map(c => c.sleep_hours == null ? null : Number(c.sleep_hours));
   const sleepAvg = avgNum(sleepVals);
-  const shortNights = dayCount(cs, c => c.sleep_hours != null && Number(c.sleep_hours) < 5);
-  if (sleepAvg != null && (sleepAvg < 6 || shortNights >= 3)) {
+  const shortNights = dayCount(cs, c => c.sleep_hours != null && Number(c.sleep_hours) < t.shortSleep);
+  if (sleepAvg != null && (sleepAvg < t.shortSleep + 1 || shortNights >= 3)) {
     out.push({
       key: "sleep",
       title: "Sömnen behöver mer plats",
       insight: shortNights >= 3
-        ? `${shortNights} nätter under 5h denna vecka.`
+        ? `${shortNights} nätter under ${t.shortSleep}h denna vecka.`
         : `Snitt: ${sleepAvg.toFixed(1)}h per natt.`,
       nudge: "En kvällsrutin gör mest skillnad just nu.",
       color: "purple",
@@ -59,10 +62,10 @@ export const buildPriorities = (cs: Checkin[]): Priority[] => {
     });
   }
 
-  // 2. ORO — högsta prioritet om snitt >=6 eller 3+ dagar >=7
+  // 2. ORO — snitt >= highAnxiety eller 3+ dagar >= veryHighAnx
   const anxAvg = avgNum(cs.map(c => c.anxiety));
-  const highAnxDays = dayCount(cs, c => (c.anxiety ?? 0) >= 7);
-  if (anxAvg != null && (anxAvg >= 6 || highAnxDays >= 3)) {
+  const highAnxDays = dayCount(cs, c => (c.anxiety ?? 0) >= veryHighAnx);
+  if (anxAvg != null && (anxAvg >= t.highAnxiety || highAnxDays >= 3)) {
     out.push({
       key: "anxiety",
       title: "Oron är hög denna vecka",
@@ -88,9 +91,9 @@ export const buildPriorities = (cs: Checkin[]): Priority[] => {
     });
   }
 
-  // 4. NEDSTÄMDHET — snitt tyngd >=6
+  // 4. NEDSTÄMDHET — snitt tyngd >= highMood
   const moodAvg = avgNum(cs.map(c => c.mood_heaviness));
-  if (moodAvg != null && moodAvg >= 6) {
+  if (moodAvg != null && moodAvg >= t.highMood) {
     out.push({
       key: "mood",
       title: "Tyngd ligger högt",
@@ -114,9 +117,9 @@ export const buildPriorities = (cs: Checkin[]): Priority[] => {
     });
   }
 
-  // 6. STILLA TID — bed/sofa >120 min snitt
+  // 6. STILLA TID — bed/sofa > highBedSofa snitt
   const bedAvg = avgNum(cs.map(c => c.daytime_bed_sofa_time_minutes));
-  if (bedAvg != null && bedAvg > 120) {
+  if (bedAvg != null && bedAvg > t.highBedSofa) {
     out.push({
       key: "stillness",
       title: "Mycket stilla tid dagtid",
