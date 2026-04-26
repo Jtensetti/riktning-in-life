@@ -2,6 +2,11 @@ import { AbstractIcon, type IconName } from "./AbstractIcon";
 import { floatDurationFor, type HeroMood } from "@/lib/heroVisuals";
 
 /**
+ * @deprecated Use `ScreenHeader` from `@/components/ui-kit` for all main
+ * tabs and sub-pages. `HeroBanner` is only kept around for `CrisisPlan`
+ * which intentionally keeps a distinct emergency framing. New code should
+ * not import this component.
+ */
  * Standardiserad hero/header-gradient med flytande abstrakt ikon.
  * Använd överst på sidor inuti <AppShell> så får alla sektioner samma
  * padding, radius och timing.
