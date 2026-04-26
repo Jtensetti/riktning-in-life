@@ -24,7 +24,7 @@ const TEMPLATES: Record<TemplateKey, {
     title: "Tre rader",
     subtitle: "En liten avstamp för dagen",
     bg: "bg-yellow-journal", text: "text-foreground",
-    ill: "journal", icon: "pencil-soft", iconColor: "hsl(var(--orange-start))",
+    tone: "var(--yellow-journal)", icon: "pencil-soft", iconColor: "hsl(var(--orange-start))",
     fields: [
       { key: "heaviest", label: "Det tyngsta idag var" },
       { key: "helped", label: "Något som hjälpte lite var" },
@@ -35,7 +35,7 @@ const TEMPLATES: Record<TemplateKey, {
     title: "Tankeloop",
     subtitle: "Fakta vs tolkning",
     bg: "bg-orange-start", text: "text-white",
-    ill: "thoughtLoop", icon: "spark", iconColor: "hsl(var(--yellow-journal))",
+    tone: "var(--orange-start)", icon: "spark", iconColor: "hsl(var(--yellow-journal))",
     fields: [
       { key: "thought", label: "Tanken som fastnat" },
       { key: "for", label: "Fakta som stödjer den" },
@@ -47,7 +47,7 @@ const TEMPLATES: Record<TemplateKey, {
     title: "Kropp först",
     subtitle: "Lyssna på kroppens signaler",
     bg: "bg-blue-calm", text: "text-white",
-    ill: "bodyScan", icon: "heart-pulse", iconColor: "hsl(var(--surface))",
+    tone: "var(--blue-calm)", icon: "heart-pulse", iconColor: "hsl(var(--surface))",
     fields: [
       { key: "where", label: "Var sitter känslan?" },
       { key: "signal", label: "Vad signalerar kroppen?" },
@@ -58,7 +58,7 @@ const TEMPLATES: Record<TemplateKey, {
     title: "Bevislogg",
     subtitle: "Vad gjorde du trots motstånd?",
     bg: "bg-green-recovery", text: "text-white",
-    ill: "focus", icon: "flag", iconColor: "hsl(var(--yellow-journal))",
+    tone: "var(--green-recovery)", icon: "flag", iconColor: "hsl(var(--yellow-journal))",
     fields: [
       { key: "did", label: "Vad gjorde jag trots motstånd?" },
       { key: "means", label: "Vad säger det som depressionen inte säger?" },
@@ -69,7 +69,7 @@ const TEMPLATES: Record<TemplateKey, {
     title: "Fri text",
     subtitle: "Skriv vad du vill",
     bg: "bg-pink-move", text: "text-white",
-    ill: "journal", icon: "bookmark-soft", iconColor: "hsl(var(--surface))",
+    tone: "var(--pink-move)", icon: "bookmark-soft", iconColor: "hsl(var(--surface))",
     fields: [],
   },
 };
