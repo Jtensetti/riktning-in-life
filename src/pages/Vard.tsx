@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronLeft, ChevronRight, Plus, Download, Trash2, FileDown } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Download, Trash2, FileDown, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { FORMS, FormType, SIDE_EFFECTS } from "@/lib/forms";
 import jsPDF from "jspdf";
@@ -458,6 +458,7 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
   const [markedJournalCount, setMarkedJournalCount] = useState<number | null>(null);
   const [generating, setGenerating] = useState(false);
   const [report, setReport] = useState<string | null>(null);
+  const [doctorEmail, setDoctorEmail] = useState<string>(() => localStorage.getItem("riktning_doctor_email") || "");
 
   useEffect(() => {
     if (!user) return;
