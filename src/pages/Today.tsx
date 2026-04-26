@@ -399,6 +399,15 @@ const Today = () => {
     setStreakReloadKey((k) => k + 1);
   };
 
+  // Hooks MUST run before any early return — kalla allt här uppe.
+  const { data: recent7 } = useRecentCheckins(7);
+  useEffect(() => {
+    if (trendData.length >= 14) {
+      // trendData saknar vissa fält som baseline.ts förväntar sig — vi gör en
+      // bredare query nedan istället. Här kör vi bara compute om vi har full data.
+    }
+  }, [trendData]);
+
   if (loading || fetching) {
     return (
       <AppShell>
@@ -427,7 +436,6 @@ const Today = () => {
   const funcTrend = computeTrend(trendData, c => c.function_score, false);
 
   // 7-dagars sparklines från senaste check-ins. Visas när minst 4 dagar har data.
-  const { data: recent7 } = useRecentCheckins(7);
   const moodSpark = seriesForField(recent7, 7, "mood_heaviness").values;
   const sleepSpark = seriesForField(recent7, 7, "sleep_hours").values;
   const funcSpark = seriesForField(recent7, 7, "function_score").values;
@@ -438,12 +446,6 @@ const Today = () => {
 
   // Personlig baslinje + kvällsprediktion. Trend-datan (14 dagar, full struktur)
   // räcker som källa. Evening prediction kräver minst 7 dagar.
-  useEffect(() => {
-    if (trendData.length >= 14) {
-      // trendData saknar vissa fält som baseline.ts förväntar sig — vi gör en
-      // bredare query nedan istället. Här kör vi bara compute om vi har full data.
-    }
-  }, [trendData]);
 
   const baselineRow = loadBaseline();
   const thresholds = thresholdsFromBaseline(baselineRow);
