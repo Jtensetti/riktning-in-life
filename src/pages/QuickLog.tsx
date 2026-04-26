@@ -201,6 +201,40 @@ const QuickLog = () => {
     if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.(10);
   };
 
+  /** Anropas av MoodForm efter spara — visar toast med "Ändra känsla"-action
+   *  som öppnar samma typ av redigeringsdrawer som aktivitets-snabbloggen. */
+  const onMoodSaved = (id: string, heaviness: number, anxiety: number, energy: number) => {
+    setOpenTpl(null);
+    setReloadKey(k => k + 1);
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.(10);
+    toast.success("Mående loggat", {
+      description: `Tyngd ${heaviness} · Oro ${anxiety} · Energi ${energy}`,
+      action: {
+        label: "Ändra känsla",
+        onClick: () => setMoodEdit({ id, heaviness, anxiety, energy }),
+      },
+    });
+  };
+
+  const saveMoodEdit = async () => {
+    if (!moodEdit || !user || savingMoodEdit) return;
+    setSavingMoodEdit(true);
+    const { error } = await supabase
+      .from("daily_checkins")
+      .update({
+        mood_heaviness: moodEdit.heaviness,
+        anxiety: moodEdit.anxiety,
+        energy: moodEdit.energy,
+      })
+      .eq("id", moodEdit.id)
+      .eq("user_id", user.id);
+    setSavingMoodEdit(false);
+    if (error) { toast.error("Kunde inte spara"); return; }
+    toast.success("Känsla uppdaterad");
+    setMoodEdit(null);
+    setReloadKey(k => k + 1);
+  };
+
   const deleteEntry = async (e: DayEntry) => {
     if (!user) return;
     const tableMap: Record<TemplateKey, string> = {
