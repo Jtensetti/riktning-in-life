@@ -274,6 +274,31 @@ const Week = () => {
     [activitiesAll, sessionsAll],
   );
 
+  // Spår 1: deterministisk mönsterdetektor över rullande 28 dagar.
+  const patterns = useMemo(() => {
+    const sessionsForPatterns = sessionsAll.map((s) => ({
+      date: (s.created_at ?? "").split("T")[0],
+      category: s.exercises?.category ?? null,
+      title: s.exercises?.title ?? null,
+      mood_before: s.mood_before,
+      mood_after: s.mood_after,
+      anxiety_before: s.anxiety_before,
+      anxiety_after: s.anxiety_after,
+    }));
+    return detectPatterns({
+      checkins,
+      activities: activitiesAll.map((a) => ({
+        date: a.date,
+        activity_slug: a.activity_slug,
+        label: a.label,
+        mood_delta: a.mood_delta,
+      })),
+      sessions: sessionsForPatterns,
+      medLogs: medLogsAll,
+      thresholds,
+    });
+  }, [checkins, activitiesAll, sessionsAll, medLogsAll, thresholds]);
+
   /** Per-dag Riktning (0–100, högre = bättre) för senaste 7 dagar.
    *  Riktning = 100 − burden för dagens checkin. Saknas dagen → null. */
   const directionSeries: DirectionPoint[] = useMemo(() => {
