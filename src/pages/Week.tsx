@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { Illustration } from "@/components/Illustrations";
 import { AbstractIcon, type IconName } from "@/components/AbstractIcon";
+import { ColorCard, type CardTone } from "@/components/ColorCard";
 import { HeroBanner } from "@/components/HeroBanner";
 import { ArrowDown, ArrowUp, ChevronRight, Minus, Sparkles } from "lucide-react";
 import {
@@ -59,6 +60,21 @@ const colorHsl = (color: string): string => {
     case "pink": return "hsl(var(--pink-move))";
     case "green": return "hsl(var(--green-recovery))";
     default: return "hsl(var(--orange-start))";
+  }
+};
+
+/** Normalisera godtycklig färg-sträng till en giltig CardTone (ColorCard). */
+const asTone = (color: string): CardTone => {
+  switch (color) {
+    case "orange":
+    case "blue":
+    case "yellow":
+    case "purple":
+    case "pink":
+    case "green":
+      return color;
+    default:
+      return "orange";
   }
 };
 
