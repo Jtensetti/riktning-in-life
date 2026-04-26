@@ -112,6 +112,7 @@ export const WeekDirectionChart = ({ data, height = 180 }: Props) => {
           />
         </LineChart>
       </ResponsiveContainer>
-    </div>
+      </div>
+    </AnimatedChart>
   );
 };
