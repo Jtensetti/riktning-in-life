@@ -82,6 +82,10 @@ export const setWeatherPermissionGranted = (granted: boolean) =>
   localStorage.setItem(PERMISSION_GRANTED_KEY, granted ? "1" : "0");
 export const isWeatherPermissionGranted = () =>
   localStorage.getItem(PERMISSION_GRANTED_KEY) === "1";
+export const isWeatherPermissionDismissed = () =>
+  localStorage.getItem(PERMISSION_DISMISSED_KEY) === "1";
+export const dismissWeatherPermission = () =>
+  localStorage.setItem(PERMISSION_DISMISSED_KEY, "1");
 
 const getPosition = (): Promise<{ lat: number; lon: number }> =>
   new Promise((resolve, reject) => {
