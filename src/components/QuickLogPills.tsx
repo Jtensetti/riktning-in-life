@@ -184,26 +184,43 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
             </button>
           </div>
           <div className="grid grid-cols-1 gap-2">
-            {favs.map((f, i) => (
-              <button
-                key={f.slug}
-                onClick={() => quickLog(f)}
-                disabled={busy === f.slug}
-                className={`w-full ${colorBg(f.color)} rounded-2xl px-4 py-3 flex items-center gap-3 shadow-card press-soft animate-pop-in ${busy === f.slug ? "opacity-60" : ""}`}
-                style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
-              >
-                <div className="shrink-0 w-10 h-10 rounded-full bg-white/25 grid place-items-center">
-                  <AbstractIcon name={f.icon as IconName} size={22} color="currentColor" />
+            {favs.map((f, i) => {
+              const why = whyReason(f);
+              return (
+                <div
+                  key={f.slug}
+                  className={`${colorBg(f.color)} rounded-2xl shadow-card animate-pop-in ${busy === f.slug ? "opacity-60" : ""}`}
+                  style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
+                >
+                  <button
+                    onClick={() => quickLog(f)}
+                    disabled={busy === f.slug}
+                    className="w-full px-4 pt-3 pb-2 flex items-center gap-3 press-soft text-left"
+                  >
+                    <div className="shrink-0 w-10 h-10 rounded-full bg-white/25 grid place-items-center">
+                      <AbstractIcon name={f.icon as IconName} size={22} color="currentColor" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-extrabold text-[15px] leading-tight truncate">{f.label}</p>
+                      <p className="text-[11px] opacity-90 font-bold">{f.default_minutes} min · ett klick = loggad</p>
+                    </div>
+                    <div className="shrink-0 w-8 h-8 rounded-full bg-white/25 grid place-items-center">
+                      <Plus size={16} />
+                    </div>
+                  </button>
+                  <div className="mx-3 mb-2 px-3 py-1.5 rounded-full bg-white/20 flex items-center gap-1.5">
+                    {why.icon === "star" ? (
+                      <Star size={11} className="shrink-0" fill="currentColor" />
+                    ) : (
+                      <Info size={11} className="shrink-0" />
+                    )}
+                    <p className="text-[11px] font-bold leading-tight opacity-95 truncate">
+                      <span className="opacity-75">Varför den här? </span>{why.text}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0 text-left">
-                  <p className="font-extrabold text-[15px] leading-tight truncate">{f.label}</p>
-                  <p className="text-[11px] opacity-90 font-bold">{f.default_minutes} min · ett klick = loggad</p>
-                </div>
-                <div className="shrink-0 w-8 h-8 rounded-full bg-white/25 grid place-items-center">
-                  <Plus size={16} />
-                </div>
-              </button>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}
