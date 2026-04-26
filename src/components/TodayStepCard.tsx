@@ -61,8 +61,8 @@ export const TodayStepCard = ({ exercises, todayCheckin, recentSessions, loggedT
         </span>
       </div>
 
-      <div className="absolute right-3 top-12 opacity-90 pointer-events-none z-[1]">
-        <AbstractIcon name="spark" size={44} color="currentColor" />
+      <div className="absolute -right-2 top-6 opacity-95 pointer-events-none z-[1] drop-shadow-[0_6px_14px_rgba(0,0,0,0.18)]">
+        <AbstractIcon name="spark" size={104} color="currentColor" />
       </div>
 
       <div className="relative z-[1] mt-auto">
