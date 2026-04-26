@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { Illustration } from "@/components/Illustrations";
+import { AbstractIcon } from "@/components/AbstractIcon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -62,6 +63,19 @@ const Vard = () => {
 
   return (
     <AppShell>
+      {/* Soft blue hero */}
+      <div className="-mx-6 -mt-8 mb-6 relative overflow-hidden rounded-b-[36px]"
+           style={{ background: "linear-gradient(180deg, hsl(var(--blue-calm)) 0%, hsl(var(--blue-calm) / 0.5) 55%, hsl(var(--background)) 100%)" }}>
+        <div className="h-32 relative">
+          <div className="absolute left-1/2 -translate-x-1/2 top-5 animate-float">
+            <AbstractIcon name="heart-pulse" size={64} color="hsl(var(--surface))" />
+          </div>
+          <svg className="absolute inset-x-0 bottom-0 w-full" viewBox="0 0 400 60" preserveAspectRatio="none" aria-hidden>
+            <path d="M0 60 Q200 0 400 60 Z" fill="hsl(var(--background))" />
+          </svg>
+        </div>
+      </div>
+
       <header className="mb-6">
         <h1 className="text-[32px] leading-[38px] mb-1">Vård</h1>
         <p className="text-sm text-text-secondary">Skattningar, läkemedel och rapport till vården.</p>
@@ -70,7 +84,7 @@ const Vard = () => {
       <section className="mb-7">
         <h2 className="text-lg font-extrabold mb-3">Veckoskattningar</h2>
         <div className="space-y-3">
-          {(["phq9", "gad7", "who5"] as FormType[]).map(t => {
+          {(["phq9", "gad7", "who5"] as FormType[]).map((t, i) => {
             const f = FORMS[t];
             const last = latest(t);
             const final = last && f.toFinal ? f.toFinal(last.total_score) : last?.total_score;
@@ -78,7 +92,8 @@ const Vard = () => {
               <button
                 key={t}
                 onClick={() => { setActiveForm(t); setView("form"); }}
-                className="w-full card-soft p-4 flex items-center gap-3 text-left hover:bg-surface-alt transition"
+                className="w-full card-soft p-4 flex items-center gap-3 text-left press-soft animate-fade-in-up"
+                style={{ animationDelay: `${i * 60}ms` }}
               >
                 <div className="w-11 h-11 rounded-2xl bg-blue-calm/10 text-blue-calm grid place-items-center">
                   <ClipboardList size={20} />
@@ -102,7 +117,7 @@ const Vard = () => {
         <h2 className="text-lg font-extrabold mb-3">Läkemedel</h2>
         <button
           onClick={() => setView("meds")}
-          className="w-full card-soft p-4 flex items-center gap-3 text-left hover:bg-surface-alt transition"
+          className="w-full card-soft p-4 flex items-center gap-3 text-left press-soft animate-fade-in-up"
         >
           <div className="w-11 h-11 rounded-2xl bg-pink-move/15 text-pink-move grid place-items-center">
             <PillIcon size={20} />
@@ -119,7 +134,7 @@ const Vard = () => {
         <h2 className="text-lg font-extrabold mb-3">Rapport</h2>
         <button
           onClick={() => setView("report")}
-          className="w-full rounded-3xl bg-blue-calm text-white p-1 overflow-hidden shadow-soft text-left hover:opacity-95 transition"
+          className="w-full rounded-3xl bg-blue-calm text-white p-1 overflow-hidden shadow-soft text-left press-soft animate-pop-in"
         >
           <div className="rounded-[20px] overflow-hidden">
             <Illustration name="care" className="w-full h-auto" />
