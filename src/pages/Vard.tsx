@@ -504,6 +504,21 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
     adherence: number | null;
     sideEffects: string[];
     movementDays: number;
+    // Sammanfattningsblock (sömn / rörelse / journal / medicin)
+    sleepHours: number | null;
+    sleepHoursPrev: number | null;
+    sleepQuality: number | null;
+    lowSleepNights: number;
+    movementYes: number;
+    movementLittle: number;
+    movementCombinedPrev: number;
+    journalCount: number;
+    journalDays: number;
+    meaningfulYes: number;
+    activeMeds: number;
+    adherencePrev: number | null;
+    totalActMinutes: number;
+    periodDays: number;
   } | null>(null);
 
   const generate = async () => {
