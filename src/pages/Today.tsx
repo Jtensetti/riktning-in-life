@@ -19,6 +19,45 @@ type Checkin = {
   safety_status: string | null;
 };
 
+type TrendCheckin = {
+  date: string;
+  mood_heaviness: number | null;
+  function_score: number | null;
+  sleep_hours: number | null;
+};
+
+type Trend = { dir: "up" | "down" | "flat"; deltaLabel: string; tone: "good" | "warn" | "neutral" };
+
+const isoDaysAgo = (n: number) => {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().split("T")[0];
+};
+
+const avg = (xs: (number | null)[]) => {
+  const v = xs.filter((x): x is number => x != null);
+  return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null;
+};
+
+// goodWhenLower=true means lower values are better (e.g. mood_heaviness)
+const computeTrend = (cs: TrendCheckin[], pick: (c: TrendCheckin) => number | null, goodWhenLower: boolean): { value: number | null; sub: string; trend: Trend } => {
+  const d7 = isoDaysAgo(6);
+  const d14 = isoDaysAgo(13);
+  const cur = cs.filter(c => c.date >= d7).map(pick);
+  const prev = cs.filter(c => c.date >= d14 && c.date < d7).map(pick);
+  const a = avg(cur);
+  const b = avg(prev);
+  if (a == null) return { value: null, sub: "Inget loggat ännu", trend: { dir: "flat", deltaLabel: "—", tone: "neutral" } };
+  if (b == null) return { value: a, sub: "Bygger baslinje", trend: { dir: "flat", deltaLabel: "Ny", tone: "neutral" } };
+  const delta = a - b;
+  const pct = b !== 0 ? Math.round((delta / b) * 100) : 0;
+  const dir: "up" | "down" | "flat" = Math.abs(pct) < 3 ? "flat" : delta > 0 ? "up" : "down";
+  const improved = goodWhenLower ? delta < 0 : delta > 0;
+  const tone: Trend["tone"] = dir === "flat" ? "neutral" : improved ? "good" : "warn";
+  const deltaLabel = dir === "flat" ? "Stabil" : `${delta > 0 ? "+" : ""}${pct}%`;
+  return { value: a, sub: `Snitt 7 dagar`, trend: { dir, deltaLabel, tone } };
+};
+
 type RecentSession = {
   id: string;
   created_at: string;
