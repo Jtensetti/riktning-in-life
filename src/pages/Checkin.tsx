@@ -62,6 +62,8 @@ const Checkin = () => {
   const { weather } = useWeather(true);
   const [weatherOverride, setWeatherOverride] = useState<WeatherKind | null>(null);
   const [showWeatherPicker, setShowWeatherPicker] = useState(false);
+  const [activities, setActivities] = useState<ActivityDraft[]>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   // Effective weather kind = manual override if set, else autodetected.
   const effectiveKind: WeatherKind | null = weatherOverride ?? weather?.kind ?? null;
