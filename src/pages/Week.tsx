@@ -8,6 +8,7 @@ import { AbstractIcon, type IconName } from "@/components/AbstractIcon";
 import { iconForActivity } from "@/lib/icons";
 import { ColorCard, type CardTone } from "@/components/ColorCard";
 import { ScreenHeader } from "@/components/ui-kit/ScreenHeader";
+import { BaselineProgressCard } from "@/components/BaselineProgressCard";
 import { ArrowDown, ArrowUp, ChevronRight, Minus, Sparkles } from "lucide-react";
 import {
   burdenScore, functionScore, recoveryScore, stabilityScore, stabilityLabel,
