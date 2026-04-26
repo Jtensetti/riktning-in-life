@@ -39,8 +39,9 @@ export const BottomNav = () => {
                   >
                     <AbstractIcon
                       name={icon}
-                      size={isActive ? 26 : 22}
+                      size={isActive ? 24 : 22}
                       color={isActive ? activeColor : "hsl(var(--text-secondary))"}
+                      inline
                     />
                   </span>
                   <span className={`text-[11px] ${isActive ? "font-extrabold" : "font-semibold"}`}>{label}</span>
