@@ -310,7 +310,7 @@ const Today = () => {
           <h3 className="text-xl mb-1">Nya insikter</h3>
           <p className="text-sm text-text-secondary mb-3">Riktning senaste 7 dagarna</p>
           <div className="grid grid-cols-3 gap-3">
-            <div className="animate-pop-in" style={{ animationDelay: "0ms" }}>
+            <div className="animate-pop-in" style={{ animationDelay: "var(--stagger-0)" }}>
               <InsightCard
                 label="Humör"
                 value={moodTrend.value}
@@ -320,7 +320,7 @@ const Today = () => {
                 colorClass="bg-orange-start"
               />
             </div>
-            <div className="animate-pop-in" style={{ animationDelay: "80ms" }}>
+            <div className="animate-pop-in" style={{ animationDelay: "var(--stagger-1)" }}>
               <InsightCard
                 label="Sömn"
                 value={sleepTrend.value}
@@ -330,7 +330,7 @@ const Today = () => {
                 colorClass="bg-purple-sleep"
               />
             </div>
-            <div className="animate-pop-in" style={{ animationDelay: "160ms" }}>
+            <div className="animate-pop-in" style={{ animationDelay: "var(--stagger-2)" }}>
               <InsightCard
                 label="Funktion"
                 value={funcTrend.value}
@@ -377,7 +377,7 @@ const Today = () => {
               pushDelta("E", s.energy_before, s.energy_after, false);
 
               return (
-                <li key={s.id} className="relative animate-fade-in-up" style={{ animationDelay: `${i * 60}ms` }}>
+                <li key={s.id} className="relative animate-fade-in-up" style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}>
                   <span className="absolute -left-[22px] top-1/2 -translate-y-1/2" aria-hidden>
                     <AbstractIcon name="blob-smile" size={18} color={blobColor} />
                   </span>
