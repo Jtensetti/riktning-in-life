@@ -5,8 +5,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { Input } from "@/components/ui/input";
 import { Search, ChevronRight } from "lucide-react";
-import { Illustration, categoryIll } from "@/components/Illustrations";
 import { AbstractIcon } from "@/components/AbstractIcon";
+import { iconForExerciseCategory } from "@/lib/icons";
 import { getTimeContext } from "@/lib/timeContext";
 import { useWeather, isOutdoorFriendly } from "@/lib/weather";
 
@@ -115,15 +115,17 @@ const Exercises = () => {
               <button
                 key={name}
                 onClick={() => setActive(active === name ? null : name)}
-                className={`relative w-full rounded-3xl ${bg} ${text} px-5 py-4 text-left overflow-hidden shadow-card press-soft animate-fade-in-up flex items-center justify-between gap-3 ${
+                className={`relative w-full rounded-3xl ${bg} ${text} px-5 py-4 text-left overflow-hidden shadow-card press-soft animate-pop-in flex items-center justify-between gap-3 ${
                   active === name ? "ring-4 ring-foreground/15" : ""
                 }`}
-                style={{ animationDelay: `${i * 50}ms`, minHeight: "84px" }}
+                style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})`, minHeight: "92px" }}
               >
-                <span className="font-extrabold text-[17px] leading-tight relative z-10 max-w-[60%]">{name}</span>
-                <div className="shrink-0 w-24 h-16 rounded-2xl overflow-hidden opacity-95">
-                  <Illustration name={categoryIll(name)} className="w-full h-full object-cover" />
-                </div>
+                {/* Sticker-rytm: bakgrundsblob */}
+                <span aria-hidden className="absolute -bottom-10 -right-10 w-40 h-40 rounded-full bg-foreground/10 pointer-events-none" />
+                <span className="relative z-[1] font-extrabold text-[17px] leading-tight max-w-[55%]">{name}</span>
+                <span className="relative z-[1] shrink-0">
+                  <AbstractIcon name={iconForExerciseCategory(name)} size={64} />
+                </span>
               </button>
             ))}
           </div>
@@ -145,26 +147,31 @@ const Exercises = () => {
           <button
             key={ex.id}
             onClick={() => navigate(`/ovningar/${ex.id}`)}
-            className="w-full text-left rounded-3xl bg-surface border border-border-soft p-3 flex items-center gap-3 shadow-card press-soft animate-fade-in-up"
-            style={{ animationDelay: `${i * 40}ms` }}
+            className={`relative w-full text-left rounded-3xl ${colorBg(ex.color)} px-4 py-3 overflow-hidden shadow-card press-soft animate-pop-in flex items-center gap-3`}
+            style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})`, minHeight: "76px" }}
           >
-            <div className={`w-20 h-16 rounded-2xl shrink-0 overflow-hidden ${colorBg(ex.color)}`}>
-              <Illustration name={categoryIll(ex.category)} className="w-full h-full object-cover" />
-            </div>
-            <div className="flex-1 min-w-0">
+            {/* Sticker-rytm: subtil bakgrundsblob */}
+            <span aria-hidden className="absolute -bottom-8 -right-8 w-28 h-28 rounded-full bg-foreground/10 pointer-events-none" />
+
+            <span className="relative z-[1] shrink-0">
+              <AbstractIcon name={iconForExerciseCategory(ex.category)} size={44} />
+            </span>
+
+            <div className="relative z-[1] flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
-                <h3 className="font-extrabold text-base truncate">{ex.title}</h3>
+                <h3 className="font-extrabold text-[15px] truncate">{ex.title}</h3>
                 {fitsNow(ex.category) && !q && !active && (
-                  <span className="shrink-0 text-[9px] font-extrabold uppercase tracking-wide bg-orange-start text-white rounded-full px-1.5 py-0.5">
+                  <span className="shrink-0 text-[9px] font-extrabold uppercase tracking-wide bg-white/90 text-foreground rounded-full px-1.5 py-0.5">
                     Passar nu
                   </span>
                 )}
               </div>
-              <p className="text-xs font-semibold text-text-secondary">
+              <p className="text-[11px] font-bold opacity-85">
                 {ex.category} · {ex.duration_minutes} min
               </p>
             </div>
-            <ChevronRight size={20} className="text-text-secondary shrink-0" />
+
+            <ChevronRight size={20} className="relative z-[1] shrink-0 opacity-80" />
           </button>
         ))}
         {filtered.length === 0 && (
