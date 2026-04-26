@@ -85,6 +85,7 @@ const Week = () => {
   const [activities, setActivities] = useState<ActivityLite[]>([]);
   const [exercises, setExercises] = useState<ExerciseLite[]>([]);
   const [fetching, setFetching] = useState(true);
+  const [historyFilter, setHistoryFilter] = useState<"all" | "checkins" | "exercises" | "activeTime">("all");
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
@@ -341,55 +342,130 @@ const Week = () => {
           <p className="text-xs text-text-secondary">Senaste 7 dagar — varje dag berättar något</p>
         </div>
 
-        <ChartCard
-          title="Aktiv tid"
-          subtitle="Senaste 7 dagar"
-          tone="green"
-          index={0}
-          ariaSummary={`Totalt ${timeline.reduce((s, d) => s + d.totalMinutes, 0)} minuter aktiv tid den här veckan.`}
-          action={
-            <span className="text-[11px] font-extrabold text-text-secondary tabular-nums">
-              {timeline.reduce((s, d) => s + d.totalMinutes, 0)} min totalt
-            </span>
-          }
-          className="mb-3"
-        >
-          <ActivityBars
-            data={timeline.map((d) => ({
-              iso: d.iso,
-              minutes: d.totalMinutes,
-              color: d.acts[0]?.color ?? d.sess[0]?.exercises?.color ?? "green",
-            }))}
-            height={120}
-          />
-        </ChartCard>
+        {/* Filter-pills: styr både diagram och per-dag-listan */}
+        <div role="tablist" aria-label="Filtrera återhämtningshistorik" className="flex flex-wrap gap-1.5 mb-3">
+          {([
+            { key: "all", label: "Allt" },
+            { key: "checkins", label: "Check-ins" },
+            { key: "exercises", label: "Övningar" },
+            { key: "activeTime", label: "Aktiv tid" },
+          ] as const).map((f) => {
+            const active = historyFilter === f.key;
+            return (
+              <button
+                key={f.key}
+                role="tab"
+                aria-selected={active}
+                onClick={() => setHistoryFilter(f.key)}
+                className={`px-3 py-1.5 rounded-full text-[12px] font-extrabold press-soft transition-colors ${
+                  active
+                    ? "bg-foreground text-background"
+                    : "bg-surface-alt text-text-secondary hover:text-foreground"
+                }`}
+              >
+                {f.label}
+              </button>
+            );
+          })}
+        </div>
 
-        <ChartCard
-          title="Vad gjorde dagen av?"
-          subtitle="Minuter fördelat på sömn, rörelse, mående, återhämtning"
-          tone="orange"
-          index={1}
-          className="mb-3"
-        >
-          <StackedRecovery
-            data={timeline.map<RecoveryDay>((d) => {
-              const sleep = d.checkin?.sleep_hours ? Math.round(Number(d.checkin.sleep_hours) * 60) : 0;
-              const movement = d.acts
-                .filter((a) => a.color === "pink" || a.color === "green")
-                .reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
-              const mood = d.acts
-                .filter((a) => a.color === "orange" || a.color === "yellow")
-                .reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
-              const recovery =
-                d.sess.reduce((s, x) => s + (x.exercises?.duration_minutes ?? 0), 0) +
-                d.acts
-                  .filter((a) => a.color === "blue" || a.color === "purple")
-                  .reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
-              return { iso: d.iso, sleep, movement, mood, recovery };
-            })}
-            height={150}
-          />
-        </ChartCard>
+        {/* Beräkna filtrerade serier en gång */}
+        {(() => {
+          const minutesFor = (d: typeof timeline[number]): number => {
+            if (historyFilter === "checkins") return d.checkin?.sleep_hours ? Math.round(Number(d.checkin.sleep_hours) * 60) : 0;
+            if (historyFilter === "exercises") return d.sess.reduce((s, x) => s + (x.exercises?.duration_minutes ?? 0), 0);
+            if (historyFilter === "activeTime") return d.acts.reduce((s, a) => s + (a.duration_minutes ?? 0), 0)
+              + d.sess.reduce((s, x) => s + (x.exercises?.duration_minutes ?? 0), 0);
+            return d.totalMinutes;
+          };
+          const totalMin = timeline.reduce((s, d) => s + minutesFor(d), 0);
+
+          const subtitleByFilter: Record<typeof historyFilter, string> = {
+            all: "Senaste 7 dagar",
+            checkins: "Sömn-minuter från dina check-ins",
+            exercises: "Minuter från genomförda övningar",
+            activeTime: "Aktiviteter + övningar tillsammans",
+          };
+
+          const totalLabelByFilter: Record<typeof historyFilter, string> = {
+            all: `${totalMin} min totalt`,
+            checkins: `${Math.round(totalMin / 60)} h sömn totalt`,
+            exercises: `${totalMin} min övning`,
+            activeTime: `${totalMin} min aktiv tid`,
+          };
+
+          const toneByFilter: Record<typeof historyFilter, "green" | "purple" | "blue" | "orange"> = {
+            all: "green",
+            checkins: "purple",
+            exercises: "blue",
+            activeTime: "orange",
+          };
+
+          const colorByFilter: Record<typeof historyFilter, string> = {
+            all: "green",
+            checkins: "purple",
+            exercises: "blue",
+            activeTime: "orange",
+          };
+
+          return (
+            <>
+              <ChartCard
+                title="Aktiv tid"
+                subtitle={subtitleByFilter[historyFilter]}
+                tone={toneByFilter[historyFilter]}
+                index={0}
+                ariaSummary={`${totalLabelByFilter[historyFilter]} den här veckan.`}
+                action={
+                  <span className="text-[11px] font-extrabold text-text-secondary tabular-nums">
+                    {totalLabelByFilter[historyFilter]}
+                  </span>
+                }
+                className="mb-3"
+              >
+                <ActivityBars
+                  data={timeline.map((d) => ({
+                    iso: d.iso,
+                    minutes: minutesFor(d),
+                    color: historyFilter === "all"
+                      ? (d.acts[0]?.color ?? d.sess[0]?.exercises?.color ?? "green")
+                      : colorByFilter[historyFilter],
+                  }))}
+                  height={120}
+                />
+              </ChartCard>
+
+              {historyFilter === "all" && (
+                <ChartCard
+                  title="Vad gjorde dagen av?"
+                  subtitle="Minuter fördelat på sömn, rörelse, mående, återhämtning"
+                  tone="orange"
+                  index={1}
+                  className="mb-3"
+                >
+                  <StackedRecovery
+                    data={timeline.map<RecoveryDay>((d) => {
+                      const sleep = d.checkin?.sleep_hours ? Math.round(Number(d.checkin.sleep_hours) * 60) : 0;
+                      const movement = d.acts
+                        .filter((a) => a.color === "pink" || a.color === "green")
+                        .reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
+                      const mood = d.acts
+                        .filter((a) => a.color === "orange" || a.color === "yellow")
+                        .reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
+                      const recovery =
+                        d.sess.reduce((s, x) => s + (x.exercises?.duration_minutes ?? 0), 0) +
+                        d.acts
+                          .filter((a) => a.color === "blue" || a.color === "purple")
+                          .reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
+                      return { iso: d.iso, sleep, movement, mood, recovery };
+                    })}
+                    height={150}
+                  />
+                </ChartCard>
+              )}
+            </>
+          );
+        })()}
 
         {/* Per-dag rader */}
         <div className="space-y-2">
@@ -397,7 +473,21 @@ const Week = () => {
             const date = new Date(d.iso);
             const isToday = d.iso === new Date().toISOString().split("T")[0];
             const dayLabel = isToday ? "Idag" : date.toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "short" });
-            const isEmpty = d.acts.length === 0 && d.sess.length === 0 && !d.checkin;
+
+            // Filtrera vad som faktiskt visas per dag enligt valt filter
+            const showActs = historyFilter === "all" || historyFilter === "activeTime";
+            const showSess = historyFilter === "all" || historyFilter === "exercises" || historyFilter === "activeTime";
+            const showCheckin = historyFilter === "all" || historyFilter === "checkins";
+
+            const visibleActs = showActs ? d.acts : [];
+            const visibleSess = showSess ? d.sess : [];
+            const visibleCheckin = showCheckin ? d.checkin : null;
+            const isEmpty = visibleActs.length === 0 && visibleSess.length === 0 && !visibleCheckin;
+
+            const dayMinutes =
+              visibleActs.reduce((s, a) => s + (a.duration_minutes ?? 0), 0)
+              + visibleSess.reduce((s, x) => s + (x.exercises?.duration_minutes ?? 0), 0);
+
             return (
               <div
                 key={d.iso}
@@ -406,16 +496,21 @@ const Week = () => {
               >
                 <div className="flex items-baseline justify-between gap-2 mb-2">
                   <p className={`text-sm font-extrabold capitalize ${isToday ? "text-orange-deep" : ""}`}>{dayLabel}</p>
-                  {d.totalMinutes > 0 && (
-                    <p className="text-[11px] font-extrabold text-text-secondary tabular-nums">{d.totalMinutes} min</p>
+                  {dayMinutes > 0 && (
+                    <p className="text-[11px] font-extrabold text-text-secondary tabular-nums">{dayMinutes} min</p>
                   )}
                 </div>
 
                 {isEmpty ? (
-                  <p className="text-xs text-text-secondary italic">Ingen aktivitet loggad</p>
+                  <p className="text-xs text-text-secondary italic">
+                    {historyFilter === "checkins" ? "Ingen check-in" :
+                     historyFilter === "exercises" ? "Ingen övning" :
+                     historyFilter === "activeTime" ? "Ingen aktiv tid" :
+                     "Ingen aktivitet loggad"}
+                  </p>
                 ) : (
                   <div className="flex flex-wrap gap-1.5">
-                    {d.acts.map((a) => (
+                    {visibleActs.map((a) => (
                       <span
                         key={a.id}
                         className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-extrabold ${colorBg(a.color)} shadow-card`}
@@ -425,7 +520,7 @@ const Week = () => {
                         {a.duration_minutes != null && <span className="opacity-80">· {a.duration_minutes}m</span>}
                       </span>
                     ))}
-                    {d.sess.map((s) => s.exercises && (
+                    {visibleSess.map((s) => s.exercises && (
                       <span
                         key={s.id}
                         className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-extrabold ${colorBg(s.exercises.color)} shadow-card`}
@@ -435,10 +530,13 @@ const Week = () => {
                         <span className="opacity-80">· {s.exercises.duration_minutes}m</span>
                       </span>
                     ))}
-                    {d.checkin && (
+                    {visibleCheckin && (
                       <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold bg-surface border border-border-soft text-text-secondary">
                         <AbstractIcon name="pencil-soft" size={12} color="currentColor" />
                         Check-in
+                        {visibleCheckin.sleep_hours != null && (
+                          <span className="opacity-80">· {Number(visibleCheckin.sleep_hours)}h sömn</span>
+                        )}
                       </span>
                     )}
                   </div>
