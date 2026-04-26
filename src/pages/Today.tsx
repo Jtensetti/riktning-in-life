@@ -26,6 +26,9 @@ import { toast } from "sonner";
 import { refreshBaseline, loadBaseline, thresholdsFromBaseline } from "@/lib/baseline";
 import { buildEveningPrediction } from "@/lib/dayInsights";
 import { EveningPredictionCard } from "@/components/EveningPredictionCard";
+import { heroVisualsFor } from "@/lib/heroVisuals";
+import { readAndUpdateLastSeen, greetingFor as greetingForLastSeen, type LastSeen } from "@/lib/lastSeen";
+import { getToneFor, phrasebookFor } from "@/lib/tone";
 
 type Checkin = {
   id: string;
