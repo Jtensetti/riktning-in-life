@@ -636,7 +636,7 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
-    const SECTION_HEADERS = new Set(["SKATTNINGAR", "DAGLIGA MEDELVÄRDEN", "AKTIVITET", "LÄKEMEDEL", "SÄKERHETSSIGNALER", "SAMMANFATTNING", "JOURNAL (utvalda)"]);
+    const SECTION_HEADERS = new Set(["BERÄKNADE SCORES (senaste 7 dagar, 0–100)", "VIKTIGASTE BIDRAGANDE FAKTORER", "SKATTNINGAR", "DAGLIGA MEDELVÄRDEN", "AKTIVITET", "LÄKEMEDEL", "SÄKERHETSSIGNALER", "SAMMANFATTNING", "JOURNAL (utvalda)"]);
 
     for (const raw of report.split("\n").slice(2)) {
       const line = raw === "" ? " " : raw;
