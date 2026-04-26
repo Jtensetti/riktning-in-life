@@ -18,6 +18,7 @@ import {
   drawSparklineRows,
   drawHBarChart,
   drawWeekDots,
+  drawSummaryBlock,
   drawFooter,
   setPdfText,
   setPdfDraw,
