@@ -18,6 +18,7 @@ import { ChartCard } from "@/components/charts/ChartCard";
 import { ActivityBars } from "@/components/charts/ActivityBars";
 import { StackedRecovery, type RecoveryDay } from "@/components/charts/StackedRecovery";
 import { Sparkline } from "@/components/charts/Sparkline";
+import { WeekDirectionChart, type DirectionPoint } from "@/components/charts/WeekDirectionChart";
 import { TodayStepCard } from "@/components/TodayStepCard";
 import {
   loadActionPreferences, saveActionPreferences, resolvePreferredTime, resolvePreferredLength, lengthRange,
@@ -205,6 +206,17 @@ const Week = () => {
   const priorities = useMemo(() => buildPriorities(current), [current]);
   const insights = useMemo(() => generateInsights(current), [current]);
 
+  /** Per-dag Riktning (0–100, högre = bättre) för senaste 7 dagar.
+   *  Riktning = 100 − burden för dagens checkin. Saknas dagen → null. */
+  const directionSeries: DirectionPoint[] = useMemo(() => {
+    return last7Dates().map((iso) => {
+      const c = checkins.find((x) => x.date === iso);
+      if (!c) return { date: iso, value: null };
+      const { value } = burdenScore([c]);
+      return { date: iso, value: value == null ? null : Math.max(0, Math.min(100, 100 - value)) };
+    });
+  }, [checkins]);
+
   const timeline = useMemo(() => {
     const days = last7Dates();
     return days.map((iso) => {
@@ -379,6 +391,18 @@ const Week = () => {
           <h2 className="text-xl">Riktning</h2>
           <span className="text-xs font-bold text-text-secondary">Vad veckan visar</span>
         </div>
+
+        <div className="mb-3">
+          <ChartCard
+            title="Veckans riktning"
+            subtitle="7 dagar · högre = bättre dag"
+            tone="green"
+            ariaSummary="Linjediagram över veckans riktning, sju dagar, skala noll till hundra."
+          >
+            <WeekDirectionChart data={directionSeries} />
+          </ChartCard>
+        </div>
+
         <div className="space-y-3">
           {priorities.map((p, i) => (
             <PriorityCard key={p.key} p={p} rank={i} />
