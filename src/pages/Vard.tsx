@@ -66,7 +66,7 @@ const Vard = () => {
     <AppShell>
       <HeroBanner
         tone="var(--blue-calm)"
-        icon="heart-pulse"
+        icon="stethoscope"
         iconColor="hsl(var(--surface))"
       />
 
