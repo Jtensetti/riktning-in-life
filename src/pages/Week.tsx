@@ -12,6 +12,10 @@ import {
   pctChange, splitWeeks, isoDaysAgo, generateInsights, type Checkin, type WeeklyFormScore,
 } from "@/lib/metrics";
 import { buildPriorities, type Priority } from "@/lib/priorities";
+import { ChartCard } from "@/components/charts/ChartCard";
+import { ActivityBars } from "@/components/charts/ActivityBars";
+import { StackedRecovery, type RecoveryDay } from "@/components/charts/StackedRecovery";
+import { Sparkline } from "@/components/charts/Sparkline";
 
 type ExerciseLite = { id: string; title: string; category: string; duration_minutes: number; color: string };
 type SessionLite = {
