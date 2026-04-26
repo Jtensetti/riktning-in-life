@@ -1,32 +1,27 @@
 import { useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
-import { AbstractIcon, type IconName } from "./AbstractIcon";
+import { ColorCard, type CardTone } from "./ColorCard";
+import { iconForActivity } from "@/lib/icons";
 import { type Pick, slotLabel } from "@/lib/recommend";
 
-const slotIcon = (slot: Pick["slot"]): IconName => {
-  switch (slot) {
-    case "calm": return "moon-soft";
-    case "lift": return "spark";
-    case "land": return "blob-smile";
-  }
-};
-
-const colorBg = (color: string): string => {
+/** Normalisera godtycklig övnings-färg till en giltig CardTone. */
+const asTone = (color: string): CardTone => {
   switch (color) {
-    case "orange": return "bg-orange-start";
-    case "blue": return "bg-blue-calm";
-    case "yellow": return "bg-yellow-journal";
-    case "purple": return "bg-purple-sleep";
-    case "pink": return "bg-pink-move";
-    case "green": return "bg-green-recovery";
-    default: return "bg-cream-card";
+    case "orange":
+    case "blue":
+    case "yellow":
+    case "purple":
+    case "pink":
+    case "green":
+      return color;
+    default:
+      return "orange";
   }
 };
 
-const colorText = (color: string): string =>
-  color === "yellow" || color === "" ? "text-foreground" : "text-white";
-
-const slotAccent = (slot: Pick["slot"]) => {
+/** Accent åt slot-tonen — används bara på gula kort där text-on-yellow behöver
+ *  en mörk ikonfärg för kontrast. */
+const slotAccent = (slot: Pick["slot"]): string => {
   switch (slot) {
     case "calm": return "hsl(var(--blue-calm))";
     case "lift": return "hsl(var(--orange-start))";
@@ -52,55 +47,49 @@ export const ForYouCarousel = ({ picks }: Props) => {
       </div>
       <div className="overflow-x-auto scrollbar-hide snap-x snap-mandatory flex gap-3 px-6 pb-3 -mb-3">
         {picks.map((p, i) => {
-          const bg = colorBg(p.exercise.color);
-          const txt = colorText(p.exercise.color);
+          const tone = asTone(p.exercise.color);
+          const onYellow = tone === "yellow";
           const strong = p.fitScore >= 80;
+          const icon = iconForActivity(undefined, p.exercise.category);
           return (
-            <button
+            <ColorCard
               key={p.exercise.id}
+              tone={tone}
+              icon={icon}
+              iconAccent={onYellow ? slotAccent(p.slot) : "hsl(var(--surface))"}
+              size="lg"
+              index={i}
               onClick={() => navigate(`/ovningar/${p.exercise.id}`)}
-              className={`shrink-0 w-[78%] snap-start rounded-3xl ${bg} ${txt} p-5 text-left shadow-soft press-soft animate-pop-in flex flex-col gap-3 min-h-[210px] relative overflow-hidden`}
-              style={{ animationDelay: `var(--stagger-${i})` }}
+              ariaLabel={`${slotLabel(p.slot)}: ${p.exercise.title}`}
+              className="shrink-0 w-[78%] snap-start"
             >
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 flex-wrap mb-3">
                 <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-1 rounded-full ${
-                  p.exercise.color === "yellow" ? "bg-foreground/10" : "bg-white/20"
+                  onYellow ? "bg-foreground/10" : "bg-white/20"
                 }`}>
                   {slotLabel(p.slot)}
                 </span>
                 {strong && (
                   <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-1 rounded-full ${
-                    p.exercise.color === "yellow" ? "bg-foreground text-background" : "bg-white text-foreground"
+                    onYellow ? "bg-foreground text-background" : "bg-white text-foreground"
                   }`}>
                     Stark match
                   </span>
                 )}
               </div>
-
-              <div className="absolute right-3 top-3 opacity-90 pointer-events-none">
-                <AbstractIcon
-                  name={slotIcon(p.slot)}
-                  size={56}
-                  color={p.exercise.color === "yellow" ? slotAccent(p.slot) : "currentColor"}
-                  accent="currentColor"
-                />
+              <h4 className="text-[20px] leading-[24px] font-extrabold mb-1 pr-12">{p.exercise.title}</h4>
+              <p className="text-sm opacity-90 leading-snug mb-3">{p.reasonLong}</p>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-extrabold opacity-80">
+                  {p.exercise.duration_minutes} min · {p.reasonShort}
+                </span>
+                <span className={`shrink-0 grid place-items-center w-9 h-9 rounded-full ${
+                  onYellow ? "bg-foreground text-background" : "bg-white/25"
+                }`}>
+                  <ChevronRight size={18} />
+                </span>
               </div>
-
-              <div className="mt-auto">
-                <h4 className="text-[20px] leading-[24px] font-extrabold mb-1 pr-12">{p.exercise.title}</h4>
-                <p className="text-sm opacity-90 leading-snug mb-3">{p.reasonLong}</p>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-extrabold opacity-80">
-                    {p.exercise.duration_minutes} min · {p.reasonShort}
-                  </span>
-                  <span className={`shrink-0 grid place-items-center w-9 h-9 rounded-full ${
-                    p.exercise.color === "yellow" ? "bg-foreground text-background" : "bg-white/25"
-                  }`}>
-                    <ChevronRight size={18} />
-                  </span>
-                </div>
-              </div>
-            </button>
+            </ColorCard>
           );
         })}
       </div>
