@@ -101,6 +101,78 @@ const Checkin = () => {
       });
   }, [user, weather]);
 
+  // Load today's activities
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("activity_logs")
+      .select("activity_slug,label,category,icon,color,duration_minutes,mood_delta")
+      .eq("user_id", user.id).eq("date", todayISO()).order("created_at")
+      .then(({ data }) => {
+        if (data) {
+          setActivities(data.map((r: any) => ({
+            slug: r.activity_slug, label: r.label, category: r.category,
+            icon: r.icon, color: r.color,
+            duration_minutes: r.duration_minutes ?? 30,
+            mood_delta: r.mood_delta ?? 0,
+          })));
+        }
+      });
+  }, [user]);
+
+  const addActivity = async (a: ActivityDraft) => {
+    setActivities((prev) => [...prev, a]);
+    if (!user) return;
+    await supabase.from("activity_logs").insert({
+      user_id: user.id,
+      date: todayISO(),
+      activity_slug: a.slug,
+      label: a.label,
+      category: a.category,
+      icon: a.icon,
+      color: a.color,
+      duration_minutes: a.duration_minutes,
+      mood_delta: a.mood_delta,
+    });
+  };
+
+  const removeActivity = async (idx: number) => {
+    const a = activities[idx];
+    setActivities((prev) => prev.filter((_, i) => i !== idx));
+    if (!user) return;
+    const { data } = await supabase
+      .from("activity_logs")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("date", todayISO())
+      .eq("activity_slug", a.slug)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    if (data && data[0]) await supabase.from("activity_logs").delete().eq("id", data[0].id);
+  };
+
+  // Auto-derive legacy fields so recommend/week-trend keeps working
+  const deriveLegacy = () => {
+    if (activities.length === 0) {
+      return { movement_today: form.movement_today, meaningful_activity: form.meaningful_activity };
+    }
+    const meaningfulCats = new Set([
+      "Mästring & mening", "Familj & nära", "Social kontakt",
+      "Utomhus & natur", "Villa & trädgård", "Lugn glädje",
+    ]);
+    const movementSlugs = new Set([
+      "promenad", "jogg", "cykla", "simma", "skogspromenad", "langpromenad-skog",
+      "tradgardsarbete", "klippa-gras", "snoskottning", "vedhuggning",
+    ]);
+    const movementCount = activities.filter(
+      (a) => a.category === "Rörelse & kropp" || movementSlugs.has(a.slug),
+    ).length;
+    const meaningfulCount = activities.filter((a) => meaningfulCats.has(a.category)).length;
+    return {
+      movement_today: (movementCount === 0 ? "none" : movementCount === 1 ? "little" : "yes") as Form["movement_today"],
+      meaningful_activity: (meaningfulCount === 0 ? "none" : meaningfulCount === 1 ? "little" : "yes") as Form["meaningful_activity"],
+    };
+  };
+
   const save = async () => {
     if (!user) return;
     if ((form.safety_status === "active_thoughts" || form.safety_status === "acute") && !showSafetyDialog) {
@@ -108,13 +180,14 @@ const Checkin = () => {
       return;
     }
     setSaving(true);
+    const legacy = deriveLegacy();
     const { error } = await supabase.from("daily_checkins").upsert({
       user_id: user.id,
       date: todayISO(),
       ...form,
       medication_taken: form.medication_taken || null,
-      movement_today: form.movement_today || null,
-      meaningful_activity: form.meaningful_activity || null,
+      movement_today: legacy.movement_today || null,
+      meaningful_activity: legacy.meaningful_activity || null,
       weather_kind: effectiveKind,
       weather_temp_c: weather ? weather.tempC : null,
     } as any, { onConflict: "user_id,date" });
