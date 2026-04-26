@@ -8,9 +8,11 @@ import type { IconName } from "@/components/AbstractIcon";
 const KNOWN: Set<IconName> = new Set([
   "house-soft", "spark", "pie", "pencil-soft", "blob-smile", "moon-soft",
   "play-soft", "flag", "eye-closed", "bookmark-soft", "compass-soft",
-  "heart-care", "heart-pulse", "pill", "glass-water", "apple-bite",
-  "lungs-breathe", "bed-soft", "bike", "walk-figure", "stretch-figure",
-  "yoga-pose", "weights", "nature-tree", "chat-bubble", "people-two",
+  "heart-care", "heart-pulse", "stethoscope", "shield-soft",
+  "pill", "glass-water", "apple-bite",
+  "lungs-breathe", "bed-soft", "bike", "walk-figure", "run-figure",
+  "stretch-figure", "yoga-pose", "weights", "nature-tree",
+  "chat-bubble", "people-two",
   "work-bag", "coffee-cup", "plus-soft", "check-soft", "clock-soft",
   "calendar-soft", "lock-soft", "info-soft", "warning-soft", "mic-soft",
   "mute-soft", "search-soft", "filter-soft",
@@ -32,10 +34,10 @@ const SLUG_MAP: Record<string, IconName> = {
   housework: "house-soft",
   bike: "bike",
   cykla: "bike",
-  workout: "weights",
-  trana: "weights",
-  jogg: "walk-figure",
-  simma: "walk-figure",
+  workout: "run-figure",
+  trana: "run-figure",
+  jogg: "run-figure",
+  simma: "run-figure",
   skogspromenad: "nature-tree",
   "langpromenad-skog": "nature-tree",
   tradgardsarbete: "nature-tree",
@@ -76,7 +78,7 @@ const CATEGORY_MAP: Record<string, IconName> = {
   "Sociala mikrosteg": "chat-bubble",
   "Skriv av dig": "pencil-soft",
   "Förbered vårdkontakt": "heart-care",
-  "Rörelse": "walk-figure",
+  "Rörelse": "run-figure",
 };
 
 /** Map any (slug, category, raw icon string) → safe IconName. */

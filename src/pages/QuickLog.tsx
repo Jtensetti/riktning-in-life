@@ -161,7 +161,7 @@ const QuickLog = () => {
           title: name,
           detail: `${status}${dose ? " · " + dose : ""}`,
           tone: "blue",
-          icon: "heart-pulse",
+          icon: "pill",
         });
       }
 
@@ -448,10 +448,10 @@ const MovementForm = ({ onSaved, userId }: { onSaved: () => void; userId: string
   const presets: { slug: string; label: string; icon: IconName; mins: number; category: string }[] = [
     { slug: "walk", label: "Promenad", icon: "bike", mins: 30, category: "Rörelse" },
     { slug: "outdoor", label: "Ute i ljuset", icon: "weather-sun", mins: 15, category: "Rörelse" },
-    { slug: "stretch", label: "Stretch", icon: "spark", mins: 10, category: "Rörelse" },
+    { slug: "stretch", label: "Stretch", icon: "stretch-figure", mins: 10, category: "Rörelse" },
     { slug: "household", label: "Hushåll", icon: "house-soft", mins: 20, category: "Rörelse" },
     { slug: "bike", label: "Cykla", icon: "bike", mins: 30, category: "Rörelse" },
-    { slug: "workout", label: "Träning", icon: "spark", mins: 45, category: "Rörelse" },
+    { slug: "workout", label: "Träning", icon: "run-figure", mins: 45, category: "Rörelse" },
   ];
   const [pick, setPick] = useState(presets[0]);
   const [mins, setMins] = useState(presets[0].mins);
@@ -649,7 +649,7 @@ const MedicationForm = ({
               }`}
             >
               <div className={`w-9 h-9 rounded-full grid place-items-center ${pickedId === m.id ? "bg-white/25" : "bg-blue-calm/15 text-blue-calm"}`}>
-                <AbstractIcon name="heart-pulse" size={18} color="currentColor" />
+                <AbstractIcon name="pill" size={18} color="currentColor" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-extrabold leading-tight truncate">{m.name}</p>

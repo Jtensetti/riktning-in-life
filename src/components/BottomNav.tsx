@@ -6,7 +6,7 @@ const tabs: { to: string; label: string; icon: IconName; activeColor: string }[]
   { to: "/snabblogg", label: "Logga", icon: "spark", activeColor: "hsl(var(--pink-move))" },
   { to: "/vecka", label: "Vecka", icon: "pie", activeColor: "hsl(var(--green-recovery))" },
   { to: "/journal", label: "Journal", icon: "pencil-soft", activeColor: "hsl(var(--yellow-journal))" },
-  { to: "/vard", label: "Vård", icon: "heart-pulse", activeColor: "hsl(var(--blue-calm))" },
+  { to: "/vard", label: "Vård", icon: "stethoscope", activeColor: "hsl(var(--blue-calm))" },
 ];
 
 export const BottomNav = () => {

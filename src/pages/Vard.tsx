@@ -66,7 +66,7 @@ const Vard = () => {
     <AppShell>
       <HeroBanner
         tone="var(--blue-calm)"
-        icon="heart-pulse"
+        icon="stethoscope"
         iconColor="hsl(var(--surface))"
       />
 
@@ -81,7 +81,7 @@ const Vard = () => {
           className="w-full rounded-3xl bg-red-bg border-2 border-red-risk/30 p-4 text-left press-soft animate-pop-in flex items-center gap-3"
         >
           <div className="w-12 h-12 rounded-2xl bg-red-risk/15 grid place-items-center shrink-0">
-            <AbstractIcon name="heart-pulse" size={22} color="hsl(var(--red-risk))" />
+            <AbstractIcon name="shield-soft" size={22} color="hsl(var(--red-risk))" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[11px] font-extrabold uppercase tracking-wider text-red-risk mb-0.5">När det blir svårt</p>
@@ -131,7 +131,7 @@ const Vard = () => {
           className="w-full card-soft p-4 flex items-center gap-3 text-left press-soft animate-fade-in-up"
         >
           <div className="w-11 h-11 rounded-2xl bg-pink-move/15 grid place-items-center">
-            <AbstractIcon name="heart-pulse" size={20} color="hsl(var(--pink-move))" />
+            <AbstractIcon name="pill" size={20} color="hsl(var(--pink-move))" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-[15px] font-extrabold">Läkemedel & biverkningar</div>
@@ -330,7 +330,7 @@ const MedicationsView = ({ meds, onBack, onChanged, onLogFor }: { meds: Med[]; o
 
       {meds.length === 0 ? (
         <div className="card-cream p-6 text-center">
-          <div className="grid place-items-center mx-auto mb-2"><AbstractIcon name="heart-pulse" size={28} color="hsl(var(--text-secondary))" /></div>
+          <div className="grid place-items-center mx-auto mb-2"><AbstractIcon name="pill" size={28} color="hsl(var(--text-secondary))" /></div>
           <p className="text-sm text-text-secondary">Inga läkemedel tillagda.</p>
         </div>
       ) : (

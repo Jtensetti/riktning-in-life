@@ -20,6 +20,8 @@ export type IconName =
   // Body / health
   | "heart-care"
   | "heart-pulse" // alias of heart-care, kept for back-compat
+  | "stethoscope"   // dedicated icon for vård/care
+  | "shield-soft"   // dedicated icon for crisis plan / safety
   | "pill"
   | "glass-water"
   | "apple-bite"
@@ -28,6 +30,7 @@ export type IconName =
   // Activity
   | "bike"
   | "walk-figure"
+  | "run-figure"    // dedicated icon for movement / exercise logging
   | "stretch-figure"
   | "yoga-pose"
   | "weights"
@@ -573,6 +576,58 @@ export const AbstractIcon = ({ name, size = 28, color = "currentColor", accent, 
       return (
         <svg {...common}>
           <path d="M4 6 h24 l-9 11 v9 l-6 -3 v-6 z" fill={color} />
+        </svg>
+      );
+
+    case "stethoscope":
+      // Stetoskop — tydlig vårdmarkör. Två öronbågar, slang, och rund "klocka".
+      return (
+        <svg {...common}>
+          <path
+            d="M7 4 v8 a6 6 0 0 0 12 0 V4"
+            fill="none"
+            stroke={color}
+            strokeWidth="2.6"
+            strokeLinecap="round"
+          />
+          <path d="M13 18 v3 a5 5 0 0 0 10 0 v-1" fill="none" stroke={color} strokeWidth="2.6" strokeLinecap="round" />
+          <circle cx="23" cy="22" r="4" fill={color} />
+          <circle cx="23" cy="22" r="1.6" fill={a} />
+          <circle cx="7" cy="4" r="1.6" fill={color} />
+          <circle cx="19" cy="4" r="1.6" fill={color} />
+        </svg>
+      );
+
+    case "shield-soft":
+      // Sköld med mjuk insida — krisplan/safety. Inte alarmistisk, lugn och stadig.
+      return (
+        <svg {...common}>
+          <path
+            d="M16 3 L27 7 v9 c0 7 -5 11 -11 13 c-6 -2 -11 -6 -11 -13 V7 z"
+            fill={color}
+          />
+          <path
+            d="M11 16 l3.5 3.5 L22 12"
+            stroke="hsl(var(--surface))"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+          />
+        </svg>
+      );
+
+    case "run-figure":
+      // Springande figur — tydligt rörelse-spårbart. Lutad torso + svingande armar/ben.
+      return (
+        <svg {...common}>
+          <circle cx="20" cy="6" r="3" fill={color} />
+          <path
+            d="M18 11 l-4 5 l-5 1 l1 3 l5 -1 l3 -2 l-1 5 l-4 6 l3 1 l4 -6 l2 -5 l3 4 l4 -1 l-1 -3 l-3 1 l-3 -5 l-1 -3 z"
+            fill={color}
+          />
+          <path d="M9 23 l-3 4" stroke={color} strokeWidth="2.2" strokeLinecap="round" />
+          <path d="M14 28 l-2 2" stroke={color} strokeWidth="2.2" strokeLinecap="round" opacity="0.6" />
         </svg>
       );
 
