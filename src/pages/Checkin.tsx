@@ -204,8 +204,11 @@ const Checkin = () => {
   );
 };
 
-const SliderField = ({ label, value, onChange, low, high }: { label: string; value: number; onChange: (v: number) => void; low: string; high: string }) => (
-  <div className="card-cream p-5 mb-4">
+const SliderField = ({ idx = 0, label, value, onChange, low, high }: { idx?: number; label: string; value: number; onChange: (v: number) => void; low: string; high: string }) => (
+  <div
+    className="card-cream p-5 mb-4 press-soft animate-fade-in-up"
+    style={{ animationDelay: `var(--stagger-${Math.min(idx, 4)})` }}
+  >
     <div className="flex items-center justify-between mb-3">
       <label className="text-sm font-extrabold">{label}</label>
       <span className="text-base font-extrabold text-orange-deep">{value}</span>
@@ -218,14 +221,14 @@ const SliderField = ({ label, value, onChange, low, high }: { label: string; val
 );
 
 const SegField = ({ label, value, onChange, opts }: { label: string; value: string; onChange: (v: string) => void; opts: [string, string][] }) => (
-  <div className="card-cream p-5 mb-4">
+  <div className="card-cream p-5 mb-4 animate-fade-in-up" style={{ animationDelay: "var(--stagger-4)" }}>
     <label className="text-sm font-extrabold mb-3 block">{label}</label>
     <div className="grid grid-cols-3 gap-2">
       {opts.map(([k, l]) => (
         <button
           key={k}
           onClick={() => onChange(k)}
-          className={`rounded-2xl px-2 py-3 text-sm font-extrabold border-2 transition ${
+          className={`rounded-2xl px-2 py-3 text-sm font-extrabold border-2 transition press-soft ${
             value === k ? "bg-foreground border-foreground text-background" : "bg-surface border-border-soft text-foreground"
           }`}
         >
