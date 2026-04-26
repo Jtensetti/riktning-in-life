@@ -116,6 +116,7 @@ export const MetricBars = ({
           </Bar>
         </BarChart>
       </ResponsiveContainer>
-    </div>
+      </div>
+    </AnimatedChart>
   );
 };
