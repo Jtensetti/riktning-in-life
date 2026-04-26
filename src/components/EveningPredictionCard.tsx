@@ -17,7 +17,7 @@ export const EveningPredictionCard = ({ prediction }: { prediction: EveningPredi
         onClick={() => navigate(`/ovningar?cat=${encodeURIComponent(prediction.matchCategory)}`)}
         ariaLabel={`${prediction.headline}. ${prediction.reason}`}
         eyebrow={{ label: "Tipset till imorgon" }}
-        lead={{ value: "Ikväll", unit: prediction.matchCategory }}
+        lead={{ value: <span className="text-[28px] leading-[28px]">Ikväll</span> }}
         title={prediction.headline}
         reason={prediction.reason}
         metaLeft={prediction.matchCategory}
