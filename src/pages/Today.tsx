@@ -5,10 +5,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Illustration, colorIll } from "@/components/Illustrations";
-import { AbstractIcon } from "@/components/AbstractIcon";
+import { AbstractIcon, weatherIcon, weatherIconColor, weatherIconAccent, type IconName } from "@/components/AbstractIcon";
 import { HeroBanner } from "@/components/HeroBanner";
+import { WeatherChip } from "@/components/WeatherChip";
+import { WeatherPermissionCard } from "@/components/WeatherPermissionCard";
 import { ChevronRight, Settings as SettingsIcon } from "lucide-react";
 import { isOnboarded } from "@/lib/settings";
+import { getTimeContext, type TimeContext } from "@/lib/timeContext";
+import { useWeather, isOutdoorFriendly, weatherLabel, hasAskedWeatherPermission, isWeatherPermissionGranted, type Weather } from "@/lib/weather";
 
 type Checkin = {
   id: string;
@@ -120,17 +124,63 @@ const formatDate = () => new Date().toLocaleDateString("sv-SE", {
   weekday: "long", day: "numeric", month: "long",
 });
 
-const recommend = (c: Checkin | null) => {
+type Recommendation = { title: string; reason: string; color: string };
+
+const recommend = (c: Checkin | null, t: TimeContext, w: Weather | null): Recommendation => {
+  // Safety net: never recommend morning routines after morning, never outdoor in bad weather/dark.
+  const outdoorOk = isOutdoorFriendly(w);
+  const weatherNote = w ? `Vädret är ${weatherLabel(w.kind).toLowerCase()}` : null;
+
+  // 1. Late night → wind down, never energizing.
+  if (t.partOfDay === "night") {
+    return { title: "Andning för insomning", reason: "Det är sent — landa kroppen mjukt", color: "bg-purple-sleep" };
+  }
+
+  // 2. Evening → no morning routines.
+  if (t.partOfDay === "evening") {
+    if ((c?.anxiety ?? 0) >= 6) return { title: "4 min längre utandning", reason: "Hög oro — lugna kroppen inför kvällen", color: "bg-blue-calm" };
+    if ((c?.sleep_hours ?? 7) < 5) return { title: "Kvällslandning", reason: "För kort sömn igår — förbered en bättre natt", color: "bg-purple-sleep" };
+    return { title: "Skriv tre rader", reason: "Stäng dagen mjukt", color: "bg-yellow-journal" };
+  }
+
+  // 3. Acute states first.
+  if (c) {
+    if ((c.anxiety ?? 0) >= 6) return { title: "4 min längre utandning", reason: "För hög oro", color: "bg-blue-calm" };
+    if ((c.sleep_hours ?? 7) < 5) return { title: "Kvällslandning", reason: "För kort sömn", color: "bg-purple-sleep" };
+  }
+
+  // 4. Daylight + good weather → outdoor walk.
+  if (outdoorOk && (c?.function_score ?? 5) >= 4 && (t.partOfDay === "morning" || t.partOfDay === "midday" || t.partOfDay === "afternoon")) {
+    const sunny = w?.kind === "clear" || w?.kind === "partly";
+    return {
+      title: "15 min dagsljuspromenad",
+      reason: sunny ? "Solen är uppe just nu — ta vara på det" : "Dagsljus räknas även när det är molnigt",
+      color: "bg-pink-move",
+    };
+  }
+
+  // 5. Bad weather or dark → indoor alternatives.
+  if (w && (!w.isDaylight || w.kind === "rain" || w.kind === "snow" || w.kind === "thunder" || w.windMs > 12 || w.tempC < -5)) {
+    if (t.partOfDay === "morning") {
+      return { title: "8 min morgonstart", reason: weatherNote ? `${weatherNote} — börja inomhus` : "Mjuk start inomhus", color: "bg-orange-start" };
+    }
+    return { title: "Mjuk rörelse inomhus", reason: weatherNote ? `${weatherNote} — håll igång ändå` : "Håll kroppen igång", color: "bg-pink-move" };
+  }
+
+  // 6. Morning default.
+  if (t.partOfDay === "morning") {
+    return { title: "8 min morgonstart", reason: "En mjuk start på dagen", color: "bg-orange-start" };
+  }
+
+  // 7. Midday/afternoon default — first checkin missing.
   if (!c) return { title: "8 min morgonstart", reason: "En mjuk start på dagen", color: "bg-orange-start" };
-  if ((c.anxiety ?? 0) >= 6) return { title: "4 min längre utandning", reason: "För hög oro", color: "bg-blue-calm" };
-  if ((c.energy ?? 5) <= 3) return { title: "8 min morgonstart", reason: "För låg energi", color: "bg-orange-start" };
-  if ((c.sleep_hours ?? 7) < 5) return { title: "Kvällslandning", reason: "För kort sömn", color: "bg-purple-sleep" };
   return { title: "15 min dagsljuspromenad", reason: "Stabilt – håll riktningen", color: "bg-pink-move" };
 };
 
 const colorOf = (bg: string) => bg.replace("bg-", "").includes("blue") ? "blue"
   : bg.includes("purple") ? "purple"
   : bg.includes("pink") ? "pink"
+  : bg.includes("yellow") ? "yellow"
   : "orange";
 
 const colorBg = (color: string) => {
