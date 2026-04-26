@@ -242,11 +242,12 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
             {favs.map((f, i) => {
               const why = whyReason(f);
               const isBusy = busy === f.slug;
+              const isLocked = !!busy && !isBusy; // another pill is saving
               const isFailed = failed?.slug === f.slug;
               return (
                 <div
                   key={f.slug}
-                  className={`relative overflow-hidden ${colorBg(f.color)} rounded-2xl shadow-card animate-pop-in`}
+                  className={`relative overflow-hidden ${colorBg(f.color)} rounded-2xl shadow-card animate-pop-in ${isLocked ? "opacity-60" : ""}`}
                   style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
                 >
                   {/* Mjuka blob-bakgrunder för visuell rytm */}
@@ -260,8 +261,8 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
                   />
                   <button
                     onClick={() => quickLog(f)}
-                    disabled={isBusy}
-                    className={`relative z-[1] w-full px-4 pt-3 pb-2 flex items-center gap-3 press-soft text-left ${isBusy ? "opacity-80" : ""}`}
+                    disabled={isBusy || isLocked}
+                    className={`relative z-[1] w-full px-4 pt-3 pb-2 flex items-center gap-3 press-soft text-left disabled:cursor-not-allowed ${isBusy ? "opacity-80" : ""}`}
                     aria-busy={isBusy}
                   >
                     <div className="shrink-0 w-10 h-10 rounded-full bg-white/25 grid place-items-center">
@@ -274,7 +275,7 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
                     <div className="flex-1 min-w-0">
                       <p className="font-extrabold text-[15px] leading-tight truncate">{f.label}</p>
                       <p className="text-[11px] opacity-90 font-bold">
-                        {isBusy ? "Sparar…" : `${f.default_minutes} min · ett klick = loggad`}
+                        {isBusy ? "Sparar…" : isLocked ? "Vänta…" : `${f.default_minutes} min · ett klick = loggad`}
                       </p>
                     </div>
                     <div className="shrink-0 w-8 h-8 rounded-full bg-white/25 grid place-items-center">
@@ -290,8 +291,8 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
                       </p>
                       <button
                         onClick={() => quickLog(f)}
-                        disabled={isBusy}
-                        className="shrink-0 h-7 px-3 rounded-full bg-foreground text-background text-[11px] font-extrabold press-soft inline-flex items-center gap-1"
+                        disabled={isBusy || isLocked}
+                        className="shrink-0 h-7 px-3 rounded-full bg-foreground text-background text-[11px] font-extrabold press-soft inline-flex items-center gap-1 disabled:opacity-60"
                       >
                         <RefreshCw size={11} /> Försök igen
                       </button>
