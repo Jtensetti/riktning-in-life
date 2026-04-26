@@ -617,7 +617,34 @@ const MovementForm = ({ onSaved, userId }: { onSaved: () => void; userId: string
 // ====================================================================
 // === FORM: MOOD ===
 // ====================================================================
-const MoodForm = ({ onSaved, userId }: { onSaved: () => void; userId: string | undefined }) => {
+/** Delad slider-rad för både MoodForm (nylog) och mood-edit-drawern. */
+const MoodSliderRow = ({
+  label, value, set, tone,
+}: { label: string; value: number; set: (n: number) => void; tone: Tone }) => (
+  <div>
+    <div className="flex items-baseline justify-between mb-2">
+      <p className="text-xs font-extrabold uppercase tracking-wider text-text-secondary">{label}</p>
+      <p className="text-base font-extrabold tabular-nums">{value}/10</p>
+    </div>
+    <div className="grid grid-cols-11 gap-1">
+      {Array.from({ length: 11 }, (_, n) => (
+        <button key={n}
+          onClick={() => set(n)}
+          className={`aspect-square rounded-xl text-xs font-extrabold tabular-nums press-soft ${
+            value === n ? toneBg(tone) : "bg-surface-alt text-foreground"
+          }`}
+        >{n}</button>
+      ))}
+    </div>
+  </div>
+);
+
+const MoodForm = ({
+  onSaved, userId,
+}: {
+  onSaved: (id: string, heaviness: number, anxiety: number, energy: number) => void;
+  userId: string | undefined;
+}) => {
   const [heaviness, setHeaviness] = useState<number>(5);
   const [anxiety, setAnxiety] = useState<number>(5);
   const [energy, setEnergy] = useState<number>(5);
@@ -631,39 +658,28 @@ const MoodForm = ({ onSaved, userId }: { onSaved: () => void; userId: string | u
       .from("daily_checkins").select("id").eq("user_id", userId).eq("date", today).maybeSingle();
 
     const payload: any = { mood_heaviness: heaviness, anxiety, energy };
-    const { error } = existing
-      ? await supabase.from("daily_checkins").update(payload).eq("id", existing.id)
-      : await supabase.from("daily_checkins").insert({ ...payload, user_id: userId, date: today });
+    let savedId: string | null = existing?.id ?? null;
+    if (existing) {
+      const { error } = await supabase.from("daily_checkins").update(payload).eq("id", existing.id);
+      if (error) { setBusy(false); toast.error("Kunde inte spara"); return; }
+    } else {
+      const { data: ins, error } = await supabase
+        .from("daily_checkins")
+        .insert({ ...payload, user_id: userId, date: today })
+        .select("id").maybeSingle();
+      if (error || !ins?.id) { setBusy(false); toast.error("Kunde inte spara"); return; }
+      savedId = ins.id;
+    }
     setBusy(false);
-    if (error) { toast.error("Kunde inte spara"); return; }
-    toast.success("Mående loggat");
-    onSaved();
+    if (!savedId) return;
+    onSaved(savedId, heaviness, anxiety, energy);
   };
-
-  const Slider = ({ label, value, set, color }: { label: string; value: number; set: (n: number) => void; color: Tone }) => (
-    <div>
-      <div className="flex items-baseline justify-between mb-2">
-        <p className="text-xs font-extrabold uppercase tracking-wider text-text-secondary">{label}</p>
-        <p className="text-base font-extrabold tabular-nums">{value}/10</p>
-      </div>
-      <div className="grid grid-cols-11 gap-1">
-        {Array.from({ length: 11 }, (_, n) => (
-          <button key={n}
-            onClick={() => set(n)}
-            className={`aspect-square rounded-xl text-xs font-extrabold tabular-nums press-soft ${
-              value === n ? toneBg(color) : "bg-surface-alt text-foreground"
-            }`}
-          >{n}</button>
-        ))}
-      </div>
-    </div>
-  );
 
   return (
     <div className="space-y-5">
-      <Slider label="Tyngd / nedstämdhet" value={heaviness} set={setHeaviness} color="orange" />
-      <Slider label="Oro / ångest" value={anxiety} set={setAnxiety} color="blue" />
-      <Slider label="Energi" value={energy} set={setEnergy} color="pink" />
+      <MoodSliderRow label="Tyngd / nedstämdhet" value={heaviness} set={setHeaviness} tone="orange" />
+      <MoodSliderRow label="Oro / ångest" value={anxiety} set={setAnxiety} tone="blue" />
+      <MoodSliderRow label="Energi" value={energy} set={setEnergy} tone="pink" />
       <Button onClick={save} disabled={busy} variant="pill-strong" size="pill-lg" className="w-full">
         Spara mående
       </Button>
