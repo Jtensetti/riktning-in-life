@@ -73,3 +73,48 @@ export const phrasebookFor = (tone: Tone): Phrasebook => {
       };
   }
 };
+
+/**
+ * Copy guardrails (per design plan).
+ *
+ * Avoid in user-facing copy:
+ *   "streak", "perfekt dag", "optimera", "missat mål", "du borde"
+ *   and any wording that implies medical certainty.
+ *
+ * Prefer:
+ *   "Litet räknas också."
+ *   "Det här räcker idag."
+ *   "Spara dagen som den var."
+ *   "Riktning över tid — inte dagsbetyg."
+ *   "Vi har för lite data ännu."
+ *   "Senast hjälpte det här lite."
+ *
+ * `BLOCKED_PHRASES` is exported so a CI check can grep the source tree
+ * (see scripts/check-tone.sh) and assert no new violations are
+ * introduced.
+ */
+export const BLOCKED_PHRASES: readonly string[] = [
+  "streak",
+  "perfekt dag",
+  "optimera",
+  "missat mål",
+  "du borde",
+];
+
+export const APPROVED_PHRASES: readonly string[] = [
+  "Litet räknas också.",
+  "Det här räcker idag.",
+  "Spara dagen som den var.",
+  "Riktning över tid — inte dagsbetyg.",
+  "Vi har för lite data ännu.",
+  "Senast hjälpte det här lite.",
+];
+
+/**
+ * Pure helper — returns the list of blocked phrases found in a piece of
+ * text, case-insensitive. Used by the CI guard and by tests.
+ */
+export const findBlockedPhrases = (text: string): string[] => {
+  const lower = text.toLowerCase();
+  return BLOCKED_PHRASES.filter((p) => lower.includes(p));
+};
