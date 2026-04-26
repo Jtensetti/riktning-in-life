@@ -134,6 +134,12 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
     [catalog, favorites]
   );
 
+  const recentItems = useMemo(() => {
+    if (!recentSlugs.length) return [] as CatalogItem[];
+    const bySlug = new Map(catalog.map((c) => [c.slug, c]));
+    return recentSlugs.map((s) => bySlug.get(s)).filter((c): c is CatalogItem => !!c);
+  }, [catalog, recentSlugs]);
+
   const pick = (item: CatalogItem) => {
     setSelected(item);
     setDuration(item.default_minutes);
