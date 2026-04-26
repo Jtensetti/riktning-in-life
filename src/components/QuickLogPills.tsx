@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AbstractIcon, type IconName } from "./AbstractIcon";
-import { Plus, Sparkles } from "lucide-react";
+import { Plus, Sparkles, Info, Star } from "lucide-react";
 import { toast } from "sonner";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 
