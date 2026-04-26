@@ -8,9 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronLeft, ChevronRight, FileText, Pill as PillIcon, ClipboardList, Plus, Download, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileText, Pill as PillIcon, ClipboardList, Plus, Download, Trash2, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { FORMS, FormType, SIDE_EFFECTS } from "@/lib/forms";
+import jsPDF from "jspdf";
 
 type View = "home" | "form" | "meds" | "med_log" | "report";
 

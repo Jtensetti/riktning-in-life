@@ -74,6 +74,7 @@ type Entry = {
   title: string | null;
   free_text: string | null;
   body_json: any;
+  include_in_report: boolean;
   created_at: string;
 };
 
@@ -228,6 +229,10 @@ const Journal = () => {
           {entries.map(e => {
             const t = TEMPLATES[e.template_type as TemplateKey];
             const preview = e.free_text ?? Object.values(e.body_json ?? {}).filter(Boolean).join(" · ");
+            const toggleReport = async () => {
+              await supabase.from("journal_entries").update({ include_in_report: !e.include_in_report }).eq("id", e.id);
+              load();
+            };
             return (
               <li key={e.id} className="card-soft p-4 flex gap-3 items-start">
                 <div className={`w-2 self-stretch rounded-full ${t?.color ?? "bg-surface-alt"}`} />
@@ -238,7 +243,13 @@ const Journal = () => {
                       {new Date(e.created_at).toLocaleDateString("sv-SE", { day: "numeric", month: "short" })}
                     </span>
                   </div>
-                  {preview && <p className="text-sm text-text-secondary line-clamp-2">{preview}</p>}
+                  {preview && <p className="text-sm text-text-secondary line-clamp-2 mb-2">{preview}</p>}
+                  <button
+                    onClick={toggleReport}
+                    className={`pill text-[11px] ${e.include_in_report ? "bg-blue-calm text-white" : "bg-surface-alt text-text-secondary"}`}
+                  >
+                    {e.include_in_report ? "✓ Inkluderas i rapport" : "Inkludera i rapport"}
+                  </button>
                 </div>
               </li>
             );
