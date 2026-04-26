@@ -213,9 +213,9 @@ const CrisisPlan = () => {
 };
 
 const ReadView = ({ plan }: { plan: Plan }) => {
-  const sections: { title: string; items: string[]; color: string; icon: "spark" | "heart-pulse" | "moon-soft" | "house-soft" | "blob-smile" }[] = [
-    { title: "Tidiga varningstecken", items: plan.warning_signs_json.filter(Boolean), color: "yellow", icon: "spark" },
-    { title: "Det här hjälper mig", items: plan.helps_json.filter(Boolean), color: "green", icon: "heart-pulse" },
+  const sections: { title: string; items: string[]; color: string; icon: "warning-soft" | "heart-care" | "moon-soft" | "house-soft" | "blob-smile" }[] = [
+    { title: "Tidiga varningstecken", items: plan.warning_signs_json.filter(Boolean), color: "yellow", icon: "warning-soft" },
+    { title: "Det här hjälper mig", items: plan.helps_json.filter(Boolean), color: "green", icon: "heart-care" },
     { title: "Det här ska jag undvika", items: plan.avoid_json.filter(Boolean), color: "blue", icon: "moon-soft" },
     { title: "Trygga platser", items: plan.safe_places_json.filter(Boolean), color: "pink", icon: "house-soft" },
     { title: "Skäl att hålla ut", items: plan.reasons_json.filter(Boolean), color: "orange", icon: "blob-smile" },
