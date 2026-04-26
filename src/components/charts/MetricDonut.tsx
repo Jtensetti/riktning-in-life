@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { toneHsl, chartTokens, prefersReducedMotion, toneSoftBg, type ChartTone } from "@/lib/chartColors";
+import { AnimatedChart, buildChartSignature } from "./AnimatedChart";
 
 export type MetricSlice = {
   label: string;
@@ -40,10 +41,12 @@ export const MetricDonut = ({
   const outer = size / 2 - 2;
 
   const total = useMemo(() => data.reduce((s, d) => s + d.value, 0), [data]);
+  const sig = buildChartSignature(data, `${size}-${innerPct}`);
 
   return (
-    <div className="relative" style={{ width: size, height: size }} role="img" aria-label="Fördelning">
-      <ResponsiveContainer width="100%" height="100%">
+    <AnimatedChart signature={sig} className="relative" >
+      <div className="relative" style={{ width: size, height: size }} role="img" aria-label="Fördelning">
+        <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Tooltip
             contentStyle={{
@@ -94,7 +97,8 @@ export const MetricDonut = ({
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </AnimatedChart>
   );
 };
 

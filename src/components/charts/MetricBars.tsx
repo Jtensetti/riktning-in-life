@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { toneHsl, chartTokens, prefersReducedMotion, type ChartTone } from "@/lib/chartColors";
+import { AnimatedChart, buildChartSignature } from "./AnimatedChart";
 
 export type MetricBarPoint = {
   /** Visningsetikett (kort, t.ex. veckodag eller kategori). */
@@ -57,10 +58,12 @@ export const MetricBars = ({
   );
 
   const computedMax = yMax ?? Math.max(1, ...data.map((d) => d.value));
+  const sig = buildChartSignature(data, defaultTone);
 
   return (
-    <div style={{ height }} role="img" aria-label={valueLabel}>
-      <ResponsiveContainer width="100%" height="100%">
+    <AnimatedChart signature={sig}>
+      <div style={{ height }} role="img" aria-label={valueLabel}>
+        <ResponsiveContainer width="100%" height="100%">
         <BarChart data={rows} margin={{ top: 6, right: 0, bottom: 0, left: showYAxis ? -8 : 0 }} barCategoryGap="22%">
           <XAxis
             dataKey="label"
@@ -113,6 +116,7 @@ export const MetricBars = ({
           </Bar>
         </BarChart>
       </ResponsiveContainer>
-    </div>
+      </div>
+    </AnimatedChart>
   );
 };

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { toneHsl, chartTokens, prefersReducedMotion, type ChartTone } from "@/lib/chartColors";
+import { AnimatedChart } from "./AnimatedChart";
 
 export type TrendSeries = {
   key: string;
@@ -49,10 +50,16 @@ export const TrendLine = ({ dates, series, showAxis = true, height = 160 }: Prop
 
   const yMax = Math.max(...series.map((s) => s.max ?? 10));
 
+  // Signaturen byts om antal datum, första/sista datum, eller senaste värde i någon serie ändras.
+  let valueSum = 0;
+  for (const s of series) for (const v of s.values) valueSum += v ?? 0;
+  const sig = `${dates.length}|${dates[0] ?? ""}|${dates[dates.length - 1] ?? ""}|${series.map((s) => s.key).join(",")}|${valueSum}`;
+
   return (
-    <div style={{ height }} role="img" aria-label={`Trend för ${series.map((s) => s.label).join(", ")}`}>
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 8, right: 8, bottom: showAxis ? 8 : 0, left: 0 }}>
+    <AnimatedChart signature={sig}>
+      <div style={{ height }} role="img" aria-label={`Trend för ${series.map((s) => s.label).join(", ")}`}>
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={data} margin={{ top: 8, right: 8, bottom: showAxis ? 8 : 0, left: 0 }}>
           <defs>
             {series.map((s) => (
               <linearGradient key={s.key} id={`area-${s.key}`} x1="0" y1="0" x2="0" y2="1">
@@ -112,6 +119,7 @@ export const TrendLine = ({ dates, series, showAxis = true, height = 160 }: Prop
           ))}
         </AreaChart>
       </ResponsiveContainer>
-    </div>
+      </div>
+    </AnimatedChart>
   );
 };
