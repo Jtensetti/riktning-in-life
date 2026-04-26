@@ -61,6 +61,12 @@ const computeTrend = (cs: TrendCheckin[], pick: (c: TrendCheckin) => number | nu
 type RecentSession = {
   id: string;
   created_at: string;
+  mood_before: number | null;
+  mood_after: number | null;
+  anxiety_before: number | null;
+  anxiety_after: number | null;
+  energy_before: number | null;
+  energy_after: number | null;
   exercises: { title: string; category: string; duration_minutes: number; color: string } | null;
 };
 
