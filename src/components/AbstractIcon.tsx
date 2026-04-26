@@ -102,9 +102,15 @@ interface Props extends Omit<SVGProps<SVGSVGElement>, "color"> {
   color?: string;
   /** Back-compat: ignored by the sticker pack. */
   accent?: string;
+  /**
+   * Force "symbol-only" rendering (no colored background tile), regardless of size.
+   * Use when the icon already sits on a colored container (hero gradient, nav circle,
+   * pill chip) so we don't double-stack backgrounds.
+   */
+  inline?: boolean;
 }
 
-/** Pixel size below which we drop the colored background tile (inline use). */
+/** Pixel size below which we drop the colored background tile by default. */
 const INLINE_THRESHOLD = 22;
 
 export const AbstractIcon = ({
@@ -112,6 +118,7 @@ export const AbstractIcon = ({
   size = 28,
   color,
   accent,
+  inline = false,
   ...rest
 }: Props) => {
   // Dev-only style guardrail — keeps catching weird sizes during development.
