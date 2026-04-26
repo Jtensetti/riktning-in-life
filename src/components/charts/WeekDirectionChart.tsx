@@ -11,6 +11,15 @@ import {
 import { AnimatedChart, buildChartSignature } from "./AnimatedChart";
 import { ThemedGrid, ThemedTooltip, ThemedXAxis, ThemedYAxis } from "./ChartPrimitives";
 
+/** Recharts dot-render callback ger position + payload per punkt. */
+interface DirectionDotProps {
+  cx?: number;
+  cy?: number;
+  index?: number;
+  payload?: { value: number | null };
+  fill?: string;
+}
+
 export type DirectionPoint = {
   /** ISO-datum (YYYY-MM-DD) i kronologisk ordning. */
   date: string;
@@ -41,6 +50,44 @@ export const WeekDirectionChart = ({ data, height = chartHeights.expanded }: Pro
   const rows = useMemo(() => data.map((p) => ({ ...p, label: dayLetter(p.date) })), [data]);
   const stroke = toneHsl("green");
   const sig = buildChartSignature(data);
+  const baseDot = chartLineDot(stroke);
+
+  /** Custom dot — markerar saknade dagar som en streckad grå ring så att luckan
+   *  är synlig även när linjen ritas via connectNulls. */
+  const renderDot = (props: DirectionDotProps) => {
+    const { cx, cy, index, payload } = props;
+    const key = `dot-${index}`;
+    if (payload?.value == null) {
+      const x = cx ?? 0;
+      // Recharts ger ingen cy för null-värden — fall tillbaka till nedre kanten.
+      const y = Number.isFinite(cy) && (cy as number) > 0 ? (cy as number) : height - 24;
+      return (
+        <g key={key} aria-hidden>
+          <circle
+            cx={x}
+            cy={y}
+            r={4}
+            fill={chartTokens.tooltipBg}
+            stroke={chartTokens.axisText}
+            strokeWidth={1.5}
+            strokeDasharray="2 2"
+            opacity={0.7}
+          />
+        </g>
+      );
+    }
+    return (
+      <circle
+        key={key}
+        cx={cx}
+        cy={cy}
+        r={baseDot.r}
+        fill={baseDot.fill}
+        stroke={baseDot.stroke}
+        strokeWidth={baseDot.strokeWidth}
+      />
+    );
+  };
 
   return (
     <AnimatedChart signature={sig}>
@@ -63,7 +110,7 @@ export const WeekDirectionChart = ({ data, height = chartHeights.expanded }: Pro
                 return iso ? fmtDate(iso) : "";
               }}
               formatter={(value: number | string) => [
-                value == null ? "—" : `${Math.round(Number(value))}/100`,
+                value == null ? "Ingen check-in" : `${Math.round(Number(value))}/100`,
                 "Riktning",
               ]}
             />
@@ -73,7 +120,7 @@ export const WeekDirectionChart = ({ data, height = chartHeights.expanded }: Pro
               stroke="url(#dir-line)"
               strokeWidth={3}
               strokeLinecap="round"
-              dot={chartLineDot(stroke)}
+              dot={renderDot}
               activeDot={chartLineActiveDot(stroke)}
               {...chartAnimation("line")}
               connectNulls
