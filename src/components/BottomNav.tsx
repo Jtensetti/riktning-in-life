@@ -3,7 +3,7 @@ import { AbstractIcon, type IconName } from "./AbstractIcon";
 
 const tabs: { to: string; label: string; icon: IconName; activeColor: string }[] = [
   { to: "/", label: "Idag", icon: "house-soft", activeColor: "hsl(var(--orange-start))" },
-  { to: "/ovningar", label: "Övningar", icon: "spark", activeColor: "hsl(var(--orange-start))" },
+  { to: "/snabblogg", label: "Logga", icon: "spark", activeColor: "hsl(var(--pink-move))" },
   { to: "/vecka", label: "Vecka", icon: "pie", activeColor: "hsl(var(--green-recovery))" },
   { to: "/journal", label: "Journal", icon: "pencil-soft", activeColor: "hsl(var(--yellow-journal))" },
   { to: "/vard", label: "Vård", icon: "heart-pulse", activeColor: "hsl(var(--blue-calm))" },
