@@ -176,7 +176,7 @@ const Journal = () => {
             </div>
           ) : (
             t.fields.map((f, i) => (
-              <div key={f.key} className="animate-fade-in-up" style={{ animationDelay: `${i * 50}ms` }}>
+              <div key={f.key} className="animate-fade-in-up" style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}>
                 <label className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-1.5 block">{f.label}</label>
                 <Textarea
                   value={body[f.key] ?? ""}
