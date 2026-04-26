@@ -21,6 +21,7 @@ import { QuickLogPills } from "@/components/QuickLogPills";
 import { QuickLogFab } from "@/components/QuickLogFab";
 import { ActivityPicker, type ActivityDraft } from "@/components/ActivityPicker";
 import { countDaysInWindow, type StreakCounts } from "@/lib/streaks";
+import { useRecentCheckins, seriesForField } from "@/hooks/useRecentCheckins";
 import { toast } from "sonner";
 
 type Checkin = {
@@ -414,7 +415,16 @@ const Today = () => {
   const moodTrend = computeTrend(trendData, c => c.mood_heaviness, true);
   const sleepTrend = computeTrend(trendData, c => c.sleep_hours == null ? null : Number(c.sleep_hours), false);
   const funcTrend = computeTrend(trendData, c => c.function_score, false);
-  const hasInsights = trendData.length >= 2;
+
+  // 7-dagars sparklines från senaste check-ins. Visas när minst 4 dagar har data.
+  const { data: recent7 } = useRecentCheckins(7);
+  const moodSpark = seriesForField(recent7, 7, "mood_heaviness").values;
+  const sleepSpark = seriesForField(recent7, 7, "sleep_hours").values;
+  const funcSpark = seriesForField(recent7, 7, "function_score").values;
+  const daysWithAnyData = recent7.filter((r) =>
+    r.mood_heaviness != null || r.sleep_hours != null || r.function_score != null,
+  ).length;
+  const hasInsights = daysWithAnyData >= 4;
 
   // Hero icon adapts to weather + daylight; falls back to friendly blob.
   const heroIcon: IconName = weather
@@ -640,8 +650,8 @@ const Today = () => {
 
       {hasInsights && !showSafety && (
         <section className="mb-7">
-          <h3 className="text-xl mb-1">Nya insikter</h3>
-          <p className="text-sm text-text-secondary mb-3">Riktning senaste 7 dagarna</p>
+          <h3 className="text-xl mb-1">Veckans riktning</h3>
+          <p className="text-sm text-text-secondary mb-3">Senaste 7 dagarna · {daysWithAnyData} dagar loggade</p>
           <div className="grid grid-cols-3 gap-3">
             <div className="animate-pop-in" style={{ animationDelay: "var(--stagger-0)" }}>
               <InsightCard
@@ -651,6 +661,8 @@ const Today = () => {
                 invert
                 trend={moodTrend.trend}
                 colorClass="bg-orange-start"
+                spark={moodSpark}
+                sparkTone="orange"
               />
             </div>
             <div className="animate-pop-in" style={{ animationDelay: "var(--stagger-1)" }}>
@@ -661,6 +673,8 @@ const Today = () => {
                 decimals={1}
                 trend={sleepTrend.trend}
                 colorClass="bg-purple-sleep"
+                spark={sleepSpark}
+                sparkTone="purple"
               />
             </div>
             <div className="animate-pop-in" style={{ animationDelay: "var(--stagger-2)" }}>
@@ -670,6 +684,8 @@ const Today = () => {
                 suffix="/10"
                 trend={funcTrend.trend}
                 colorClass="bg-green-recovery"
+                spark={funcSpark}
+                sparkTone="green"
               />
             </div>
           </div>
