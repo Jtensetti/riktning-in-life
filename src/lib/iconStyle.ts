@@ -6,16 +6,16 @@
  * så följer alla nya ikoner automatiskt samma designprofil.
  *
  * Filosofi (Headspace-vibe, mjuk geometri):
- * - Platt, fyllda former. Stroke endast när det behövs (linjer, cirklar utan kropp).
- * - Allt ritas i 32×32 viewBox och centreras kring 16,16.
- * - currentColor som default → ikonen ärver textfärg från sin container.
- * - Två-tons-ikoner får använda `accent` (default = `--yellow-journal`) för
- *   detaljer (skugga, sekundär form), aldrig för huvudkroppen.
+ * - Platt, fyllda former i en fast färgpalett (sticker-look).
+ * - Allt ritas i 96×96 viewBox och centreras kring 48,48.
+ * - Ikoner är *inte* themable via currentColor längre — färger är inbakade
+ *   i SVG-källan (se `riktning_headspace_icon_pack`). `color`/`accent`-props
+ *   på AbstractIcon accepteras för bakåtkompatibilitet men ignoreras vid render.
  * - Inga gradienter, inga drop-shadows. Djup byggs av lager + opacity.
  */
 
 /** Standardkanvas. Alla nya ikoner SKA rita inom detta viewBox. */
-export const ICON_VIEWBOX = "0 0 32 32" as const;
+export const ICON_VIEWBOX = "0 0 96 96" as const;
 
 /** Standardstorlekar (px) — använd via storleksskala, inte godtyckliga tal. */
 export const ICON_SIZE = {
