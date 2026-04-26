@@ -54,6 +54,7 @@ export const readAndUpdateLastSeen = (now: Date = new Date()): LastSeen => {
   } catch {
     /* ignore quota */
   }
+  void patchUserSettings({ last_seen_at: now.toISOString() });
   if (!previousAt) {
     return { previousAt: null, bucket: "first-visit", daysSince: null };
   }
