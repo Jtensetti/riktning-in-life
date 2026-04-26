@@ -166,7 +166,7 @@ const Week = () => {
       const since30 = isoDaysAgo(29);
       const sinceTs = new Date(Date.now() - 30 * 86_400_000).toISOString();
 
-      const [checkinsRes, formsRes, sessRes, actsRes, exRes, actsAllRes, sessAllRes] = await Promise.all([
+      const [checkinsRes, formsRes, sessRes, actsRes, exRes, actsAllRes, sessAllRes, medLogsRes] = await Promise.all([
         supabase
           .from("daily_checkins")
           .select("id,date,mood_heaviness,anxiety,guilt_selfcriticism,hopelessness,energy,getting_started,function_score,daytime_bed_sofa_time_minutes,sleep_hours,sleep_quality,movement_today,meaningful_activity,safety_status")
@@ -188,12 +188,16 @@ const Week = () => {
           .select("id,title,category,duration_minutes,color"),
         supabase
           .from("activity_logs")
-          .select("activity_slug,label,icon,color,mood_delta")
+          .select("activity_slug,label,icon,color,mood_delta,date")
           .eq("user_id", user.id).gte("date", since30),
         supabase
           .from("exercise_sessions")
-          .select("mood_before,mood_after,anxiety_before,anxiety_after,exercises(title,category,color)")
+          .select("created_at,mood_before,mood_after,anxiety_before,anxiety_after,exercises(title,category,color)")
           .eq("user_id", user.id).gte("created_at", sinceTs),
+        supabase
+          .from("medication_logs")
+          .select("date,taken_status")
+          .eq("user_id", user.id).gte("date", since30),
       ]);
 
       setCheckins((checkinsRes.data ?? []) as Checkin[]);
@@ -202,6 +206,7 @@ const Week = () => {
       setExercises((exRes.data ?? []) as ExerciseLite[]);
       setActivitiesAll((actsAllRes.data ?? []) as any[]);
       setSessionsAll((sessAllRes.data ?? []) as any[]);
+      setMedLogsAll((medLogsRes.data ?? []) as any[]);
 
       // Spår D: uppdatera personlig baslinje när vi har ≥14 dagar.
       refreshBaseline((checkinsRes.data ?? []) as Checkin[]);
