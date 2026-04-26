@@ -6,22 +6,21 @@ import { AbstractIcon, type IconName } from "./AbstractIcon";
  * padding, radius och timing.
  *
  * Mått (låsta):
- * - höjd: 144px (h-36)  — luftigt men kompakt på små skärmar
+ * - höjd: 144px (h-36)
  * - radius: 36px nedre hörn
- * - blob position: top-6, centrerad
- * - blob storlek: 72px
+ * - blob top-6, centrerad, 72px
  * - vågseparator: 60px
- * - animationstiming: float 4s (matchar tailwind keyframe)
+ * - animationstiming: float 4s
  */
 export interface HeroBannerProps {
   /** HSL-värde, t.ex. "var(--orange-start)" eller "var(--blue-calm)" */
   tone: string;
   icon: IconName;
-  /** Färg på blob-ikonen. Default väljs lämpligt mot tonen. */
   iconColor?: string;
   iconAccent?: string;
-  /** Innehåll positionerat absolut över bannern (t.ex. settings-knapp). */
   topLeft?: React.ReactNode;
+  /** Innehåll positionerat absolut i övre högra hörnet (t.ex. väder-chip). */
+  topRight?: React.ReactNode;
 }
 
 export const HeroBanner = ({
@@ -30,6 +29,7 @@ export const HeroBanner = ({
   iconColor = "hsl(var(--surface))",
   iconAccent,
   topLeft,
+  topRight,
 }: HeroBannerProps) => {
   return (
     <div
@@ -40,6 +40,7 @@ export const HeroBanner = ({
     >
       <div className="h-36 relative">
         {topLeft && <div className="absolute top-4 left-4 z-10">{topLeft}</div>}
+        {topRight && <div className="absolute top-4 right-4 z-10">{topRight}</div>}
         <div className="absolute left-1/2 -translate-x-1/2 top-6 animate-float">
           <AbstractIcon name={icon} size={72} color={iconColor} accent={iconAccent} />
         </div>
