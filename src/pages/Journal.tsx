@@ -153,15 +153,17 @@ const Journal = () => {
         <button onClick={() => setActive(null)} className="flex items-center gap-1 text-sm font-bold text-text-secondary mb-4 press-soft">
           <ChevronLeft size={18} /> Tillbaka
         </button>
-        <HeroBanner
-          tone={t.tone}
-          icon={t.icon}
-          iconColor={t.iconColor}
-        />
-        <div className={`${t.text === "text-foreground" ? "text-foreground" : ""} mb-6`}>
-          <h1 className="text-[28px] leading-[34px] mb-1">{t.title}</h1>
-          <p className="text-sm text-text-secondary">{t.subtitle}</p>
+        <div
+          className={`-mx-6 mb-6 px-6 pt-6 pb-7 rounded-b-[28px] flex items-center gap-4 ${t.text}`}
+          style={{ background: `hsl(${t.tone})` }}
+        >
+          <AbstractIcon name={t.icon} size={48} color={t.iconColor} inline />
+          <div className="flex-1 min-w-0">
+            <h1 className="text-h2 mb-0.5">{t.title}</h1>
+            <p className="text-body opacity-90">{t.subtitle}</p>
+          </div>
         </div>
+
 
         <div className="space-y-4 mb-6">
           <div>
