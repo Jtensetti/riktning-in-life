@@ -1015,7 +1015,9 @@ const MetricCard = ({
       <div className="flex items-end justify-between gap-2 mb-2">
         <p className={`text-3xl font-extrabold leading-none ${gated ? "text-text-secondary" : ""}`}>{c ?? "—"}</p>
         {!gated && spark && spark.some((v) => v != null) && (
-          <Sparkline values={spark} tone={tone ?? "orange"} width={56} height={22} />
+          <Suspense fallback={<span style={{ width: 56, height: 22 }} aria-hidden />}>
+            <Sparkline values={spark} tone={tone ?? "orange"} width={56} height={22} />
+          </Suspense>
         )}
       </div>
       {labelOverride ? (
