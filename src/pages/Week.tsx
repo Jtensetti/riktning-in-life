@@ -170,6 +170,11 @@ const Week = () => {
       setSessions((sessRes.data ?? []) as unknown as SessionLite[]);
       setActivities((actsRes.data ?? []) as unknown as ActivityLite[]);
       setExercises((exRes.data ?? []) as ExerciseLite[]);
+      setActivitiesAll((actsAllRes.data ?? []) as any[]);
+      setSessionsAll((sessAllRes.data ?? []) as any[]);
+
+      // Spår D: uppdatera personlig baslinje när vi har ≥14 dagar.
+      refreshBaseline((checkinsRes.data ?? []) as Checkin[]);
 
       const d7 = isoDaysAgo(6);
       const d14 = isoDaysAgo(13);
@@ -209,6 +214,9 @@ const Week = () => {
   const baselineComplete = total >= 14;
   const { current, previous } = useMemo(() => splitWeeks(checkins), [checkins]);
 
+  // Spår D: läs personliga trösklar (uppdateras i load ovan).
+  const thresholds = useMemo(() => thresholdsFromBaseline(loadBaselineSafe()), [checkins.length]);
+
   const burdenC = useMemo(() => burdenScore(current, weeklyCurrent), [current, weeklyCurrent]);
   const burdenP = useMemo(() => burdenScore(previous, weeklyPrev), [previous, weeklyPrev]);
   const fnC = useMemo(() => functionScore(current), [current]);
@@ -218,8 +226,18 @@ const Week = () => {
   const stabC = useMemo(() => stabilityScore(current), [current]);
   const stabP = useMemo(() => stabilityScore(previous), [previous]);
 
-  const priorities = useMemo(() => buildPriorities(current), [current]);
-  const insights = useMemo(() => generateInsights(current), [current]);
+  const priorities = useMemo(() => buildPriorities(current, thresholds), [current, thresholds]);
+  // Spår E: skicka full historik så vi kan upptäcka logg-konsekvens-mönster.
+  const insights = useMemo(() => generateInsights(current, checkins), [current, checkins]);
+
+  // Spår B: bästa & tyngsta dag.
+  const dayHighlights = useMemo(() => buildDayHighlights(current), [current]);
+
+  // Spår A: bevisbaserad lift-summary (lifters + drainers).
+  const liftSummary = useMemo(
+    () => buildLiftSummary(activitiesAll, sessionsAll),
+    [activitiesAll, sessionsAll],
+  );
 
   /** Per-dag Riktning (0–100, högre = bättre) för senaste 7 dagar.
    *  Riktning = 100 − burden för dagens checkin. Saknas dagen → null. */
