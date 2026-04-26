@@ -210,7 +210,7 @@ const QuickLog = () => {
 
     if (e.source === "sleep" || e.source === "mood") {
       // Don't hard-delete the whole checkin if other axes exist; null the relevant fields instead.
-      const updates = e.source === "sleep"
+      const updates: any = e.source === "sleep"
         ? { sleep_hours: null, sleep_quality: null }
         : { mood_heaviness: null, anxiety: null, energy: null };
       const { error } = await supabase.from(table).update(updates).eq("id", rawId).eq("user_id", user.id);
