@@ -14,7 +14,7 @@ import {
   pctChange, splitWeeks, isoDaysAgo, generateInsights, type Checkin, type WeeklyFormScore,
 } from "@/lib/metrics";
 import { buildPriorities, type Priority } from "@/lib/priorities";
-import { refreshBaseline, thresholdsFromBaseline } from "@/lib/baseline";
+import { refreshBaseline, loadBaseline, thresholdsFromBaseline } from "@/lib/baseline";
 import { buildDayHighlights, buildLiftSummary } from "@/lib/dayInsights";
 import { DayHighlightCards } from "@/components/DayHighlightCards";
 import { ChartCard } from "@/components/charts/ChartCard";
@@ -215,7 +215,7 @@ const Week = () => {
   const { current, previous } = useMemo(() => splitWeeks(checkins), [checkins]);
 
   // Spår D: läs personliga trösklar (uppdateras i load ovan).
-  const thresholds = useMemo(() => thresholdsFromBaseline(loadBaselineSafe()), [checkins.length]);
+  const thresholds = useMemo(() => thresholdsFromBaseline(loadBaseline()), [checkins.length]);
 
   const burdenC = useMemo(() => burdenScore(current, weeklyCurrent), [current, weeklyCurrent]);
   const burdenP = useMemo(() => burdenScore(previous, weeklyPrev), [previous, weeklyPrev]);
