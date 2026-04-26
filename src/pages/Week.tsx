@@ -272,6 +272,16 @@ const Week = () => {
         </div>
       )}
 
+      {/* Dagens lilla steg — uppdateras live när nya loggar/check-ins kommer in */}
+      <section className="mb-6">
+        <TodayStepCard
+          exercises={exercisesForRec}
+          todayCheckin={todayCheckin}
+          recentSessions={recentSessionsForRec}
+          loggedToday={loggedToday}
+        />
+      </section>
+
       {/* === LAGER 1: RIKTNING === */}
       <section className="mb-7">
         <div className="flex items-baseline gap-2 mb-3">
