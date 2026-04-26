@@ -458,8 +458,11 @@ const Week = () => {
       <h1 className="text-[32px] leading-[38px] mb-1">Insikter</h1>
       <p className="text-sm text-text-secondary mb-6">Vad veckan visar — på en skärm.</p>
 
-      {/* Mönster — lyft fram det mest mänskliga längst upp */}
-      {insights.length > 0 && (
+      {/* Spår 1: bevisbaserade mönster från senaste 28 dagarna. */}
+      <PatternsSection patterns={patterns} />
+
+      {/* Mjuk fallback: korta heuristik-insikter när vi inte hittat starka mönster ännu. */}
+      {patterns.length === 0 && insights.length > 0 && (
         <section className="mb-6 animate-pop-in">
           <p className="text-[11px] font-extrabold uppercase tracking-wider text-orange-deep mb-2">Vi ser ett mönster</p>
           <div className="card-quiet">
