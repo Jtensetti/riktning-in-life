@@ -66,12 +66,21 @@ interface Props {
   onLogged?: () => void;
 }
 
+type EditState = {
+  id: string;
+  label: string;
+  mood: number;
+  minutes: number;
+};
+
 export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
   const { user } = useAuth();
   const [favs, setFavs] = useState<FavItem[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
-  const [moodSheet, setMoodSheet] = useState<{ id: string; label: string; current: number } | null>(null);
-  const [savingMood, setSavingMood] = useState<number | null>(null);
+  const [failed, setFailed] = useState<{ slug: string; message: string } | null>(null);
+  const [editSheet, setEditSheet] = useState<EditState | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -125,6 +134,7 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
   const quickLog = async (item: FavItem) => {
     if (!user || busy) return;
     setBusy(item.slug);
+    setFailed(null);
     if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.(10);
 
     const { data: inserted, error } = await supabase.from("activity_logs").insert({
@@ -140,38 +150,61 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
     }).select("id").maybeSingle();
 
     setBusy(null);
-    if (error) {
-      toast.error("Kunde inte logga. Försök igen.");
+    if (error || !inserted?.id) {
+      setFailed({ slug: item.slug, message: error?.message ?? "Okänt fel — försök igen." });
+      toast.error(`Kunde inte logga ${item.label}`, {
+        description: "Tryck på återförsök i kortet.",
+      });
       return;
     }
 
     onLogged?.();
 
     toast.success(`${item.label} loggad`, {
-      description: `${item.default_minutes} min · kändes lite bättre`,
-      action: inserted?.id ? {
-        label: "Ändra känsla",
-        onClick: () => setMoodSheet({ id: inserted.id, label: item.label, current: 1 }),
-      } : undefined,
+      description: `${item.default_minutes} min · 🙂 lite bättre`,
+      action: {
+        label: "Ändra",
+        onClick: () => setEditSheet({ id: inserted.id, label: item.label, mood: 1, minutes: item.default_minutes }),
+      },
     });
   };
 
-  const updateMood = async (delta: number) => {
-    if (!moodSheet || !user) return;
-    setSavingMood(delta);
+  const saveEdit = async () => {
+    if (!editSheet || !user || savingEdit) return;
+    setSavingEdit(true);
     const { error } = await supabase
       .from("activity_logs")
-      .update({ mood_delta: delta })
-      .eq("id", moodSheet.id)
+      .update({ mood_delta: editSheet.mood, duration_minutes: editSheet.minutes })
+      .eq("id", editSheet.id)
       .eq("user_id", user.id);
-    setSavingMood(null);
+    setSavingEdit(false);
     if (error) {
-      toast.error("Kunde inte uppdatera känslan.");
+      toast.error("Kunde inte spara ändringen.", { description: error.message });
       return;
     }
-    const picked = MOOD_OPTIONS.find(o => o.delta === delta);
-    toast.success(`Känsla uppdaterad`, { description: picked ? `${picked.emoji} ${picked.text}` : undefined });
-    setMoodSheet(null);
+    const picked = MOOD_OPTIONS.find(o => o.delta === editSheet.mood);
+    toast.success("Sparat", {
+      description: `${editSheet.minutes} min${picked ? ` · ${picked.emoji} ${picked.text}` : ""}`,
+    });
+    setEditSheet(null);
+    onLogged?.();
+  };
+
+  const deleteLog = async () => {
+    if (!editSheet || !user || deleting) return;
+    setDeleting(true);
+    const { error } = await supabase
+      .from("activity_logs")
+      .delete()
+      .eq("id", editSheet.id)
+      .eq("user_id", user.id);
+    setDeleting(false);
+    if (error) {
+      toast.error("Kunde inte radera loggen.", { description: error.message });
+      return;
+    }
+    toast.success("Loggen raderad");
+    setEditSheet(null);
     onLogged?.();
   };
 
