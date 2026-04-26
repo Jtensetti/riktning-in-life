@@ -9,6 +9,7 @@ import Checkin from "./pages/Checkin";
 import Exercises from "./pages/Exercises";
 import ExerciseDetail from "./pages/ExerciseDetail";
 import ComingSoon from "./pages/ComingSoon";
+import Week from "./pages/Week";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -25,7 +26,7 @@ const App = () => (
           <Route path="/checkin" element={<Checkin />} />
           <Route path="/ovningar" element={<Exercises />} />
           <Route path="/ovningar/:id" element={<ExerciseDetail />} />
-          <Route path="/vecka" element={<ComingSoon title="Vecka" body="Trender, jämförelser och baslinje över tid." />} />
+          <Route path="/vecka" element={<Week />} />
           <Route path="/journal" element={<ComingSoon title="Journal" body="Tre rader, tankeloop, kropp först och bevislogg." />} />
           <Route path="/vard" element={<ComingSoon title="Vård" body="PHQ-9, GAD-7, WHO-5, mediciner och rapportexport." />} />
           <Route path="*" element={<NotFound />} />
