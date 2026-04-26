@@ -1,74 +1,52 @@
 ## Mål
+Automatisk **natt-läge** som slår på sig själv när `partOfDay === "night"` (22:00–05:00). Inget manuellt reglage. Följer befintlig palett — vi använder bara mörka HSL-värden som redan finns i `.dark`-blocket i `src/index.css` plus de befintliga kategori-färgerna. Ingen ny färg uppfinns.
 
-Diagram som är **logiska** (rätt typ till rätt fråga), **ändamålsenliga** (visar förändring, inte bara siffror) och **konsekvent designade** (samma färgtokens, typografi, hörnradier och mjuka animationer som resten av appen). Inga 3D, inga gradienter, inga linjediagram med skarpa hörn — allt är platt, rundat och färgglatt i Riktning-stilen.
+## Trigger
+- I `src/App.tsx` läggs en `useEffect` som:
+  - läser `getTimeContext()` från `src/lib/timeContext.ts`
+  - togglar klassen `dark` på `<html>` när `partOfDay === "night"`
+  - re-evaluerar varje hel timme + vid `visibilitychange`
+- Ingen localStorage, ingen toggle i Settings.
 
-## Designprinciper för alla diagram
+## Färgpalett — ingen ändring av kategori-tokens
+Vi rör **inte** `--orange-start`, `--blue-calm`, etc. Däremot finjusteras `.dark`-värdena i `src/index.css` så de matchar Riktnings ton bättre (idag är de generiskt grå):
+- `--background`: djup `purple-sleep`-ton (`261 35% 9%`) — knyter an till befintliga `--purple-sleep` som redan är vår "natt-färg".
+- `--surface` / `--surface-alt`: två steg ljusare av samma ton.
+- `--cream-card`: mörk variant `261 25% 16%` så `.card-cream` också mörknar.
+- `--border-soft`: aning ljusare variant.
+- `--foreground`: behåller cream — redan rätt.
 
-- **Färger** kommer alltid från befintliga CSS-variabler: `--orange-start`, `--blue-calm`, `--purple-sleep`, `--green-recovery`, `--pink-move`, `--yellow-journal`. En färg per dataserie, ingen gradient.
-- **Form**: staplar med `radius={[12,12,0,0]}`, linjer med `type="monotone"` (mjuka kurvor), areor med 12 % opacitet i samma färg.
-- **Typografi**: Nunito Sans 700, axeltext `--text-secondary` 11 px. Inga rutnät förutom horisontella streckade `--border-soft`.
-- **Tooltip**: vit `card-soft`, rundade hörn 16 px, samma skugga som övriga kort, ingen pil.
-- **Animation**:
-  - Recharts `isAnimationActive` på, `animationDuration={650}`, `animationEasing="ease-out"`.
-  - Stapel- och linjeritning sker en gång vid mount, inte vid varje re-render.
-  - Hela diagramkortet använder `animate-pop-in` med `var(--stagger-*)` precis som övriga kort.
-  - Respekterar `prefers-reduced-motion` (sätter `isAnimationActive={false}`).
+## HeroBanner i natt-läge
+`HeroBanner` blandar idag tonen mot `hsl(var(--background))` i botten. Det följer automatiskt med när `--background` byts. Liten justering: gradient-slutfärgen sätts till `hsl(var(--background) / 0.9)` för mjukare övergång mot natt-bakgrunden (funkar lika bra i ljust läge).
 
-## Nya komponenter
+## Nya ikoner (efterfrågat: "kanske några nya ikoner")
+Två nya cases i `AbstractIcon.tsx`, båda enligt det strikta blob+accent-receptet:
+- `moon-stars` — fylld måne i `color` + 3 stjärnor i `accent`. Används som hero-ikon på kvällen/natten.
+- `night-cloud` — molnsilhuett i `color` med liten måne bakom i `accent`. För wind-down-kort.
 
-### `src/components/charts/ChartCard.tsx`
-Wrapper som ger alla diagram samma ram: titel, undertitel, valfri "Se mer"-länk, `card-cream` bakgrund, padding och `animate-pop-in`. Tar `tone` (samma palett som `ColorCard`) för en liten färgad accentprick bredvid titeln så att man känner igen kategorin.
+`moon-soft` och `weather-moon` lämnas — fungerar fortfarande för väder/sömn.
 
-### `src/components/charts/TrendLine.tsx`
-Recharts `AreaChart` för 7- och 14-dagarstrender (humör, sömn, funktion). Mjuk monotone-linje 3 px + area 12 % i samma färg, prickar 4 px på sista punkten, dold X/Y-axel som default men valfritt kompakt X (M T O T F L S). Tooltip visar datum + värde + delta mot baslinje.
+## Auto-byte av hero-ikoner på kvällen
+På `Today.tsx` och `Vard.tsx` (de två sidor med stora hero-banners): om `partOfDay === "evening"` eller `"night"`, byt hero-ikonen till `moon-stars` och tonen till `var(--purple-sleep)`. Andra sidor lämnas oförändrade — de hänger ändå med via dark-mode-tokens.
 
-### `src/components/charts/ActivityBars.tsx`
-Recharts `BarChart` för aktiv tid per dag (ersätter de handritade staplarna i `Week.tsx`). Staplar med `radius={[12,12,0,0]}`, färg per dag tas från dominant aktivitetsfärg via befintlig `colorHsl`-helper som flyttas till `src/lib/chartColors.ts`. Tom dag visas som ljus `--border-soft`-stapel med min-höjd 6 px så raden alltid har rytm.
+## Filer som ändras
+1. `src/index.css` — finjustera `.dark`-blockets bas-tokens (`--background`, `--surface`, `--surface-alt`, `--cream-card`, `--border-soft`) till purple-sleep-toner. Inga nya CSS-variabler.
+2. `src/App.tsx` — `useEffect` som togglar `document.documentElement.classList` baserat på `getTimeContext()`. Re-check varje hel timme + vid `visibilitychange`.
+3. `src/components/AbstractIcon.tsx` — två nya cases: `moon-stars`, `night-cloud`.
+4. `src/components/HeroBanner.tsx` — gradient slutar på `hsl(var(--background) / 0.9)`.
+5. `src/pages/Today.tsx` & `src/pages/Vard.tsx` — välj hero-ikon/ton baserat på `getTimeContext().partOfDay`.
 
-### `src/components/charts/Sparkline.tsx`
-Liten 60 × 24 px Recharts `LineChart` utan axlar/tooltip för `InsightCard` på Idag-sidan. Visar 7-dagars mönster i samma färg som kortets `colorClass`. Animeras in efter siffran så att blicken landar på siffran först.
+## Vad vi medvetet INTE gör
+- Ingen toggle/reglage i Settings.
+- Ingen `prefers-color-scheme`-koppling — bara klocktid styr.
+- Inga nya färgvariabler.
+- Rör inte shadcn-komponenter eller `next-themes`.
 
-### `src/components/charts/StackedRecovery.tsx` (lager 3 i Vecka)
-Stacked `BarChart` per dag som visar minuter fördelat på kategori (Sömn / Rörelse / Mående / Återhämtning). Ger en Strava-känsla utan att vara overkill. Legend som pills i samma stil som `QuickLogPills`.
+## Saker att vara medveten om
+- Recharts-tooltips läser redan `hsl(var(--surface))` via `chartTokens` → följer med automatiskt.
+- `WeatherChip` använder `bg-surface/90` → följer med automatiskt.
+- Användare som öppnar appen 21:59 hamnar i ljust läge; bytet sker 22:00 (eller direkt vid `visibilitychange`).
 
-### `src/lib/chartColors.ts`
-Centraliserar mappning `category | tone → hsl(var(--…))` så att `Week.tsx`, `Today.tsx` och nya diagram aldrig duplicerar färglogik. Återanvänder samma nycklar som `ColorCard`.
-
-## Refaktor av befintliga sidor
-
-### `src/pages/Week.tsx`
-- Byt ut det handgjorda div-stapeldiagrammet (rad 288–316) mot `<ActivityBars data={timeline} />` inuti en `<ChartCard title="Aktiv tid" subtitle="Senaste 7 dagar" tone="green">`.
-- Ovanför "Per-dag rader" lägger vi till `<ChartCard tone="orange" title="Belastning vs återhämtning"><StackedRecovery … /></ChartCard>` som ger en snabb visuell summering av veckan.
-- "Jämfört med förra veckan"-blocket får en liten `<Sparkline />` i varje `MetricCard` så att siffran får kontext.
-
-### `src/pages/Today.tsx`
-- `InsightCard` (humör, sömn, funktion) får en `<Sparkline />` under siffran. Pilen behålls men flyttas bredvid sparklinjen så delta + form syns ihop.
-- Lägger till en ny sektion **"Veckans riktning"** strax under "Nya insikter" med `<ChartCard><TrendLine series={[mood, sleep, function]} /></ChartCard>` när `trendData.length >= 4`. Tre tunna linjer i kategorifärgerna med toggle-pills för att visa/dölja serie (samma stil som befintliga pills).
-
-### `src/pages/Checkin.tsx`
-- Efter att check-in sparats visar vi en kort confirm-vy med `<Sparkline />` för det reglage användaren just rörde, så hen ser hur dagens värde landar i 7-dagarsmönstret. Ren motivationspuff, ingen ny dataquery — använder den `trendData` som redan hämtas av Today via en delad hook `useRecentCheckins(days)` som flyttas till `src/hooks/useRecentCheckins.ts`.
-
-## Tillgänglighet & prestanda
-
-- Varje diagram får `role="img"` + `aria-label` med en mening som sammanfattar trenden ("Humör har lyft från 6 till 7 senaste veckan").
-- Under diagrammet finns en visuellt dold `<table>` med samma data för skärmläsare.
-- All Recharts-import går via `chart.tsx`-wrappern så bundeln inte växer per sida.
-- `prefers-reduced-motion` kollas i `ChartCard` och skickar ner `animate={false}` till barnet.
-
-## Filer som skapas/ändras
-
-**Skapas**
-- `src/components/charts/ChartCard.tsx`
-- `src/components/charts/TrendLine.tsx`
-- `src/components/charts/ActivityBars.tsx`
-- `src/components/charts/Sparkline.tsx`
-- `src/components/charts/StackedRecovery.tsx`
-- `src/lib/chartColors.ts`
-- `src/hooks/useRecentCheckins.ts`
-
-**Ändras**
-- `src/pages/Week.tsx` — ersätter handgjorda staplar, lägger stacked recovery + sparklines i metric-korten.
-- `src/pages/Today.tsx` — sparkline i `InsightCard`, ny "Veckans riktning"-sektion.
-- `src/pages/Checkin.tsx` — sparkline i bekräftelsevyn.
-
-Inga DB-migrationer, inga nya beroenden (Recharts finns redan).
+## QA
+- Mocka `Date` i devtools (`new Date('2025-04-26T23:00')`) och bekräfta att `dark`-klassen läggs på `<html>`.
+- Snabbcheck `Today`, `Vard`, `Week`, `Checkin`, `Journal` i mörkt läge — speciellt `card-cream`-bakgrunden.
