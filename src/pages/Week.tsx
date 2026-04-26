@@ -114,6 +114,7 @@ const Week = () => {
   const [activitiesAll, setActivitiesAll] = useState<{ activity_slug: string; label: string; icon: string; color: string; mood_delta: number | null }[]>([]);
   const [sessionsAll, setSessionsAll] = useState<{ exercises: { title: string; category: string; color: string } | null; mood_before: number | null; mood_after: number | null; anxiety_before: number | null; anxiety_after: number | null }[]>([]);
   const [historyFilter, setHistoryFilter] = useState<"all" | "checkins" | "exercises" | "activeTime">("all");
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [actionPrefs, setActionPrefs] = useState<ActionPreferences>(() => loadActionPreferences());
 
   const updatePrefs = (patch: Partial<ActionPreferences>) => {
@@ -396,29 +397,26 @@ const Week = () => {
       />
 
       <h1 className="text-[32px] leading-[38px] mb-1">Insikter</h1>
-      <p className="text-sm text-text-secondary mb-5">Riktning, actions, återhämtning — på en skärm.</p>
+      <p className="text-sm text-text-secondary mb-6">Vad veckan visar — på en skärm.</p>
 
-      <button
-        onClick={() => navigate("/rapport/vecka")}
-        className="w-full card-soft p-4 mb-6 flex items-center gap-3 text-left press-soft animate-fade-in-up"
-      >
-        <div className="w-11 h-11 rounded-2xl bg-blue-calm/15 grid place-items-center shrink-0">
-          <AbstractIcon name="bookmark-soft" size={20} color="hsl(var(--blue-calm))" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="text-[15px] font-extrabold">Klinisk veckorapport</div>
-          <div className="text-xs text-text-secondary">Senaste 7 dagar som PDF — sömn, rörelse, journal, medicin.</div>
-        </div>
-        <ChevronRight size={18} className="text-text-secondary shrink-0" />
-      </button>
+      {/* Mönster — lyft fram det mest mänskliga längst upp */}
+      {insights.length > 0 && (
+        <section className="mb-6 animate-pop-in">
+          <p className="text-[11px] font-extrabold uppercase tracking-wider text-orange-deep mb-2">Vi ser ett mönster</p>
+          <div className="card-quiet">
+            <p className="text-[20px] leading-[26px] font-extrabold mb-2">{insights[0]}</p>
+            {insights.length > 1 && (
+              <p className="text-sm text-text-secondary leading-snug">{insights[1]}</p>
+            )}
+          </div>
+        </section>
+      )}
 
       {!baselineComplete && (
-        <div className="card-cream p-4 mb-6 flex items-center gap-3 animate-pop-in">
-          <Illustration name="baseline" className="w-24 h-auto rounded-xl shrink-0" />
-          <div>
-            <p className="text-sm font-extrabold mb-1">Baslinje byggs</p>
-            <p className="text-xs text-text-secondary">Dag {total} av 14. Vi visar mönster och jämförelser när baslinjen är klar.</p>
-          </div>
+        <div className="card-quiet mb-6 animate-fade-in-up">
+          <p className="text-[11px] font-extrabold uppercase tracking-wider text-blue-calm mb-1">Bygger baslinje</p>
+          <p className="text-base font-extrabold leading-tight">Dag {total} av 14</p>
+          <p className="text-xs text-text-secondary leading-snug mt-1">Vi visar mönster och jämförelser när baslinjen är klar.</p>
         </div>
       )}
 
@@ -536,11 +534,26 @@ const Week = () => {
         </section>
       )}
 
-      {/* === LAGER 3: STRAVA-STYLE ÅTERHÄMTNINGSHISTORIK === */}
+      {/* === LAGER 3: ÅTERHÄMTNINGSHISTORIK — kollapsad som default === */}
       <section className="mb-7">
+        <button
+          onClick={() => setHistoryOpen((o) => !o)}
+          aria-expanded={historyOpen}
+          className="w-full card-quiet flex items-center justify-between gap-3 press-soft"
+        >
+          <div className="text-left">
+            <p className="text-[11px] font-extrabold uppercase tracking-wider text-text-secondary mb-1">Detaljer</p>
+            <p className="text-base font-extrabold">Återhämtningshistorik</p>
+            <p className="text-xs text-text-secondary mt-0.5">Senaste 7 dagar — diagram och dag-för-dag.</p>
+          </div>
+          <ChevronRight size={20} className={`shrink-0 text-text-secondary transition-transform ${historyOpen ? "rotate-90" : ""}`} />
+        </button>
+      </section>
+
+      {historyOpen && (
+      <section className="mb-7 animate-fade-in-up">
         <div className="mb-3">
-          <h2 className="text-xl">Återhämtningshistorik</h2>
-          <p className="text-xs text-text-secondary">Senaste 7 dagar — varje dag berättar något</p>
+          <p className="text-xs text-text-secondary">Varje dag berättar något</p>
         </div>
 
         {/* Filter-pills: styr både diagram och per-dag-listan */}
@@ -804,10 +817,11 @@ const Week = () => {
           })()}
         </div>
       </section>
+      )}
 
-      {/* Måttkort */}
-      {current.length > 0 && (
-        <section className="mb-7">
+      {/* Måttkort — endast inom detaljvyn */}
+      {historyOpen && current.length > 0 && (
+        <section className="mb-7 animate-fade-in-up">
           <h2 className="text-xl mb-1">Jämfört med förra veckan</h2>
           <p className="text-xs text-text-secondary mb-3">Riktning över tid — inte dagsbetyg</p>
           <div className="grid grid-cols-2 gap-3">
@@ -827,17 +841,13 @@ const Week = () => {
         </section>
       )}
 
-      {insights.length > 0 && (
+      {insights.length > 2 && (
         <section className="mb-7">
-          <h2 className="text-xl mb-3 flex items-center gap-2">
-            <Sparkles size={18} className="text-orange-deep" />
-            Mönster vi ser
-          </h2>
+          <h2 className="text-xl mb-3">Fler mönster</h2>
           <div className="space-y-2">
-            {insights.map((s, i) => (
-              <div key={i} className="card-cream p-4 flex gap-3 items-start animate-fade-in-up"
+            {insights.slice(2).map((s, i) => (
+              <div key={i} className="card-quiet animate-fade-in-up"
                 style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}>
-                <AbstractIcon name="blob-smile" size={18} color="hsl(var(--orange-start))" />
                 <p className="text-sm font-semibold leading-snug">{s}</p>
               </div>
             ))}
@@ -907,6 +917,19 @@ const Week = () => {
           )}
         </section>
       )}
+
+      {/* Klinisk veckorapport — lugn länkrad längst ner, inte CTA */}
+      <button
+        onClick={() => navigate("/rapport/vecka")}
+        className="w-full card-quiet flex items-center justify-between gap-3 press-soft mb-2"
+      >
+        <div className="text-left">
+          <p className="text-[11px] font-extrabold uppercase tracking-wider text-blue-calm mb-1">För vården</p>
+          <p className="text-base font-extrabold">Klinisk veckorapport</p>
+          <p className="text-xs text-text-secondary mt-0.5">Senaste 7 dagar som PDF.</p>
+        </div>
+        <ChevronRight size={20} className="shrink-0 text-text-secondary" />
+      </button>
     </AppShell>
   );
 };
