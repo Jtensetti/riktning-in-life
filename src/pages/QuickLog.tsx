@@ -23,10 +23,10 @@ type Template = {
 };
 
 const TEMPLATES: Template[] = [
-  { key: "sleep", title: "Sömn", blurb: "Hur sov du i natt?", tone: "purple", icon: "moon-soft" },
-  { key: "movement", title: "Rörelse", blurb: "Vad gjorde din kropp?", tone: "pink", icon: "bike" },
+  { key: "sleep", title: "Sömn", blurb: "Hur sov du i natt?", tone: "purple", icon: "bed-soft" },
+  { key: "movement", title: "Rörelse", blurb: "Vad gjorde din kropp?", tone: "pink", icon: "walk-figure" },
   { key: "mood", title: "Mående", blurb: "Hur känns det just nu?", tone: "orange", icon: "blob-smile" },
-  { key: "medication", title: "Medicin", blurb: "Tagit dagens dos?", tone: "blue", icon: "heart-pulse" },
+  { key: "medication", title: "Medicin", blurb: "Tagit dagens dos?", tone: "blue", icon: "pill" },
 ];
 
 const toneBg = (t: Tone): string => {
@@ -244,25 +244,24 @@ const QuickLog = () => {
         {TEMPLATES.map((t, i) => {
           const done = todayCoverage.find(c => c.key === t.key)?.done;
           return (
-            <button
+            <ColorCard
               key={t.key}
+              tone={t.tone}
+              icon={t.icon}
+              iconPosition="bottom-right"
+              size="sm"
+              index={i}
               onClick={() => setOpenTpl(t.key)}
-              className={`relative rounded-3xl ${toneBg(t.tone)} p-4 text-left shadow-soft press-soft animate-pop-in min-h-[124px] flex flex-col justify-between overflow-hidden`}
-              style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
-            >
-              {done && (
-                <span className="absolute top-2 right-2 grid place-items-center w-6 h-6 rounded-full bg-white/30">
+              ariaLabel={`Logga ${t.title}`}
+              badge={done ? (
+                <span className="grid place-items-center w-6 h-6 rounded-full bg-white/30">
                   <Check size={14} strokeWidth={3} />
                 </span>
-              )}
-              <div className="w-11 h-11 rounded-full bg-white/25 grid place-items-center">
-                <AbstractIcon name={t.icon} size={24} color="currentColor" />
-              </div>
-              <div>
-                <p className="text-[17px] font-extrabold leading-tight">{t.title}</p>
-                <p className="text-[11px] opacity-90 font-bold">{t.blurb}</p>
-              </div>
-            </button>
+              ) : undefined}
+            >
+              <p className="text-[17px] font-extrabold leading-tight">{t.title}</p>
+              <p className="text-[11px] opacity-90 font-bold">{t.blurb}</p>
+            </ColorCard>
           );
         })}
       </section>
