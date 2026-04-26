@@ -128,9 +128,10 @@ const Week = () => {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const since = isoDaysAgo(20);
+      const since = isoDaysAgo(60); // mer historik för baslinje + logg-konsekvens-insikt
       const since7 = isoDaysAgo(6);
-      const sinceTs = new Date(Date.now() - 7 * 86_400_000).toISOString();
+      const since30 = isoDaysAgo(29);
+      const sinceTs = new Date(Date.now() - 30 * 86_400_000).toISOString();
 
       const [checkinsRes, formsRes, sessRes, actsRes, exRes] = await Promise.all([
         supabase
