@@ -5,10 +5,25 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { useWeather, weatherLabel, type WeatherKind } from "@/lib/weather";
-import { AbstractIcon, weatherIcon, weatherIconColor, weatherIconAccent } from "@/components/AbstractIcon";
+import { AbstractIcon, weatherIcon, weatherIconColor, weatherIconAccent, type IconName } from "@/components/AbstractIcon";
+import { ActivityPicker, type ActivityDraft } from "@/components/ActivityPicker";
+
+const colorBg = (color: string): string => {
+  switch (color) {
+    case "orange": return "bg-orange-start text-white";
+    case "blue": return "bg-blue-calm text-white";
+    case "yellow": return "bg-yellow-journal text-foreground";
+    case "purple": return "bg-purple-sleep text-white";
+    case "pink": return "bg-pink-move text-white";
+    case "green": return "bg-green-recovery text-white";
+    default: return "bg-cream-card text-foreground";
+  }
+};
+
+const moodEmoji = (d: number) => (d >= 2 ? "😊" : d === 1 ? "🙂" : d === 0 ? "😐" : d === -1 ? "🙁" : "😔");
 
 const todayISO = () => new Date().toISOString().split("T")[0];
 
