@@ -434,29 +434,27 @@ const Today = () => {
         />
       )}
 
-      {showSafety && (
-        <div className="rounded-3xl border-2 border-red-risk bg-red-bg p-5 mb-7 animate-pop-in">
-          <div className="mb-3 -mx-1">
-            <Illustration name="safety" className="w-full h-auto rounded-2xl" />
+      {showSafety ? null : <StreakRing counts={streakCounts} className="mb-5" />}
+
+      {/* Kvällsläge: efter kl 20 lyfter vi fram "Stäng dagen mjukt" istället för full check-in. */}
+      {!showSafety && !checkin && (time.partOfDay === "evening" || time.partOfDay === "night") && (
+        <section className="rounded-3xl bg-purple-sleep text-white p-5 mb-6 animate-pop-in shadow-soft">
+          <div className="flex items-start gap-3 mb-3">
+            <div className="shrink-0 w-12 h-12 rounded-2xl bg-white/20 grid place-items-center">
+              <Moon size={22} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-[20px] leading-tight font-extrabold mb-1">Stäng dagen mjukt</h3>
+              <p className="text-sm opacity-90">Tre snabba reglage. Ingen prestation — bara en mjuk avslutning.</p>
+            </div>
           </div>
-          <h3 className="text-lg font-extrabold text-red-risk mb-2">Allvarlig signal</h3>
-          <p className="text-sm text-foreground/80 mb-3">
-            Det här ska inte hanteras som vanlig statistik. Kontakta vården, psykiatrisk akutmottagning, 1177 eller 112 vid akut fara. Kontakta också någon du litar på.
-          </p>
           <Button
-            onClick={() => navigate("/vard")}
-            className="bg-red-risk hover:bg-red-risk/90 text-white rounded-full font-extrabold press-soft mr-2"
+            onClick={() => navigate("/checkin")}
+            className="w-full h-12 rounded-full bg-white text-foreground hover:bg-white/90 font-extrabold press-soft"
           >
-            Gå till Vård
+            Logga kvällen
           </Button>
-          <Button
-            onClick={() => navigate("/krisplan")}
-            variant="secondary"
-            className="rounded-full font-extrabold press-soft mt-2"
-          >
-            Öppna min krisplan
-          </Button>
-        </div>
+        </section>
       )}
 
       {/* State card — compact horizontal layout */}
@@ -483,6 +481,13 @@ const Today = () => {
           {checkin ? "Uppdatera dagen" : "Logga dagen"}
         </Button>
       </section>
+
+      {!showSafety && (
+        <QuickLogPills
+          onOpenPicker={() => setPickerOpen(true)}
+          onLogged={() => setStreakReloadKey((k) => k + 1)}
+        />
+      )}
 
       {!showSafety && picks.length > 0 && (
         <ForYouCarousel picks={picks} />
