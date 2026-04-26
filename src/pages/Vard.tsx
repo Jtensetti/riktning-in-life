@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronLeft, ChevronRight, Plus, Download, Trash2, FileDown } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Download, Trash2, FileDown, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { FORMS, FormType, SIDE_EFFECTS } from "@/lib/forms";
 import jsPDF from "jspdf";
@@ -458,6 +458,7 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
   const [markedJournalCount, setMarkedJournalCount] = useState<number | null>(null);
   const [generating, setGenerating] = useState(false);
   const [report, setReport] = useState<string | null>(null);
+  const [doctorEmail, setDoctorEmail] = useState<string>(() => localStorage.getItem("riktning_doctor_email") || "");
 
   useEffect(() => {
     if (!user) return;
@@ -636,6 +637,32 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
     toast.success("Kopierad");
   };
 
+  const emailToDoctor = () => {
+    if (!report) return;
+    const trimmed = doctorEmail.trim();
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+    if (!emailOk) {
+      toast.error("Skriv in en giltig mejladress först");
+      return;
+    }
+    localStorage.setItem("riktning_doctor_email", trimmed);
+    downloadPdf();
+    const dateStr = new Date().toISOString().split("T")[0];
+    const subject = `Klinisk rapport – ${days} dagar – ${dateStr}`;
+    const body = [
+      "Hej,",
+      "",
+      `Bifogar min rapport från Riktning för perioden ${days} dagar (genererad ${dateStr}).`,
+      includeJournal ? "Rapporten inkluderar mina markerade journalanteckningar." : "Journalanteckningar är inte inkluderade i denna rapport.",
+      "",
+      `PDF-filen "riktning-rapport-${dateStr}.pdf" har just sparats i din nedladdningsmapp – bifoga den innan du skickar.`,
+      "",
+      "Vänliga hälsningar,",
+    ].join("\n");
+    window.location.href = `mailto:${encodeURIComponent(trimmed)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    toast.success("Mejl förberett – bifoga PDF:en som just laddades ned");
+  };
+
   return (
     <AppShell>
       <button onClick={onBack} className="flex items-center gap-1 text-sm font-bold text-text-secondary mb-4">
@@ -679,13 +706,30 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
           <div className="card-soft p-4 mb-4 max-h-[420px] overflow-y-auto">
             <pre className="text-xs leading-relaxed whitespace-pre-wrap font-mono text-foreground">{report}</pre>
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-2 mb-5">
             <Button variant="secondary" onClick={copy} className="rounded-full font-extrabold h-11 text-xs">Kopiera</Button>
             <Button variant="secondary" onClick={downloadText} className="rounded-full font-extrabold h-11 text-xs">
               <Download size={14} /> Text
             </Button>
             <Button onClick={downloadPdf} className="rounded-full bg-blue-calm hover:bg-blue-calm/90 text-white font-extrabold h-11 text-xs">
               <FileDown size={14} /> PDF
+            </Button>
+          </div>
+
+          <div className="card-cream p-4">
+            <label className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-2 block">Skicka till läkare</label>
+            <p className="text-xs text-text-secondary mb-3">PDF:en laddas ned och din mejlklient öppnas med adress, ämne och meddelande förifyllt – dra in PDF:en som bilaga innan du skickar.</p>
+            <Input
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              placeholder="lakare@vardcentral.se"
+              value={doctorEmail}
+              onChange={(e) => setDoctorEmail(e.target.value)}
+              className="h-12 rounded-full border-2 border-border-soft bg-surface mb-3"
+            />
+            <Button onClick={emailToDoctor} className="w-full h-12 rounded-full bg-blue-calm hover:bg-blue-calm/90 text-white font-extrabold">
+              <Mail size={16} className="mr-1" /> Förbered mejl till läkare
             </Button>
           </div>
         </>
