@@ -6,6 +6,7 @@ import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Illustration, colorIll } from "@/components/Illustrations";
 import { AbstractIcon } from "@/components/AbstractIcon";
+import { HeroBanner } from "@/components/HeroBanner";
 import { ChevronRight, Settings as SettingsIcon } from "lucide-react";
 import { isOnboarded } from "@/lib/settings";
 
@@ -214,26 +215,20 @@ const Today = () => {
 
   return (
     <AppShell>
-      {/* Hero banner with floating blob — Headspace-style warm intro */}
-      <div className="-mx-6 -mt-8 mb-6 relative overflow-hidden rounded-b-[36px]"
-           style={{ background: "linear-gradient(180deg, hsl(var(--orange-start)) 0%, hsl(var(--orange-start) / 0.55) 55%, hsl(var(--background)) 100%)" }}>
-        <div className="h-40 relative">
+      <HeroBanner
+        tone="var(--orange-start)"
+        icon="blob-smile"
+        iconColor="hsl(var(--orange-deep))"
+        topLeft={
           <button
             onClick={() => navigate("/installningar")}
-            className="absolute top-4 left-4 z-10 w-10 h-10 grid place-items-center rounded-full bg-surface shadow-card press-soft"
+            className="w-10 h-10 grid place-items-center rounded-full bg-surface shadow-card press-soft"
             aria-label="Inställningar"
           >
             <SettingsIcon size={18} className="text-foreground" strokeWidth={2.4} />
           </button>
-          <div className="absolute left-1/2 -translate-x-1/2 top-6 animate-float">
-            <AbstractIcon name="blob-smile" size={84} color="hsl(var(--orange-deep))" />
-          </div>
-          {/* Decorative arcs */}
-          <svg className="absolute inset-x-0 bottom-0 w-full" viewBox="0 0 400 60" preserveAspectRatio="none" aria-hidden>
-            <path d="M0 60 Q200 0 400 60 Z" fill="hsl(var(--background))" />
-          </svg>
-        </div>
-      </div>
+        }
+      />
 
       <header className="mb-6">
         <h1 className="text-[32px] leading-[38px]">Idag</h1>
