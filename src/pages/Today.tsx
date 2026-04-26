@@ -522,6 +522,358 @@ const Today = () => {
   const showWeatherPermission =
     !weather && !hasAskedWeatherPermission() && !isWeatherPermissionGranted() && !permissionDismissed;
 
+  // -------- Layout-decision (vad ska visas?) --------
+  // Räkna antal dagar med data i recent7 (för baselineProgress / hasInsights).
+  const baselineDays = recent7.filter(
+    (r) => r.mood_heaviness != null || r.anxiety != null || r.sleep_hours != null,
+  ).length;
+  const reportShortcutDue = (() => {
+    // "Lågnivå-due"-heuristik: vi har ≥7 dagar data och inte visar redan ett färskt forecast/eveningPrediction.
+    // Tightare regler (PHQ/GAD-due) kan komma senare när vi har den datan på Today.
+    if (baselineDays < 7) return false;
+    return true;
+  })();
+
+  const layoutCtx: TodayContext = {
+    hasCheckin: !!checkin,
+    partOfDay: time.partOfDay,
+    safetyFlag: showSafety,
+    daysSinceLastSeen: lastSeen.daysSince,
+    baselineDays,
+    baselineReady: baselineDays >= BASELINE_MIN_DAYS,
+    hasInsights,
+    hasPicks: picks.length > 0,
+    hasEveningPrediction: !!eveningPrediction,
+    hasForecast: !!forecast,
+    hasTodayRoutine: !!todayRoutine && todayRoutine.ids.length > 0,
+    hasFeaturedArticle: !!featuredArticle,
+    hasRecentActivity: recent.length > 0,
+    hasWeather: !!weather,
+    showWeatherPermission,
+    reportShortcutDue,
+    activitiesToday,
+  };
+  const decision = decideTodayLayout(layoutCtx);
+
+  // -------- MODULES-map: id → JSX --------
+  // Vi bygger varje block som en funktion så bara de som decision väljer renderas.
+  const quickStarts = quickStartsFor(time.partOfDay);
+
+  const MODULES: Record<ModuleId, () => React.ReactNode> = {
+    weatherPermission: () => (
+      <WeatherPermissionCard
+        key="weatherPermission"
+        onAllow={() => requestLocation()}
+        onDismiss={() => setPermissionDismissed(true)}
+      />
+    ),
+    safety: () => (
+      <div key="safety" className="rounded-3xl border-2 border-red-risk bg-red-bg p-5 mb-7 animate-pop-in">
+        <div className="mb-3 -mx-1">
+          <Illustration name="safety" className="w-full h-auto rounded-2xl" />
+        </div>
+        <h3 className="text-lg font-extrabold text-red-risk mb-2">Allvarlig signal</h3>
+        <p className="text-sm text-foreground/80 mb-3">
+          Det här ska inte hanteras som vanlig statistik. Kontakta vården, psykiatrisk akutmottagning, 1177 eller 112 vid akut fara. Kontakta också någon du litar på.
+        </p>
+        <Button
+          onClick={() => navigate("/vard")}
+          className="bg-red-risk hover:bg-red-risk/90 text-white rounded-full font-extrabold press-soft mr-2"
+        >
+          Gå till Vård
+        </Button>
+        <Button
+          onClick={() => navigate("/krisplan")}
+          variant="secondary"
+          className="rounded-full font-extrabold press-soft mt-2"
+        >
+          Öppna min krisplan
+        </Button>
+      </div>
+    ),
+    returneeNote: () => (
+      <div key="returneeNote" className="card-cream p-4 mb-5 flex items-start gap-3 animate-fade-in-up">
+        <div className="shrink-0 w-10 h-10 rounded-2xl bg-orange-start/15 grid place-items-center">
+          <AbstractIcon name="blob-smile" size={20} color="hsl(var(--orange-deep))" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[15px] font-extrabold leading-snug">Välkommen tillbaka</p>
+          <p className="text-xs text-text-secondary leading-snug mt-0.5">
+            Vi börjar mjukt. En liten logg räcker för idag.
+          </p>
+        </div>
+      </div>
+    ),
+    streak: () => <StreakRing key="streak" counts={streakCounts} className="mb-5" />,
+    eveningWindDown: () => (
+      <section key="eveningWindDown" className="rounded-3xl bg-purple-sleep text-white p-5 mb-6 animate-pop-in shadow-soft">
+        <div className="flex items-start gap-3 mb-3">
+          <div className="shrink-0 w-12 h-12 rounded-2xl bg-white/20 grid place-items-center">
+            <Moon size={22} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-[20px] leading-tight font-extrabold mb-1">Stäng dagen mjukt</h3>
+            <p className="text-sm opacity-90">Tre snabba reglage. Ingen prestation — bara en mjuk avslutning.</p>
+          </div>
+        </div>
+        <Button
+          onClick={() => navigate("/checkin")}
+          className="w-full h-12 rounded-full bg-white text-foreground hover:bg-white/90 font-extrabold press-soft"
+        >
+          Logga kvällen
+        </Button>
+        {activitiesToday === 0 && (
+          <button
+            onClick={saveEveningGoal}
+            disabled={savingEveningGoal}
+            className={`mt-2 w-full h-12 rounded-full bg-white/15 hover:bg-white/25 text-white font-extrabold press-soft inline-flex items-center justify-center gap-2 transition-colors ${savingEveningGoal ? "opacity-60" : ""}`}
+          >
+            <Moon size={16} />
+            {savingEveningGoal ? "Sparar…" : "Spara kvällsmål (10 min mjuk stund)"}
+          </button>
+        )}
+        {activitiesToday > 0 && (
+          <p className="mt-3 text-xs font-bold opacity-80 text-center">
+            ✓ Du har redan loggat {activitiesToday} {activitiesToday === 1 ? "sak" : "saker"} idag.
+          </p>
+        )}
+      </section>
+    ),
+    state: () => (
+      <section key="state" className="card-cream p-5 mb-7 animate-pop-in">
+        <div className="flex items-start gap-3 mb-4">
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] font-extrabold uppercase tracking-wider text-text-secondary mb-1">{phrases.whisper}</p>
+            <h2 className="text-2xl mb-1">{state.title}</h2>
+            <p className="text-sm text-text-secondary">{state.sub}</p>
+          </div>
+          <div className="shrink-0 -mr-1 -mt-1">
+            <AbstractIcon name="blob-smile" size={68} color="hsl(var(--orange-start))" />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2 mb-5">
+          <Pill label="Belastning" value={burdenLabel(checkin)} />
+          <Pill label="Funktion" value={fnLabel(checkin)} />
+          <Pill label="Återhämtning" value={recoveryLabel(checkin)} />
+          <Pill label="Risk" value={riskLabel(checkin)} accent={!!checkin?.safety_status && checkin.safety_status !== "none"} />
+        </div>
+        <Button
+          onClick={() => navigate("/checkin")}
+          className="w-full h-12 rounded-full bg-foreground hover:bg-foreground/90 text-background font-extrabold text-[17px] press-soft"
+        >
+          {checkin ? phrases.ctaUpdate : phrases.ctaLog}
+        </Button>
+      </section>
+    ),
+    quickStarts: () => (
+      <div key="quickStarts" className="mb-7 animate-fade-in-up">
+        <p className="text-xs font-extrabold uppercase tracking-wider text-text-secondary mb-2 px-1">
+          Välj en liten start
+        </p>
+        <div className="flex gap-2 flex-wrap">
+          {quickStarts.map((q) => (
+            <Chip key={q.label} onClick={() => navigate(q.to)}>{q.label}</Chip>
+          ))}
+        </div>
+      </div>
+    ),
+    baselineProgress: () => (
+      <div key="baselineProgress" className="card-cream p-3 mb-5 flex items-center gap-3 animate-fade-in-up">
+        <div className="shrink-0 w-9 h-9 rounded-2xl bg-blue-calm/15 grid place-items-center">
+          <AbstractIcon name="bookmark-soft" size={16} color="hsl(var(--blue-calm))" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] font-extrabold leading-tight">Baslinje byggs · dag {baselineDays} av {BASELINE_MIN_DAYS}</p>
+          <p className="text-[11px] text-text-secondary leading-snug">Vi visar riktning när baslinjen finns.</p>
+        </div>
+      </div>
+    ),
+    quickLog: () => (
+      <QuickLogPills
+        key="quickLog"
+        onOpenPicker={() => setPickerOpen(true)}
+        onLogged={() => setStreakReloadKey((k) => k + 1)}
+      />
+    ),
+    primary: () => rec ? (
+      <div key="primary">
+        <h3 className="text-xl mb-3">Rekommenderat just nu</h3>
+        <div className={`rounded-3xl ${rec.color} text-white p-1 mb-4 shadow-soft overflow-hidden`}>
+          <div className="rounded-[20px] overflow-hidden mb-1">
+            <Illustration name={colorIll(colorOf(rec.color))} className="w-full h-auto" />
+          </div>
+          <div className="px-4 pb-4 pt-1">
+            <h4 className="text-2xl mb-1">{rec.title}</h4>
+            <p className="text-sm opacity-90 mb-4">{rec.reason}</p>
+            <Button
+              onClick={() => navigate("/ovningar")}
+              className="bg-white/20 hover:bg-white/30 text-white rounded-full font-extrabold backdrop-blur"
+            >
+              Starta <ChevronRight size={18} />
+            </Button>
+          </div>
+        </div>
+        <div className="flex gap-2 flex-wrap mb-7">
+          <Chip onClick={() => navigate("/ovningar")}>Andning 4 min</Chip>
+          <Chip onClick={() => navigate("/journal")}>Skriv tre rader</Chip>
+          <Chip onClick={() => navigate("/ovningar")}>Dagsljus 15 min</Chip>
+        </div>
+      </div>
+    ) : null,
+    forYou: () => <ForYouCarousel key="forYou" picks={picks} />,
+    eveningPrediction: () => eveningPrediction ? <EveningPredictionCard key="eveningPrediction" prediction={eveningPrediction} /> : null,
+    forecast: () => forecast ? (
+      <div key="forecast">
+        <TomorrowForecastCard forecast={forecast} exercises={library} />
+        <ForecastEvidenceStrip forecast={forecast} rows={recent7} thresholds={thresholds} />
+      </div>
+    ) : null,
+    todayRoutine: () => todayRoutine && todayRoutine.ids.length > 0 ? (
+      <section key="todayRoutine" className="mb-7 animate-pop-in">
+        <h3 className="text-xl mb-1">Dagens rutin</h3>
+        <p className="text-sm text-text-secondary mb-3">Tre små steg som hänger ihop</p>
+        <button
+          onClick={() => navigate(`/ovningar/${todayRoutine.ids[0]}?seq=${todayRoutine.slug}`)}
+          className={`w-full ${colorBg(todayRoutine.color)} ${todayRoutine.color === "yellow" ? "text-foreground" : "text-white"} rounded-3xl p-5 text-left shadow-soft press-soft flex items-center gap-3`}
+        >
+          <div className={`shrink-0 w-12 h-12 grid place-items-center rounded-2xl ${todayRoutine.color === "yellow" ? "bg-foreground/10" : "bg-white/20"}`}>
+            <AbstractIcon name="play-soft-circle" size={22} color="currentColor" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="text-[18px] leading-tight font-extrabold mb-0.5">{todayRoutine.title}</h4>
+            <p className="text-xs opacity-90">{todayRoutine.description}</p>
+          </div>
+          <ChevronRight size={20} className="shrink-0" />
+        </button>
+      </section>
+    ) : null,
+    reportShortcut: () => (
+      <button
+        key="reportShortcut"
+        onClick={() => navigate("/rapport/vecka")}
+        className="w-full card-soft p-4 mb-6 flex items-center gap-3 text-left press-soft animate-fade-in-up"
+      >
+        <div className="w-11 h-11 rounded-2xl bg-blue-calm/15 grid place-items-center shrink-0">
+          <AbstractIcon name="bookmark-soft" size={20} color="hsl(var(--blue-calm))" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-[15px] font-extrabold">Skapa klinisk veckorapport</div>
+          <div className="text-xs text-text-secondary">Senaste 7 dagar som PDF — sömn, rörelse, journal, medicin + plats för läkarens anteckningar.</div>
+        </div>
+        <ChevronRight size={18} className="text-text-secondary shrink-0" />
+      </button>
+    ),
+    learn: () => featuredArticle ? (
+      <section key="learn" className="mb-7 animate-fade-in-up">
+        <div className="flex items-baseline justify-between mb-3">
+          <h3 className="text-xl">Lär dig något nytt</h3>
+          <button
+            onClick={() => navigate("/lar-dig")}
+            className="text-xs font-extrabold text-orange-deep press-soft"
+          >
+            Se alla
+          </button>
+        </div>
+        <button
+          onClick={() => navigate(`/lar-dig/${featuredArticle.slug}`)}
+          className="w-full card-cream p-4 text-left flex items-start gap-3 press-soft"
+        >
+          <div className={`shrink-0 w-12 h-12 grid place-items-center rounded-2xl ${colorBg(featuredArticle.color)} ${featuredArticle.color === "yellow" ? "text-foreground" : "text-white"}`}>
+            <AbstractIcon name="book-open" size={22} color="currentColor" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] font-extrabold uppercase tracking-wider text-text-secondary mb-0.5">
+              {featuredArticle.read_minutes} min läsning
+            </p>
+            <h4 className="text-[16px] leading-tight font-extrabold mb-1">{featuredArticle.title}</h4>
+            <p className="text-xs text-text-secondary leading-snug line-clamp-2">{featuredArticle.excerpt}</p>
+          </div>
+        </button>
+      </section>
+    ) : null,
+    weekDirection: () => (
+      <section key="weekDirection" className="mb-7">
+        <h3 className="text-xl mb-1">Veckans riktning</h3>
+        <p className="text-sm text-text-secondary mb-3">Senaste 7 dagarna · {daysWithAnyData} dagar loggade</p>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="animate-pop-in" style={{ animationDelay: "var(--stagger-0)" }}>
+            <InsightCard label="Humör" value={moodTrend.value} suffix="/10" invert trend={moodTrend.trend} colorClass="bg-orange-start" spark={moodSpark} sparkTone="orange" />
+          </div>
+          <div className="animate-pop-in" style={{ animationDelay: "var(--stagger-1)" }}>
+            <InsightCard label="Sömn" value={sleepTrend.value} suffix=" h" decimals={1} trend={sleepTrend.trend} colorClass="bg-purple-sleep" spark={sleepSpark} sparkTone="purple" />
+          </div>
+          <div className="animate-pop-in" style={{ animationDelay: "var(--stagger-2)" }}>
+            <InsightCard label="Funktion" value={funcTrend.value} suffix="/10" trend={funcTrend.trend} colorClass="bg-green-recovery" spark={funcSpark} sparkTone="green" />
+          </div>
+        </div>
+      </section>
+    ),
+    latestActivity: () => (
+      <section key="latestActivity" className="mb-4">
+        <h3 className="text-xl mb-3">Senaste aktivitet</h3>
+        <ul className="relative pl-5 space-y-2">
+          <span className="absolute left-1.5 top-2 bottom-2 w-px border-l-2 border-dashed border-[#D7D0C9]" aria-hidden />
+          {recent.map((s, i) => {
+            const ex = s.exercises;
+            if (!ex) return null;
+            const blobColor = (() => {
+              switch (ex.color) {
+                case "orange": return "hsl(var(--orange-start))";
+                case "blue": return "hsl(var(--blue-calm))";
+                case "yellow": return "hsl(var(--yellow-journal))";
+                case "pink": return "hsl(var(--pink-move))";
+                case "green": return "hsl(var(--green-recovery))";
+                default: return "hsl(var(--orange-start))";
+              }
+            })();
+            const dateStr = new Date(s.created_at).toLocaleDateString("sv-SE", { day: "numeric", month: "short" });
+            const deltas: { letter: string; delta: number; tone: "good" | "warn" }[] = [];
+            const pushDelta = (letter: string, before: number | null, after: number | null, goodWhenLower: boolean) => {
+              if (before == null || after == null) return;
+              const d = after - before;
+              if (d === 0) return;
+              const improved = goodWhenLower ? d < 0 : d > 0;
+              deltas.push({ letter, delta: d, tone: improved ? "good" : "warn" });
+            };
+            pushDelta("M", s.mood_before, s.mood_after, true);
+            pushDelta("Å", s.anxiety_before, s.anxiety_after, true);
+            pushDelta("E", s.energy_before, s.energy_after, false);
+            return (
+              <li key={s.id} className="relative animate-fade-in-up" style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}>
+                <span className="absolute -left-[22px] top-1/2 -translate-y-1/2" aria-hidden>
+                  <AbstractIcon name="blob-smile" size={18} color={blobColor} />
+                </span>
+                <button
+                  onClick={() => navigate("/ovningar")}
+                  className="w-full text-left rounded-2xl bg-surface border border-border-soft py-2.5 px-3 flex items-center gap-2 shadow-card press-soft"
+                >
+                  <span className="text-[11px] font-extrabold text-text-secondary tabular-nums shrink-0 w-12">{dateStr}</span>
+                  <span className="text-sm font-extrabold truncate flex-1 min-w-0">{ex.title}</span>
+                  {deltas.length > 0 && (
+                    <span className="flex items-center gap-1 shrink-0">
+                      {deltas.map(d => (
+                        <span
+                          key={d.letter}
+                          className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full tabular-nums ${
+                            d.tone === "good" ? "bg-green-recovery/15 text-green-recovery" : "bg-red-bg text-red-risk"
+                          }`}
+                          title={`${d.letter}: ${d.delta > 0 ? "+" : ""}${d.delta}`}
+                        >
+                          {d.letter}{d.delta > 0 ? "+" : ""}{d.delta}
+                        </span>
+                      ))}
+                    </span>
+                  )}
+                  <ChevronRight size={16} className="text-text-secondary shrink-0" />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+    ),
+  };
+
   return (
     <AppShell>
       <HeroBanner
@@ -552,326 +904,10 @@ const Today = () => {
         )}
       </header>
 
-      {showWeatherPermission && (
-        <WeatherPermissionCard
-          onAllow={() => requestLocation()}
-          onDismiss={() => setPermissionDismissed(true)}
-        />
-      )}
-
-      {showSafety && (
-        <div className="rounded-3xl border-2 border-red-risk bg-red-bg p-5 mb-7 animate-pop-in">
-          <div className="mb-3 -mx-1">
-            <Illustration name="safety" className="w-full h-auto rounded-2xl" />
-          </div>
-          <h3 className="text-lg font-extrabold text-red-risk mb-2">Allvarlig signal</h3>
-          <p className="text-sm text-foreground/80 mb-3">
-            Det här ska inte hanteras som vanlig statistik. Kontakta vården, psykiatrisk akutmottagning, 1177 eller 112 vid akut fara. Kontakta också någon du litar på.
-          </p>
-          <Button
-            onClick={() => navigate("/vard")}
-            className="bg-red-risk hover:bg-red-risk/90 text-white rounded-full font-extrabold press-soft mr-2"
-          >
-            Gå till Vård
-          </Button>
-          <Button
-            onClick={() => navigate("/krisplan")}
-            variant="secondary"
-            className="rounded-full font-extrabold press-soft mt-2"
-          >
-            Öppna min krisplan
-          </Button>
-        </div>
-      )}
-
-      {!showSafety && <StreakRing counts={streakCounts} className="mb-5" />}
-
-      {/* Kvällsläge: efter kl 20 lyfter vi fram "Stäng dagen mjukt" istället för full check-in. */}
-      {!showSafety && !checkin && (time.partOfDay === "evening" || time.partOfDay === "night") && (
-        <section className="rounded-3xl bg-purple-sleep text-white p-5 mb-6 animate-pop-in shadow-soft">
-          <div className="flex items-start gap-3 mb-3">
-            <div className="shrink-0 w-12 h-12 rounded-2xl bg-white/20 grid place-items-center">
-              <Moon size={22} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-[20px] leading-tight font-extrabold mb-1">Stäng dagen mjukt</h3>
-              <p className="text-sm opacity-90">Tre snabba reglage. Ingen prestation — bara en mjuk avslutning.</p>
-            </div>
-          </div>
-          <Button
-            onClick={() => navigate("/checkin")}
-            className="w-full h-12 rounded-full bg-white text-foreground hover:bg-white/90 font-extrabold press-soft"
-          >
-            Logga kvällen
-          </Button>
-          {activitiesToday === 0 && (
-            <button
-              onClick={saveEveningGoal}
-              disabled={savingEveningGoal}
-              className={`mt-2 w-full h-12 rounded-full bg-white/15 hover:bg-white/25 text-white font-extrabold press-soft inline-flex items-center justify-center gap-2 transition-colors ${savingEveningGoal ? "opacity-60" : ""}`}
-            >
-              <Moon size={16} />
-              {savingEveningGoal ? "Sparar…" : "Spara kvällsmål (10 min mjuk stund)"}
-            </button>
-          )}
-          {activitiesToday > 0 && (
-            <p className="mt-3 text-xs font-bold opacity-80 text-center">
-              ✓ Du har redan loggat {activitiesToday} {activitiesToday === 1 ? "sak" : "saker"} idag.
-            </p>
-          )}
-        </section>
-      )}
-
-      {/* State card — compact horizontal layout */}
-      <section className="card-cream p-5 mb-7 animate-pop-in">
-        <div className="flex items-start gap-3 mb-4">
-          <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-extrabold uppercase tracking-wider text-text-secondary mb-1">{phrases.whisper}</p>
-            <h2 className="text-2xl mb-1">{state.title}</h2>
-            <p className="text-sm text-text-secondary">{state.sub}</p>
-          </div>
-          <div className="shrink-0 -mr-1 -mt-1">
-            <AbstractIcon name="blob-smile" size={68} color="hsl(var(--orange-start))" />
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-2 mb-5">
-          <Pill label="Belastning" value={burdenLabel(checkin)} />
-          <Pill label="Funktion" value={fnLabel(checkin)} />
-          <Pill label="Återhämtning" value={recoveryLabel(checkin)} />
-          <Pill label="Risk" value={riskLabel(checkin)} accent={!!checkin?.safety_status && checkin.safety_status !== "none"} />
-        </div>
-        <Button
-          onClick={() => navigate("/checkin")}
-          className="w-full h-12 rounded-full bg-foreground hover:bg-foreground/90 text-background font-extrabold text-[17px] press-soft"
-        >
-          {checkin ? phrases.ctaUpdate : phrases.ctaLog}
-        </Button>
-      </section>
-
-      {!showSafety && (
-        <QuickLogPills
-          onOpenPicker={() => setPickerOpen(true)}
-          onLogged={() => setStreakReloadKey((k) => k + 1)}
-        />
-      )}
-
-      {!showSafety && picks.length > 0 && (
-        <ForYouCarousel picks={picks} />
-      )}
-
-      {eveningPrediction && <EveningPredictionCard prediction={eveningPrediction} />}
-
-      {forecast && (
-        <>
-          <TomorrowForecastCard forecast={forecast} exercises={library} />
-          <ForecastEvidenceStrip forecast={forecast} rows={recent7} thresholds={thresholds} />
-        </>
-      )}
-
-      {!showSafety && (
-        <button
-          onClick={() => navigate("/rapport/vecka")}
-          className="w-full card-soft p-4 mb-6 flex items-center gap-3 text-left press-soft animate-fade-in-up"
-        >
-          <div className="w-11 h-11 rounded-2xl bg-blue-calm/15 grid place-items-center shrink-0">
-            <AbstractIcon name="bookmark-soft" size={20} color="hsl(var(--blue-calm))" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-[15px] font-extrabold">Skapa klinisk veckorapport</div>
-            <div className="text-xs text-text-secondary">Senaste 7 dagar som PDF — sömn, rörelse, journal, medicin + plats för läkarens anteckningar.</div>
-          </div>
-          <ChevronRight size={18} className="text-text-secondary shrink-0" />
-        </button>
-      )}
-
-
-      {rec && (
-        <>
-          <h3 className="text-xl mb-3">Rekommenderat just nu</h3>
-          <div className={`rounded-3xl ${rec.color} text-white p-1 mb-4 shadow-soft overflow-hidden`}>
-            <div className="rounded-[20px] overflow-hidden mb-1">
-              <Illustration name={colorIll(colorOf(rec.color))} className="w-full h-auto" />
-            </div>
-            <div className="px-4 pb-4 pt-1">
-              <h4 className="text-2xl mb-1">{rec.title}</h4>
-              <p className="text-sm opacity-90 mb-4">{rec.reason}</p>
-              <Button
-                onClick={() => navigate("/ovningar")}
-                className="bg-white/20 hover:bg-white/30 text-white rounded-full font-extrabold backdrop-blur"
-              >
-                Starta <ChevronRight size={18} />
-              </Button>
-            </div>
-          </div>
-
-          <div className="flex gap-2 flex-wrap mb-7">
-            <Chip onClick={() => navigate("/ovningar")}>Andning 4 min</Chip>
-            <Chip onClick={() => navigate("/journal")}>Skriv tre rader</Chip>
-            <Chip onClick={() => navigate("/ovningar")}>Dagsljus 15 min</Chip>
-          </div>
-        </>
-      )}
-
-      {!showSafety && todayRoutine && todayRoutine.ids.length > 0 && (
-        <section className="mb-7 animate-pop-in">
-          <h3 className="text-xl mb-1">Dagens rutin</h3>
-          <p className="text-sm text-text-secondary mb-3">Tre små steg som hänger ihop</p>
-          <button
-            onClick={() => navigate(`/ovningar/${todayRoutine.ids[0]}?seq=${todayRoutine.slug}`)}
-            className={`w-full ${colorBg(todayRoutine.color)} ${todayRoutine.color === "yellow" ? "text-foreground" : "text-white"} rounded-3xl p-5 text-left shadow-soft press-soft flex items-center gap-3`}
-          >
-            <div className={`shrink-0 w-12 h-12 grid place-items-center rounded-2xl ${todayRoutine.color === "yellow" ? "bg-foreground/10" : "bg-white/20"}`}>
-              <AbstractIcon name="play-soft-circle" size={22} color="currentColor" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h4 className="text-[18px] leading-tight font-extrabold mb-0.5">{todayRoutine.title}</h4>
-              <p className="text-xs opacity-90">{todayRoutine.description}</p>
-            </div>
-            <ChevronRight size={20} className="shrink-0" />
-          </button>
-        </section>
-      )}
-
-      {!showSafety && featuredArticle && (
-        <section className="mb-7 animate-fade-in-up">
-          <div className="flex items-baseline justify-between mb-3">
-            <h3 className="text-xl">Lär dig något nytt</h3>
-            <button
-              onClick={() => navigate("/lar-dig")}
-              className="text-xs font-extrabold text-orange-deep press-soft"
-            >
-              Se alla
-            </button>
-          </div>
-          <button
-            onClick={() => navigate(`/lar-dig/${featuredArticle.slug}`)}
-            className="w-full card-cream p-4 text-left flex items-start gap-3 press-soft"
-          >
-            <div className={`shrink-0 w-12 h-12 grid place-items-center rounded-2xl ${colorBg(featuredArticle.color)} ${featuredArticle.color === "yellow" ? "text-foreground" : "text-white"}`}>
-              <AbstractIcon name="book-open" size={22} color="currentColor" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-extrabold uppercase tracking-wider text-text-secondary mb-0.5">
-                {featuredArticle.read_minutes} min läsning
-              </p>
-              <h4 className="text-[16px] leading-tight font-extrabold mb-1">{featuredArticle.title}</h4>
-              <p className="text-xs text-text-secondary leading-snug line-clamp-2">{featuredArticle.excerpt}</p>
-            </div>
-          </button>
-        </section>
-      )}
-
-      {hasInsights && !showSafety && (
-        <section className="mb-7">
-          <h3 className="text-xl mb-1">Veckans riktning</h3>
-          <p className="text-sm text-text-secondary mb-3">Senaste 7 dagarna · {daysWithAnyData} dagar loggade</p>
-          <div className="grid grid-cols-3 gap-3">
-            <div className="animate-pop-in" style={{ animationDelay: "var(--stagger-0)" }}>
-              <InsightCard
-                label="Humör"
-                value={moodTrend.value}
-                suffix="/10"
-                invert
-                trend={moodTrend.trend}
-                colorClass="bg-orange-start"
-                spark={moodSpark}
-                sparkTone="orange"
-              />
-            </div>
-            <div className="animate-pop-in" style={{ animationDelay: "var(--stagger-1)" }}>
-              <InsightCard
-                label="Sömn"
-                value={sleepTrend.value}
-                suffix=" h"
-                decimals={1}
-                trend={sleepTrend.trend}
-                colorClass="bg-purple-sleep"
-                spark={sleepSpark}
-                sparkTone="purple"
-              />
-            </div>
-            <div className="animate-pop-in" style={{ animationDelay: "var(--stagger-2)" }}>
-              <InsightCard
-                label="Funktion"
-                value={funcTrend.value}
-                suffix="/10"
-                trend={funcTrend.trend}
-                colorClass="bg-green-recovery"
-                spark={funcSpark}
-                sparkTone="green"
-              />
-            </div>
-          </div>
-        </section>
-      )}
-
-      {recent.length > 0 && (
-        <section className="mb-4">
-          <h3 className="text-xl mb-3">Senaste aktivitet</h3>
-          <ul className="relative pl-5 space-y-2">
-            <span className="absolute left-1.5 top-2 bottom-2 w-px border-l-2 border-dashed border-[#D7D0C9]" aria-hidden />
-            {recent.map((s, i) => {
-              const ex = s.exercises;
-              if (!ex) return null;
-              const dot = colorBg(ex.color);
-              const blobColor = (() => {
-                switch (ex.color) {
-                  case "orange": return "hsl(var(--orange-start))";
-                  case "blue": return "hsl(var(--blue-calm))";
-                  case "yellow": return "hsl(var(--yellow-journal))";
-                  case "purple": return "hsl(var(--purple-sleep))";
-                  case "pink": return "hsl(var(--pink-move))";
-                  case "green": return "hsl(var(--green-recovery))";
-                  default: return "hsl(var(--orange-start))";
-                }
-              })();
-              const dateStr = new Date(s.created_at).toLocaleDateString("sv-SE", { day: "numeric", month: "short" });
-              const deltas: { letter: string; delta: number; tone: "good" | "warn" }[] = [];
-              const pushDelta = (letter: string, before: number | null, after: number | null, goodWhenLower: boolean) => {
-                if (before == null || after == null) return;
-                const d = after - before;
-                if (d === 0) return;
-                const improved = goodWhenLower ? d < 0 : d > 0;
-                deltas.push({ letter, delta: d, tone: improved ? "good" : "warn" });
-              };
-              pushDelta("M", s.mood_before, s.mood_after, true);
-              pushDelta("Å", s.anxiety_before, s.anxiety_after, true);
-              pushDelta("E", s.energy_before, s.energy_after, false);
-
-              return (
-                <li key={s.id} className="relative animate-fade-in-up" style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}>
-                  <span className="absolute -left-[22px] top-1/2 -translate-y-1/2" aria-hidden>
-                    <AbstractIcon name="blob-smile" size={18} color={blobColor} />
-                  </span>
-                  <button
-                    onClick={() => navigate("/ovningar")}
-                    className="w-full text-left rounded-2xl bg-surface border border-border-soft py-2.5 px-3 flex items-center gap-2 shadow-card press-soft"
-                  >
-                    <span className="text-[11px] font-extrabold text-text-secondary tabular-nums shrink-0 w-12">{dateStr}</span>
-                    <span className="text-sm font-extrabold truncate flex-1 min-w-0">{ex.title}</span>
-                    {deltas.length > 0 && (
-                      <span className="flex items-center gap-1 shrink-0">
-                        {deltas.map(d => (
-                          <span
-                            key={d.letter}
-                            className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full tabular-nums ${
-                              d.tone === "good" ? "bg-green-recovery/15 text-green-recovery" : "bg-red-bg text-red-risk"
-                            }`}
-                            title={`${d.letter}: ${d.delta > 0 ? "+" : ""}${d.delta}`}
-                          >
-                            {d.letter}{d.delta > 0 ? "+" : ""}{d.delta}
-                          </span>
-                        ))}
-                      </span>
-                    )}
-                    <ChevronRight size={16} className="text-text-secondary shrink-0" />
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
+      {decision.modules.map((id) => {
+        const node = MODULES[id]?.();
+        return node ?? null;
+      })}
 
       {!showSafety && <QuickLogFab onClick={() => setPickerOpen(true)} />}
       <ActivityPicker open={pickerOpen} onOpenChange={setPickerOpen} onAdd={handleQuickAdd} />
