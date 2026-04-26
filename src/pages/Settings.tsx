@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { AbstractIcon, weatherIcon, weatherIconColor } from "@/components/AbstractIcon";
-import { HeroBanner } from "@/components/HeroBanner";
+import { ScreenHeader } from "@/components/ui-kit/ScreenHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -88,19 +88,19 @@ const Settings = () => {
 
   return (
     <AppShell>
-      <HeroBanner
-        tone="var(--cream-card)"
-        icon="blob-smile"
-        iconColor="hsl(var(--orange-start))"
+      <ScreenHeader
+        screen="more"
+        title="Inställningar"
+        subtitle="Konto, påminnelser och din data."
+        topLeft={
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-1 text-sm font-bold text-foreground/80 press-soft"
+          >
+            <ChevronLeft size={18} /> Tillbaka
+          </button>
+        }
       />
-
-      <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm font-bold text-text-secondary mb-4 press-soft">
-        <ChevronLeft size={18} /> Tillbaka
-      </button>
-      <header className="mb-6">
-        <h1 className="text-[32px] leading-[38px] mb-1">Inställningar</h1>
-        <p className="text-sm text-text-secondary">Konto, påminnelser och din data.</p>
-      </header>
 
       <section className="mb-7">
         <h2 className="text-lg font-extrabold mb-3">Konto</h2>
