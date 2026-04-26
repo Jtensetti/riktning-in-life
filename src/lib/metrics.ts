@@ -205,5 +205,50 @@ export const generateInsights = (cs: Checkin[], history?: Checkin[]): string[] =
     if (f2 - f1 >= 1) insights.push("Säng/sofftid över 120 min sammanfaller med lägre funktion.");
   }
 
+
+  // 4. Logg-konsekvens × Riktning — meta-insikt över flera veckor.
+  // Korrelera antal loggade dagar/vecka med veckans riktning. r > 0.3 → mjuk insikt.
+  if (history && history.length >= 14) {
+    const buckets = new Map<string, Checkin[]>();
+    for (const c of history) {
+      const d = new Date(c.date);
+      // ISO veckonyckel: år + veckonummer (måndag-start, enkelt approx).
+      const tmp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+      const dayNum = (tmp.getUTCDay() + 6) % 7;
+      tmp.setUTCDate(tmp.getUTCDate() - dayNum + 3);
+      const firstThursday = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 4));
+      const week = 1 + Math.round(((tmp.getTime() - firstThursday.getTime()) / 86400000 - 3 + ((firstThursday.getUTCDay() + 6) % 7)) / 7);
+      const key = `${tmp.getUTCFullYear()}-${week}`;
+      const arr = buckets.get(key) ?? [];
+      arr.push(c);
+      buckets.set(key, arr);
+    }
+    const points: { logged: number; direction: number }[] = [];
+    for (const arr of buckets.values()) {
+      if (arr.length < 2) continue;
+      const moodAvg = arr.map((x) => x.mood_heaviness).filter((v): v is number => v != null);
+      if (moodAvg.length === 0) continue;
+      const meanMood = moodAvg.reduce((s, x) => s + x, 0) / moodAvg.length;
+      // Direction proxy: 100 − (mood*10), 0–100.
+      points.push({ logged: arr.length, direction: Math.max(0, 100 - meanMood * 10) });
+    }
+    if (points.length >= 4) {
+      const n = points.length;
+      const mx = points.reduce((s, p) => s + p.logged, 0) / n;
+      const my = points.reduce((s, p) => s + p.direction, 0) / n;
+      let num = 0, dx2 = 0, dy2 = 0;
+      for (const p of points) {
+        const dx = p.logged - mx;
+        const dy = p.direction - my;
+        num += dx * dy;
+        dx2 += dx * dx;
+        dy2 += dy * dy;
+      }
+      const r = dx2 > 0 && dy2 > 0 ? num / Math.sqrt(dx2 * dy2) : 0;
+      if (r >= 0.3) insights.push("Veckor då du loggar ofta tenderar att kännas lättare.");
+    }
+  }
+
   return insights;
 };
+
