@@ -229,6 +229,9 @@ const Today = () => {
   const [time, setTime] = useState<TimeContext>(() => getTimeContext());
   const { weather, status: weatherStatus, requestLocation } = useWeather(true);
   const [permissionDismissed, setPermissionDismissed] = useState(false);
+  const [streakCounts, setStreakCounts] = useState<StreakCounts>({ checkin: 0, activity: 0, session: 0 });
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [streakReloadKey, setStreakReloadKey] = useState(0);
 
   // Refresh time context every minute so partOfDay stays accurate without reload.
   useEffect(() => {
