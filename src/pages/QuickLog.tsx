@@ -161,7 +161,7 @@ const QuickLog = () => {
           title: name,
           detail: `${status}${dose ? " · " + dose : ""}`,
           tone: "blue",
-          icon: "heart-pulse",
+          icon: "pill",
         });
       }
 
