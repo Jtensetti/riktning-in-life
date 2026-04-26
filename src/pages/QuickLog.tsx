@@ -76,6 +76,7 @@ const QuickLog = () => {
   const [reloadKey, setReloadKey] = useState(0);
   const [moodEdit, setMoodEdit] = useState<MoodEdit | null>(null);
   const [savingMoodEdit, setSavingMoodEdit] = useState(false);
+  const [moodEditSaved, setMoodEditSaved] = useState<MoodEdit | null>(null);
 
   useEffect(() => { if (!loading && !user) navigate("/auth"); }, [user, loading, navigate]);
 
