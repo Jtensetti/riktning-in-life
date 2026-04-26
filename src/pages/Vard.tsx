@@ -313,7 +313,7 @@ const MedicationsView = ({ meds, onBack, onChanged, onLogFor }: { meds: Med[]; o
 
       {meds.length === 0 ? (
         <div className="card-cream p-6 text-center">
-          <PillIcon size={28} className="mx-auto mb-2 text-text-secondary" />
+          <div className="grid place-items-center mx-auto mb-2"><AbstractIcon name="heart-pulse" size={28} color="hsl(var(--text-secondary))" /></div>
           <p className="text-sm text-text-secondary">Inga läkemedel tillagda.</p>
         </div>
       ) : (
