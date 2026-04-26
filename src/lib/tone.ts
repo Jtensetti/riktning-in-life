@@ -55,19 +55,19 @@ export const phrasebookFor = (tone: Tone): Phrasebook => {
   switch (tone) {
     case "tender":
       return {
-        ctaLog: "Bara en mjuk check-in",
-        ctaUpdate: "Mjuk uppdatering",
+        ctaLog: "Hur har du det? — mjukt",
+        ctaUpdate: "Uppdatera mjukt",
         whisper: "Idag räcker det att andas.",
       };
     case "steady":
       return {
-        ctaLog: "Logga dagen",
+        ctaLog: "Hur har du det?",
         ctaUpdate: "Uppdatera dagen",
         whisper: "Det här räcker idag.",
       };
     case "energized":
       return {
-        ctaLog: "Logga dagen",
+        ctaLog: "Hur har du det?",
         ctaUpdate: "Uppdatera dagen",
         whisper: "Bra ingång — använd den.",
       };

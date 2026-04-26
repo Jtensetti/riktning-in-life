@@ -102,14 +102,14 @@ type RecentSession = {
 const todayISO = () => new Date().toISOString().split("T")[0];
 
 const stateLabel = (c: Checkin | null) => {
-  if (!c) return { title: "Inget loggat idag", sub: "Idag kräver vi inte mycket. Välj en liten start." };
+  if (!c) return { title: "Hur har du det?", sub: "Ta 60 sekunder. Det räcker." };
   const m = c.mood_heaviness ?? 5;
   const a = c.anxiety ?? 5;
   const f = c.function_score ?? 5;
   if (c.safety_status === "active_thoughts" || c.safety_status === "acute") return { title: "Allvarlig signal", sub: "Det här ska inte hanteras som vanlig statistik." };
-  if (m >= 7 && f <= 4) return { title: "Tungt men stabilt", sub: "Spara dagen som den var." };
-  if (a >= 7) return { title: "Hög oro", sub: "Lugna kroppen först. Inget måste idag." };
-  if (f >= 6) return { title: "Funktion rör sig åt rätt håll", sub: "Bra att du loggar." };
+  if (m >= 7 && f <= 4) return { title: "Tungt men du är här", sub: "Det räcker att finnas idag." };
+  if (a >= 7) return { title: "Mycket oro just nu", sub: "Lugna kroppen först. Inget måste idag." };
+  if (f >= 6) return { title: "Det rör sig åt rätt håll", sub: "Bra att du loggar." };
   return { title: "Stabilt nog", sub: "Det här räcker idag." };
 };
 

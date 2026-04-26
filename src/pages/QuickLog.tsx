@@ -25,8 +25,8 @@ type Template = {
 
 const TEMPLATES: Template[] = [
   { key: "sleep", title: "Sömn", blurb: "Hur sov du i natt?", tone: "purple", icon: "bed-soft" },
-  { key: "movement", title: "Rörelse", blurb: "Vad gjorde din kropp?", tone: "pink", icon: "walk-figure" },
-  { key: "mood", title: "Mående", blurb: "Hur känns det just nu?", tone: "orange", icon: "blob-smile" },
+  { key: "movement", title: "Kroppen", blurb: "Vad har du gjort?", tone: "pink", icon: "walk-figure" },
+  { key: "mood", title: "Måendet", blurb: "Hur känns det nu?", tone: "orange", icon: "blob-smile" },
   { key: "medication", title: "Medicin", blurb: "Tagit dagens dos?", tone: "blue", icon: "pill" },
 ];
 
@@ -339,7 +339,7 @@ const QuickLog = () => {
       />
 
       <h1 className="text-[32px] leading-[38px] mb-1">Snabblogg</h1>
-      <p className="text-sm text-text-secondary mb-6">Logga på under 30 sekunder. Välj en mall och kör.</p>
+      <p className="text-sm text-text-secondary mb-6">Tryck på en knapp och svara kort. Det går snabbt.</p>
 
       {/* === FOUR TEMPLATE BUTTONS === */}
       <section className="grid grid-cols-2 gap-3 mb-7">
