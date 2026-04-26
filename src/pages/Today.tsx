@@ -232,6 +232,8 @@ const Today = () => {
   const [streakCounts, setStreakCounts] = useState<StreakCounts>({ checkin: 0, activity: 0, session: 0 });
   const [pickerOpen, setPickerOpen] = useState(false);
   const [streakReloadKey, setStreakReloadKey] = useState(0);
+  const [activitiesToday, setActivitiesToday] = useState<number>(0);
+  const [savingEveningGoal, setSavingEveningGoal] = useState(false);
 
   // Refresh time context every minute so partOfDay stays accurate without reload.
   useEffect(() => {
