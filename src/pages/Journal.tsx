@@ -3,20 +3,19 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
-import { Illustration } from "@/components/Illustrations";
 import { AbstractIcon, type IconName } from "@/components/AbstractIcon";
 import { HeroBanner } from "@/components/HeroBanner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 type TemplateKey = "three_lines" | "thought_loop" | "body_first" | "evidence" | "free";
 
 const TEMPLATES: Record<TemplateKey, {
   title: string; subtitle: string; bg: string; text: string;
-  ill: "journal" | "thoughtLoop" | "bodyScan" | "focus";
+  tone: string;
   icon: IconName;
   iconColor: string;
   fields: { key: string; label: string; placeholder?: string }[];
