@@ -657,7 +657,12 @@ const Today = () => {
 
       {eveningPrediction && <EveningPredictionCard prediction={eveningPrediction} />}
 
-      {forecast && <TomorrowForecastCard forecast={forecast} exercises={library} />}
+      {forecast && (
+        <>
+          <TomorrowForecastCard forecast={forecast} exercises={library} />
+          <ForecastEvidenceStrip forecast={forecast} rows={recent7} thresholds={thresholds} />
+        </>
+      )}
 
       {!showSafety && (
         <button
