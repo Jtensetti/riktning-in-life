@@ -131,17 +131,21 @@ export const AbstractIcon = ({
             d="M5 14.5 L16 5 L27 14.5 V25 a3 3 0 0 1 -3 3 H8 a3 3 0 0 1 -3 -3 Z"
             fill={color}
           />
+          {/* Accent: dörr + litet fönster */}
+          <rect x="13.5" y="18" width="5" height="10" rx="1.6" fill={a} />
+          <rect x="19" y="14.5" width="3.5" height="3.5" rx="0.8" fill={a} opacity="0.7" />
         </svg>
       );
 
     case "spark":
       return (
         <svg {...common}>
+          {/* Accent halo bakom stjärnan */}
+          <circle cx="16" cy="16" r="12" fill={a} opacity="0.35" />
           <path
             d="M16 3 L18.5 12 L27 14 L18.5 16.5 L16 26 L13.5 16.5 L5 14 L13.5 12 Z"
             fill={color}
           />
-          <circle cx="26" cy="6" r="1.6" fill={color} opacity="0.6" />
         </svg>
       );
 
@@ -160,7 +164,8 @@ export const AbstractIcon = ({
             d="M21 4.5 l6.5 6.5 -15 15 H6 v-6.5 z"
             fill={color}
           />
-          <path d="M19.5 6 l6.5 6.5" stroke={a} strokeWidth="1.6" strokeLinecap="round" />
+          {/* Accent: metallring runt skaftet */}
+          <path d="M18.5 7 l6.5 6.5 -2.2 2.2 -6.5 -6.5 z" fill={a} />
         </svg>
       );
 
@@ -172,7 +177,8 @@ export const AbstractIcon = ({
             d="M16 27 C8 21 3 16 3 11 a6 6 0 0 1 11 -3 a6 6 0 0 1 11 3 c0 5 -5 10 -13 16 z"
             fill={color}
           />
-          <path d="M8 14 h3 l2 -3 l3 6 l2 -3 h6" stroke="hsl(var(--surface))" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          {/* Accent: pulslinje i surface, normaliserad stroke */}
+          <path d="M8 14 h3 l2 -3 l3 6 l2 -3 h6" stroke="hsl(var(--surface))" strokeWidth="2.2" fill="none" />
         </svg>
       );
 
@@ -183,8 +189,9 @@ export const AbstractIcon = ({
             d="M16 3 C24 3 29 9 29 16 C29 23 24 29 16 29 C8 29 3 23 3 16 C3 9 8 3 16 3 Z"
             fill={color}
           />
-          <path d="M11 17 q3 4 6 0" stroke="hsl(var(--foreground))" strokeWidth="1.8" strokeLinecap="round" fill="none" opacity="0.85" />
-          <path d="M18 17 q3 4 6 0" stroke="hsl(var(--foreground))" strokeWidth="1.8" strokeLinecap="round" fill="none" opacity="0.85" />
+          {/* Ögon i accent */}
+          <path d="M11 17 q3 4 6 0" stroke={a} strokeWidth="2.2" fill="none" opacity="0.95" />
+          <path d="M18 17 q3 4 6 0" stroke={a} strokeWidth="2.2" fill="none" opacity="0.95" />
         </svg>
       );
 
@@ -195,48 +202,63 @@ export const AbstractIcon = ({
             d="M22 4 a13 13 0 1 0 6 14 a10 10 0 0 1 -6 -14 z"
             fill={color}
           />
-          <circle cx="6" cy="8" r="0.9" fill={color} opacity="0.5" />
-          <circle cx="27" cy="26" r="1.1" fill={color} opacity="0.5" />
+          {/* Stjärnor i accent (tidigare i color, bröt mönstret) */}
+          <circle cx="6" cy="8" r="1.1" fill={a} />
+          <circle cx="27" cy="26" r="1.4" fill={a} />
         </svg>
       );
 
     case "play-soft":
       return (
         <svg {...common}>
-          <path d="M9 6 L26 16 L9 26 Z" fill={color} />
+          {/* Mjuk halo bakom triangeln */}
+          <circle cx="16" cy="16" r="13" fill={a} opacity="0.3" />
+          <path d="M11 7 L25 16 L11 25 Z" fill={color} />
         </svg>
       );
 
     case "flag":
       return (
         <svg {...common}>
-          <path d="M8 4 v24" stroke={color} strokeWidth="2.4" strokeLinecap="round" />
-          <path d="M9 5 q9 -1 14 3 q-7 4 -14 3 z" fill={color} />
+          {/* Flaggstång som fylld pelare */}
+          <rect x="7" y="3" width="2.6" height="26" rx="1.3" fill={color} />
+          {/* Duken i accent — separat form, inte stroke */}
+          <path d="M9.6 5 q9 -1 14 3 q-7 4 -14 3 z" fill={a} />
         </svg>
       );
 
     case "eye-closed":
       return (
         <svg {...common}>
+          {/* Fyllt ögonlock som huvudform */}
           <path
-            d="M3 14 q13 12 26 0"
-            stroke={color}
-            strokeWidth="2.6"
-            strokeLinecap="round"
-            fill="none"
+            d="M3 13 q13 14 26 0 q-2 4 -13 4 q-11 0 -13 -4 z"
+            fill={color}
           />
-          <path d="M9 21 l-2 3" stroke={color} strokeWidth="2" strokeLinecap="round" />
-          <path d="M16 22 v3" stroke={color} strokeWidth="2" strokeLinecap="round" />
-          <path d="M23 21 l2 3" stroke={color} strokeWidth="2" strokeLinecap="round" />
+          {/* Ögonfransar i accent */}
+          <path d="M9 18.5 l-2 3" stroke={a} strokeWidth="2.2" />
+          <path d="M16 19.5 v3" stroke={a} strokeWidth="2.2" />
+          <path d="M23 18.5 l2 3" stroke={a} strokeWidth="2.2" />
         </svg>
       );
 
     case "bike":
       return (
         <svg {...common}>
-          <circle cx="8" cy="22" r="5" fill="none" stroke={color} strokeWidth="2.2" />
-          <circle cx="24" cy="22" r="5" fill="none" stroke={color} strokeWidth="2.2" />
-          <path d="M8 22 L15 12 L21 22 M15 12 L19 12 M22 22 L19 12" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          {/* Hjul som fyllda skivor */}
+          <circle cx="8" cy="22" r="5" fill={color} />
+          <circle cx="24" cy="22" r="5" fill={color} />
+          {/* Naven i accent */}
+          <circle cx="8" cy="22" r="1.6" fill={a} />
+          <circle cx="24" cy="22" r="1.6" fill={a} />
+          {/* Ram som fylld silhuett (tjock kontur via dubbla paths) */}
+          <path
+            d="M7 22 L14.5 11 L21.5 22 z"
+            fill={color}
+            opacity="0.85"
+          />
+          <path d="M14 11 h5 v2 h-5 z" fill={color} />
+          <circle cx="20.5" cy="11" r="1.6" fill={a} />
         </svg>
       );
 
@@ -244,6 +266,8 @@ export const AbstractIcon = ({
       return (
         <svg {...common}>
           <path d="M8 4 h16 a2 2 0 0 1 2 2 v22 l-10 -6 l-10 6 V6 a2 2 0 0 1 2 -2 z" fill={color} />
+          {/* Accent: liten flik upptill */}
+          <rect x="13" y="4" width="6" height="3" rx="1" fill={a} />
         </svg>
       );
 
@@ -259,7 +283,7 @@ export const AbstractIcon = ({
               width="2"
               height="4.5"
               rx="1"
-              fill={color}
+              fill={a}
               transform={`rotate(${deg} 16 16)`}
             />
           ))}
@@ -271,9 +295,9 @@ export const AbstractIcon = ({
         <svg {...common}>
           <circle cx="11" cy="11" r="5" fill={color} />
           {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => (
-            <rect key={deg} x="10.2" y="1.5" width="1.6" height="3" rx="0.8" fill={color} transform={`rotate(${deg} 11 11)`} />
+            <rect key={deg} x="10.2" y="1.5" width="1.6" height="3" rx="0.8" fill={a} transform={`rotate(${deg} 11 11)`} />
           ))}
-          <path d="M11 24 a6 6 0 0 1 0 -12 h6 a6 6 0 0 1 6 6 a5 5 0 0 1 -3 9 H12 a4 4 0 0 1 -1 -3 z" fill={a} />
+          <path d="M11 24 a6 6 0 0 1 0 -12 h6 a6 6 0 0 1 6 6 a5 5 0 0 1 -3 9 H12 a4 4 0 0 1 -1 -3 z" fill={color} opacity="0.85" />
         </svg>
       );
 
@@ -284,6 +308,8 @@ export const AbstractIcon = ({
             d="M9 22 a6 6 0 0 1 0 -12 a7 7 0 0 1 13 -1 a5 5 0 0 1 1 10 z"
             fill={color}
           />
+          {/* Accent: mjuk undersida */}
+          <path d="M9 21 a8 8 0 0 0 14 0 z" fill={a} opacity="0.55" />
         </svg>
       );
 
@@ -292,11 +318,11 @@ export const AbstractIcon = ({
         <svg {...common}>
           <path
             d="M9 18 a6 6 0 0 1 0 -12 a7 7 0 0 1 13 -1 a5 5 0 0 1 1 10 z"
-            fill={a}
+            fill={color}
           />
-          <path d="M11 22 l-2 5" stroke={color} strokeWidth="2.4" strokeLinecap="round" />
-          <path d="M16 22 l-2 5" stroke={color} strokeWidth="2.4" strokeLinecap="round" />
-          <path d="M21 22 l-2 5" stroke={color} strokeWidth="2.4" strokeLinecap="round" />
+          <path d="M11 22 l-2 5" stroke={a} strokeWidth="2.4" />
+          <path d="M16 22 l-2 5" stroke={a} strokeWidth="2.4" />
+          <path d="M21 22 l-2 5" stroke={a} strokeWidth="2.4" />
         </svg>
       );
 
@@ -305,11 +331,11 @@ export const AbstractIcon = ({
         <svg {...common}>
           <path
             d="M9 18 a6 6 0 0 1 0 -12 a7 7 0 0 1 13 -1 a5 5 0 0 1 1 10 z"
-            fill={a}
+            fill={color}
           />
-          <circle cx="10" cy="24" r="1.6" fill={color} />
-          <circle cx="16" cy="26" r="1.6" fill={color} />
-          <circle cx="22" cy="24" r="1.6" fill={color} />
+          <circle cx="10" cy="24" r="1.6" fill={a} />
+          <circle cx="16" cy="26" r="1.6" fill={a} />
+          <circle cx="22" cy="24" r="1.6" fill={a} />
         </svg>
       );
 
@@ -320,8 +346,8 @@ export const AbstractIcon = ({
             d="M9 16 a6 6 0 0 1 0 -12 a7 7 0 0 1 13 -1 a5 5 0 0 1 1 10 z"
             fill={color}
           />
-          <path d="M5 22 h22" stroke={color} strokeWidth="2.2" strokeLinecap="round" opacity="0.7" />
-          <path d="M8 27 h16" stroke={color} strokeWidth="2.2" strokeLinecap="round" opacity="0.5" />
+          <path d="M5 22 h22" stroke={a} strokeWidth="2.4" opacity="0.85" />
+          <path d="M8 27 h16" stroke={a} strokeWidth="2.4" opacity="0.65" />
         </svg>
       );
 
@@ -339,9 +365,13 @@ export const AbstractIcon = ({
     case "weather-wind":
       return (
         <svg {...common}>
-          <path d="M3 11 h16 a3 3 0 1 0 -3 -3" stroke={color} strokeWidth="2.4" strokeLinecap="round" fill="none" />
-          <path d="M3 17 h22 a3 3 0 1 1 -3 3" stroke={color} strokeWidth="2.4" strokeLinecap="round" fill="none" />
-          <path d="M3 23 h13 a2.5 2.5 0 1 1 -2.5 2.5" stroke={color} strokeWidth="2.4" strokeLinecap="round" fill="none" />
+          {/* Liten "vind-kropp" som blob */}
+          <path
+            d="M21 10 a6 6 0 0 1 6 6 a5 5 0 0 1 -5 5 H8 a3 3 0 0 1 0 -6 a4 4 0 0 1 4 -4 a5 5 0 0 1 9 -1 z"
+            fill={color}
+          />
+          {/* Accent: vinddrag underifrån */}
+          <path d="M5 24 h14 a2.5 2.5 0 1 1 -2.5 2.5" stroke={a} strokeWidth="2.4" fill="none" />
         </svg>
       );
 
@@ -352,8 +382,9 @@ export const AbstractIcon = ({
             d="M22 4 a13 13 0 1 0 6 14 a10 10 0 0 1 -6 -14 z"
             fill={color}
           />
-          <circle cx="6" cy="8" r="0.9" fill={color} opacity="0.5" />
-          <circle cx="27" cy="26" r="1.1" fill={color} opacity="0.5" />
+          {/* Stjärnor i accent (tidigare i color) */}
+          <circle cx="6" cy="8" r="1.1" fill={a} />
+          <circle cx="27" cy="26" r="1.4" fill={a} />
         </svg>
       );
 
