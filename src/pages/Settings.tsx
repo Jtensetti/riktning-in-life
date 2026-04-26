@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
+import { AbstractIcon } from "@/components/AbstractIcon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -83,7 +84,20 @@ const Settings = () => {
 
   return (
     <AppShell>
-      <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm font-bold text-text-secondary mb-4">
+      {/* Soft cream hero */}
+      <div className="-mx-6 -mt-8 mb-6 relative overflow-hidden rounded-b-[36px]"
+           style={{ background: "linear-gradient(180deg, hsl(var(--cream-card)) 0%, hsl(var(--cream-card) / 0.5) 55%, hsl(var(--background)) 100%)" }}>
+        <div className="h-28 relative">
+          <div className="absolute left-1/2 -translate-x-1/2 top-4 animate-float">
+            <AbstractIcon name="blob-smile" size={56} color="hsl(var(--orange-start))" />
+          </div>
+          <svg className="absolute inset-x-0 bottom-0 w-full" viewBox="0 0 400 60" preserveAspectRatio="none" aria-hidden>
+            <path d="M0 60 Q200 0 400 60 Z" fill="hsl(var(--background))" />
+          </svg>
+        </div>
+      </div>
+
+      <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm font-bold text-text-secondary mb-4 press-soft">
         <ChevronLeft size={18} /> Tillbaka
       </button>
       <header className="mb-6">
