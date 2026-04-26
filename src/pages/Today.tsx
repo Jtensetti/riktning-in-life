@@ -564,7 +564,7 @@ const Today = () => {
       <WeatherPermissionCard
         key="weatherPermission"
         onAllow={() => requestLocation()}
-        onDismiss={() => setPermissionDismissed(true)}
+        onDismiss={() => { dismissWeatherPermission(); setPermissionDismissed(true); }}
       />
     ),
     safety: () => (
