@@ -73,8 +73,8 @@ const Onboarding = () => {
         </div>
 
         {step === 0 && (
-          <>
-            <Illustration name="start" className="w-full h-auto mb-6 rounded-3xl" />
+          <div className="animate-fade-in-up">
+            <Illustration name="start" className="w-full h-auto mb-6 rounded-3xl animate-pop-in" />
             <h1 className="text-[32px] leading-[38px] mb-3">Det här är Riktning</h1>
             <p className="text-base text-text-secondary mb-6 leading-relaxed">
               En lugn app för dig som lever med psykisk ohälsa. Riktning hjälper dig att se rörelse i mående, funktion och återhämtning – och bygga en rapport till din vård.
@@ -83,12 +83,12 @@ const Onboarding = () => {
               <p className="text-sm font-extrabold mb-1">Inte diagnostisk</p>
               <p className="text-xs text-text-secondary">Riktning ersätter inte vård eller behandling. Den hjälper dig att se mönster över tid.</p>
             </div>
-          </>
+          </div>
         )}
 
         {step === 1 && (
-          <>
-            <Illustration name="baseline" className="w-full h-auto mb-6 rounded-3xl" />
+          <div className="animate-fade-in-up">
+            <Illustration name="baseline" className="w-full h-auto mb-6 rounded-3xl animate-pop-in" />
             <h1 className="text-[32px] leading-[38px] mb-3">Första 14 dagarna bygger din baslinje</h1>
             <p className="text-base text-text-secondary mb-6 leading-relaxed">
               Under de första två veckorna lär appen ditt normalläge. Vi visar inga upp- eller nedåtgående bedömningar förrän baslinjen finns.
@@ -97,7 +97,7 @@ const Onboarding = () => {
               <p className="text-sm font-extrabold mb-1">Spara dagen som den var</p>
               <p className="text-xs text-text-secondary">En tung dag är inte ett misslyckande. Den är data.</p>
             </div>
-          </>
+          </div>
         )}
 
         {step === 2 && (
@@ -146,7 +146,7 @@ const Onboarding = () => {
         <Button
           onClick={step < 3 ? next : finish}
           disabled={saving}
-          className="w-full h-14 rounded-full bg-orange-start hover:bg-orange-deep text-white font-extrabold text-[17px] shadow-soft"
+          className="w-full h-14 rounded-full bg-orange-start hover:bg-orange-deep text-white font-extrabold text-[17px] shadow-soft press-soft"
         >
           {saving ? "Sparar..." : step < 3 ? "Fortsätt" : "Kom igång"}
         </Button>

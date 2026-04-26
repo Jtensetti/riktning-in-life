@@ -123,24 +123,24 @@ const ExerciseDetail = () => {
         )}
 
         {phase === "before" && (
-          <>
+          <div className="animate-fade-in-up">
             <h3 className="text-xl mb-3 mt-2">Hur är det innan?</h3>
             <SliderRow label="Oro" value={before.anxiety} onChange={(v) => setBefore(b => ({ ...b, anxiety: v }))} />
             <SliderRow label="Energi" value={before.energy} onChange={(v) => setBefore(b => ({ ...b, energy: v }))} />
             <SliderRow label="Mående" value={before.mood} onChange={(v) => setBefore(b => ({ ...b, mood: v }))} />
             <Button
               onClick={() => setPhase("doing")}
-              className="w-full h-14 rounded-full bg-orange-start hover:bg-orange-deep text-white font-extrabold text-[17px]"
+              className="w-full h-14 rounded-full bg-orange-start hover:bg-orange-deep text-white font-extrabold text-[17px] press-soft"
             >
               Kör igång
             </Button>
-          </>
+          </div>
         )}
 
         {phase === "doing" && (
-          <>
+          <div className="animate-fade-in-up">
             <div className="card-cream p-4 text-center mb-6">
-              <div className="rounded-2xl overflow-hidden mb-4">
+              <div className="rounded-2xl overflow-hidden mb-4 animate-breathe">
                 <Illustration name={ill} className="w-full h-auto" />
               </div>
               <h3 className="text-xl mb-2">Ta din tid</h3>
@@ -150,15 +150,15 @@ const ExerciseDetail = () => {
             </div>
             <Button
               onClick={() => setPhase("after")}
-              className="w-full h-14 rounded-full bg-foreground hover:bg-foreground/90 text-background font-extrabold text-[17px]"
+              className="w-full h-14 rounded-full bg-foreground hover:bg-foreground/90 text-background font-extrabold text-[17px] press-soft"
             >
               <Check size={20} /> Klart
             </Button>
-          </>
+          </div>
         )}
 
         {phase === "after" && (
-          <>
+          <div className="animate-fade-in-up">
             <h3 className="text-xl mb-3 mt-2">Hur är det nu?</h3>
             <SliderRow label="Oro" value={after.anxiety} onChange={(v) => setAfter(a => ({ ...a, anxiety: v }))} />
             <SliderRow label="Energi" value={after.energy} onChange={(v) => setAfter(a => ({ ...a, energy: v }))} />
@@ -175,11 +175,11 @@ const ExerciseDetail = () => {
             <Button
               onClick={save}
               disabled={saving}
-              className="w-full h-14 rounded-full bg-orange-start hover:bg-orange-deep text-white font-extrabold text-[17px]"
+              className="w-full h-14 rounded-full bg-orange-start hover:bg-orange-deep text-white font-extrabold text-[17px] press-soft"
             >
               {saving ? "Sparar..." : "Spara"}
             </Button>
-          </>
+          </div>
         )}
       </div>
     </div>

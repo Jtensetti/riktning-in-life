@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
+import { AbstractIcon } from "@/components/AbstractIcon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -83,7 +84,20 @@ const Settings = () => {
 
   return (
     <AppShell>
-      <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm font-bold text-text-secondary mb-4">
+      {/* Soft cream hero */}
+      <div className="-mx-6 -mt-8 mb-6 relative overflow-hidden rounded-b-[36px]"
+           style={{ background: "linear-gradient(180deg, hsl(var(--cream-card)) 0%, hsl(var(--cream-card) / 0.5) 55%, hsl(var(--background)) 100%)" }}>
+        <div className="h-28 relative">
+          <div className="absolute left-1/2 -translate-x-1/2 top-4 animate-float">
+            <AbstractIcon name="blob-smile" size={56} color="hsl(var(--orange-start))" />
+          </div>
+          <svg className="absolute inset-x-0 bottom-0 w-full" viewBox="0 0 400 60" preserveAspectRatio="none" aria-hidden>
+            <path d="M0 60 Q200 0 400 60 Z" fill="hsl(var(--background))" />
+          </svg>
+        </div>
+      </div>
+
+      <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm font-bold text-text-secondary mb-4 press-soft">
         <ChevronLeft size={18} /> Tillbaka
       </button>
       <header className="mb-6">
@@ -103,7 +117,7 @@ const Settings = () => {
             navigate("/auth", { replace: true });
           }}
           variant="secondary"
-          className="w-full h-12 rounded-full font-extrabold"
+          className="w-full h-12 rounded-full font-extrabold press-soft"
         >
           <LogOut size={16} /> Logga ut
         </Button>
@@ -125,14 +139,14 @@ const Settings = () => {
             onClick={exportAll}
             disabled={busy}
             variant="secondary"
-            className="w-full h-12 rounded-full font-extrabold justify-start"
+            className="w-full h-12 rounded-full font-extrabold justify-start press-soft"
           >
             <Download size={16} /> Exportera all data
           </Button>
           <Button
             onClick={() => setShowDelete(s => !s)}
             disabled={busy}
-            className="w-full h-12 rounded-full font-extrabold justify-start bg-red-bg text-red-risk hover:bg-red-bg/80"
+            className="w-full h-12 rounded-full font-extrabold justify-start bg-red-bg text-red-risk hover:bg-red-bg/80 press-soft"
           >
             <Trash2 size={16} /> Radera all data
           </Button>

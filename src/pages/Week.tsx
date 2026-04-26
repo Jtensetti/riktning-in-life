@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { Illustration } from "@/components/Illustrations";
+import { AbstractIcon } from "@/components/AbstractIcon";
 import { ArrowDown, ArrowUp, Minus } from "lucide-react";
 import {
   burdenScore, functionScore, recoveryScore, stabilityScore, stabilityLabel,
@@ -94,11 +95,24 @@ const Week = () => {
 
   return (
     <AppShell>
+      {/* Soft hero strip */}
+      <div className="-mx-6 -mt-8 mb-6 relative overflow-hidden rounded-b-[36px]"
+           style={{ background: "linear-gradient(180deg, hsl(var(--green-recovery)) 0%, hsl(var(--green-recovery) / 0.45) 55%, hsl(var(--background)) 100%)" }}>
+        <div className="h-32 relative">
+          <div className="absolute left-1/2 -translate-x-1/2 top-5 animate-float">
+            <AbstractIcon name="pie" size={72} color="hsl(var(--surface))" accent="hsl(var(--yellow-journal))" />
+          </div>
+          <svg className="absolute inset-x-0 bottom-0 w-full" viewBox="0 0 400 60" preserveAspectRatio="none" aria-hidden>
+            <path d="M0 60 Q200 0 400 60 Z" fill="hsl(var(--background))" />
+          </svg>
+        </div>
+      </div>
+
       <h1 className="text-[32px] leading-[38px] mb-1">Vecka</h1>
       <p className="text-sm text-text-secondary mb-6">Riktning över tid – inte dagsbetyg.</p>
 
       {!baselineComplete && (
-        <div className="card-cream p-4 mb-6 flex items-center gap-3">
+        <div className="card-cream p-4 mb-6 flex items-center gap-3 animate-pop-in">
           <Illustration name="baseline" className="w-24 h-auto rounded-xl shrink-0" />
           <div>
             <p className="text-sm font-extrabold mb-1">Baslinje byggs</p>
@@ -118,27 +132,35 @@ const Week = () => {
         <>
           <h2 className="text-xl mb-3">Jämfört med förra veckan</h2>
           <div className="grid grid-cols-2 gap-3 mb-6">
-            <MetricCard
-              title="Belastning"
-              current={burdenC.value}
-              prev={burdenP.value}
-              invert
-              note={burdenC.withWeekly ? undefined : "utan veckoskattning"}
-              gated={!baselineComplete}
-            />
-            <MetricCard title="Funktion" current={fnC} prev={fnP} gated={!baselineComplete} />
-            <MetricCard title="Återhämtning" current={recC} prev={recP} gated={!baselineComplete} />
-            <MetricCard
-              title="Stabilitet"
-              current={stabC}
-              prev={stabP}
-              hideChange
-              labelOverride={stabilityLabel(stabC, stabP)}
-              gated={!baselineComplete}
-            />
+            <div className="animate-pop-in" style={{ animationDelay: "0ms" }}>
+              <MetricCard
+                title="Belastning"
+                current={burdenC.value}
+                prev={burdenP.value}
+                invert
+                note={burdenC.withWeekly ? undefined : "utan veckoskattning"}
+                gated={!baselineComplete}
+              />
+            </div>
+            <div className="animate-pop-in" style={{ animationDelay: "70ms" }}>
+              <MetricCard title="Funktion" current={fnC} prev={fnP} gated={!baselineComplete} />
+            </div>
+            <div className="animate-pop-in" style={{ animationDelay: "140ms" }}>
+              <MetricCard title="Återhämtning" current={recC} prev={recP} gated={!baselineComplete} />
+            </div>
+            <div className="animate-pop-in" style={{ animationDelay: "210ms" }}>
+              <MetricCard
+                title="Stabilitet"
+                current={stabC}
+                prev={stabP}
+                hideChange
+                labelOverride={stabilityLabel(stabC, stabP)}
+                gated={!baselineComplete}
+              />
+            </div>
           </div>
 
-          <div className="card-soft p-4 mb-6">
+          <div className="card-soft p-4 mb-6 animate-fade-in-up" style={{ animationDelay: "260ms" }}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-base font-extrabold">Senaste 7 dagar</h3>
               <Illustration name="week" className="w-16 h-auto" />
@@ -176,23 +198,36 @@ const Week = () => {
           </div>
 
           <div className="grid grid-cols-2 gap-3 mb-6">
-            <div className="card-cream p-4">
-              <p className="text-[11px] font-bold text-text-secondary uppercase tracking-wider mb-1">Sömn / natt</p>
-              <p className="text-2xl font-extrabold">{avgSleep != null ? `${avgSleep.toFixed(1)} h` : "—"}</p>
+            <div className="card-cream p-4 flex items-start justify-between gap-2 animate-pop-in">
+              <div>
+                <p className="text-[11px] font-bold text-text-secondary uppercase tracking-wider mb-1">Sömn / natt</p>
+                <p className="text-2xl font-extrabold">{avgSleep != null ? `${avgSleep.toFixed(1)} h` : "—"}</p>
+              </div>
+              <AbstractIcon name="moon-soft" size={28} color="hsl(var(--purple-sleep))" />
             </div>
-            <div className="card-cream p-4">
-              <p className="text-[11px] font-bold text-text-secondary uppercase tracking-wider mb-1">Rörelsedagar</p>
-              <p className="text-2xl font-extrabold">{movementDays} / {current.length}</p>
+            <div className="card-cream p-4 flex items-start justify-between gap-2 animate-pop-in" style={{ animationDelay: "70ms" }}>
+              <div>
+                <p className="text-[11px] font-bold text-text-secondary uppercase tracking-wider mb-1">Rörelsedagar</p>
+                <p className="text-2xl font-extrabold">{movementDays} / {current.length}</p>
+              </div>
+              <AbstractIcon name="bike" size={28} color="hsl(var(--pink-move))" />
             </div>
           </div>
 
           {insights.length > 0 && (
             <>
-              <h2 className="text-xl mb-3">Mönster vi ser</h2>
+              <h2 className="text-xl mb-3 flex items-center gap-2">
+                <AbstractIcon name="spark" size={20} color="hsl(var(--orange-start))" />
+                Mönster vi ser
+              </h2>
               <div className="space-y-3">
                 {insights.map((s, i) => (
-                  <div key={i} className="card-cream p-4 flex gap-3 items-start">
-                    <span className="w-2 h-2 rounded-full bg-orange-start mt-2 shrink-0" />
+                  <div
+                    key={i}
+                    className="card-cream p-4 flex gap-3 items-start animate-fade-in-up"
+                    style={{ animationDelay: `${i * 60}ms` }}
+                  >
+                    <AbstractIcon name="blob-smile" size={18} color="hsl(var(--orange-start))" />
                     <p className="text-sm font-semibold leading-snug">{s}</p>
                   </div>
                 ))}

@@ -4,20 +4,27 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { Illustration } from "@/components/Illustrations";
+import { AbstractIcon, type IconName } from "@/components/AbstractIcon";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { ChevronLeft, Plus, BookOpen } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 
 type TemplateKey = "three_lines" | "thought_loop" | "body_first" | "evidence" | "free";
 
-const TEMPLATES: Record<TemplateKey, { title: string; subtitle: string; color: string; ill: "journal" | "thoughtLoop" | "bodyScan" | "focus"; fields: { key: string; label: string; placeholder?: string }[] }> = {
+const TEMPLATES: Record<TemplateKey, {
+  title: string; subtitle: string; bg: string; text: string;
+  ill: "journal" | "thoughtLoop" | "bodyScan" | "focus";
+  icon: IconName;
+  iconColor: string;
+  fields: { key: string; label: string; placeholder?: string }[];
+}> = {
   three_lines: {
     title: "Tre rader",
     subtitle: "En liten avstamp för dagen",
-    color: "bg-yellow-journal",
-    ill: "journal",
+    bg: "bg-yellow-journal", text: "text-foreground",
+    ill: "journal", icon: "pencil-soft", iconColor: "hsl(var(--orange-start))",
     fields: [
       { key: "heaviest", label: "Det tyngsta idag var" },
       { key: "helped", label: "Något som hjälpte lite var" },
@@ -27,8 +34,8 @@ const TEMPLATES: Record<TemplateKey, { title: string; subtitle: string; color: s
   thought_loop: {
     title: "Tankeloop",
     subtitle: "Fakta vs tolkning",
-    color: "bg-orange-start",
-    ill: "thoughtLoop",
+    bg: "bg-orange-start", text: "text-white",
+    ill: "thoughtLoop", icon: "spark", iconColor: "hsl(var(--yellow-journal))",
     fields: [
       { key: "thought", label: "Tanken som fastnat" },
       { key: "for", label: "Fakta som stödjer den" },
@@ -39,8 +46,8 @@ const TEMPLATES: Record<TemplateKey, { title: string; subtitle: string; color: s
   body_first: {
     title: "Kropp först",
     subtitle: "Lyssna på kroppens signaler",
-    color: "bg-blue-calm",
-    ill: "bodyScan",
+    bg: "bg-blue-calm", text: "text-white",
+    ill: "bodyScan", icon: "heart-pulse", iconColor: "hsl(var(--surface))",
     fields: [
       { key: "where", label: "Var sitter känslan?" },
       { key: "signal", label: "Vad signalerar kroppen?" },
@@ -50,8 +57,8 @@ const TEMPLATES: Record<TemplateKey, { title: string; subtitle: string; color: s
   evidence: {
     title: "Bevislogg",
     subtitle: "Vad gjorde du trots motstånd?",
-    color: "bg-green-recovery",
-    ill: "focus",
+    bg: "bg-green-recovery", text: "text-white",
+    ill: "focus", icon: "flag", iconColor: "hsl(var(--yellow-journal))",
     fields: [
       { key: "did", label: "Vad gjorde jag trots motstånd?" },
       { key: "means", label: "Vad säger det som depressionen inte säger?" },
@@ -61,8 +68,8 @@ const TEMPLATES: Record<TemplateKey, { title: string; subtitle: string; color: s
   free: {
     title: "Fri text",
     subtitle: "Skriv vad du vill",
-    color: "bg-pink-move",
-    ill: "journal",
+    bg: "bg-pink-move", text: "text-white",
+    ill: "journal", icon: "bookmark-soft", iconColor: "hsl(var(--surface))",
     fields: [],
   },
 };
@@ -143,14 +150,14 @@ const Journal = () => {
     const canSave = active === "free" ? free.trim().length > 0 : Object.values(body).some(v => v?.trim());
     return (
       <AppShell>
-        <button onClick={() => setActive(null)} className="flex items-center gap-1 text-sm font-bold text-text-secondary mb-4">
+        <button onClick={() => setActive(null)} className="flex items-center gap-1 text-sm font-bold text-text-secondary mb-4 press-soft">
           <ChevronLeft size={18} /> Tillbaka
         </button>
-        <div className={`rounded-3xl ${t.color} p-1 mb-6 overflow-hidden shadow-soft`}>
+        <div className={`rounded-3xl ${t.bg} p-1 mb-6 overflow-hidden shadow-soft animate-pop-in`}>
           <div className="rounded-[20px] overflow-hidden">
             <Illustration name={t.ill} className="w-full h-auto" />
           </div>
-          <div className="px-4 pb-4 pt-3 text-white">
+          <div className={`px-4 pb-4 pt-3 ${t.text}`}>
             <h1 className="text-[28px] leading-[34px] mb-1">{t.title}</h1>
             <p className="text-sm opacity-90">{t.subtitle}</p>
           </div>
@@ -167,8 +174,8 @@ const Journal = () => {
               <Textarea value={free} onChange={e => setFree(e.target.value)} placeholder="Tankar, känslor, dagen…" className="min-h-[200px] rounded-2xl bg-surface text-base" />
             </div>
           ) : (
-            t.fields.map(f => (
-              <div key={f.key}>
+            t.fields.map((f, i) => (
+              <div key={f.key} className="animate-fade-in-up" style={{ animationDelay: `${i * 50}ms` }}>
                 <label className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-1.5 block">{f.label}</label>
                 <Textarea
                   value={body[f.key] ?? ""}
@@ -183,7 +190,7 @@ const Journal = () => {
         <Button
           disabled={!canSave || saving}
           onClick={save}
-          className="w-full h-12 rounded-full bg-foreground hover:bg-foreground/90 text-background font-extrabold text-[17px]"
+          className="w-full h-12 rounded-full bg-foreground hover:bg-foreground/90 text-background font-extrabold text-[17px] press-soft"
         >
           {saving ? "Sparar…" : "Spara"}
         </Button>
@@ -193,40 +200,61 @@ const Journal = () => {
 
   return (
     <AppShell>
+      {/* Soft yellow hero */}
+      <div className="-mx-6 -mt-8 mb-6 relative overflow-hidden rounded-b-[36px]"
+           style={{ background: "linear-gradient(180deg, hsl(var(--yellow-journal)) 0%, hsl(var(--yellow-journal) / 0.5) 55%, hsl(var(--background)) 100%)" }}>
+        <div className="h-32 relative">
+          <div className="absolute left-1/2 -translate-x-1/2 top-5 animate-float">
+            <AbstractIcon name="pencil-soft" size={64} color="hsl(var(--orange-start))" />
+          </div>
+          <svg className="absolute inset-x-0 bottom-0 w-full" viewBox="0 0 400 60" preserveAspectRatio="none" aria-hidden>
+            <path d="M0 60 Q200 0 400 60 Z" fill="hsl(var(--background))" />
+          </svg>
+        </div>
+      </div>
+
       <header className="mb-6">
         <h1 className="text-[32px] leading-[38px] mb-1">Journal</h1>
         <p className="text-sm text-text-secondary">Spara dagen som den var.</p>
       </header>
 
       <h2 className="text-lg font-extrabold mb-3">Mallar</h2>
-      <div className="grid grid-cols-2 gap-3 mb-8">
-        {(Object.keys(TEMPLATES) as TemplateKey[]).map(k => {
+      <div className="space-y-3 mb-8">
+        {(Object.keys(TEMPLATES) as TemplateKey[]).map((k, i) => {
           const t = TEMPLATES[k];
           return (
             <button
               key={k}
               onClick={() => startTemplate(k)}
-              className={`text-left rounded-3xl ${t.color} text-white p-4 h-32 shadow-soft hover:opacity-95 transition flex flex-col justify-between`}
+              className={`w-full text-left rounded-3xl ${t.bg} ${t.text} px-5 py-4 shadow-card press-soft animate-fade-in-up flex items-center justify-between gap-3`}
+              style={{ animationDelay: `${i * 50}ms`, minHeight: "84px" }}
             >
-              <Plus size={18} className="opacity-80" />
-              <div>
+              <div className="min-w-0">
                 <div className="text-[17px] font-extrabold leading-tight">{t.title}</div>
                 <div className="text-[12px] opacity-90 mt-0.5">{t.subtitle}</div>
+              </div>
+              <div className="shrink-0 grid place-items-center w-12 h-12 rounded-2xl bg-white/20">
+                <AbstractIcon name={t.icon} size={24} color={t.iconColor} />
               </div>
             </button>
           );
         })}
       </div>
 
-      <h2 className="text-lg font-extrabold mb-3">Historik</h2>
+      <h2 className="text-lg font-extrabold mb-3 flex items-center gap-2">
+        <AbstractIcon name="bookmark-soft" size={18} color="hsl(var(--blue-calm))" />
+        Historik
+      </h2>
       {entries.length === 0 ? (
         <div className="card-cream p-6 text-center">
-          <BookOpen size={28} className="mx-auto mb-2 text-text-secondary" />
+          <div className="grid place-items-center mx-auto mb-2">
+            <AbstractIcon name="pencil-soft" size={32} color="hsl(var(--text-secondary))" />
+          </div>
           <p className="text-sm text-text-secondary">Inga anteckningar än. Börja med Tre rader.</p>
         </div>
       ) : (
         <ul className="space-y-3">
-          {entries.map(e => {
+          {entries.map((e, i) => {
             const t = TEMPLATES[e.template_type as TemplateKey];
             const preview = e.free_text ?? Object.values(e.body_json ?? {}).filter(Boolean).join(" · ");
             const toggleReport = async () => {
@@ -234,8 +262,12 @@ const Journal = () => {
               load();
             };
             return (
-              <li key={e.id} className="card-soft p-4 flex gap-3 items-start">
-                <div className={`w-2 self-stretch rounded-full ${t?.color ?? "bg-surface-alt"}`} />
+              <li
+                key={e.id}
+                className="card-soft p-4 flex gap-3 items-start animate-fade-in-up"
+                style={{ animationDelay: `${i * 50}ms` }}
+              >
+                <div className={`w-2 self-stretch rounded-full ${t?.bg ?? "bg-surface-alt"}`} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline justify-between gap-2 mb-1">
                     <span className="text-[15px] font-extrabold truncate">{e.title || t?.title || "Anteckning"}</span>
@@ -246,7 +278,7 @@ const Journal = () => {
                   {preview && <p className="text-sm text-text-secondary line-clamp-2 mb-2">{preview}</p>}
                   <button
                     onClick={toggleReport}
-                    className={`pill text-[11px] ${e.include_in_report ? "bg-blue-calm text-white" : "bg-surface-alt text-text-secondary"}`}
+                    className={`pill text-[11px] press-soft ${e.include_in_report ? "bg-blue-calm text-white" : "bg-surface-alt text-text-secondary"}`}
                   >
                     {e.include_in_report ? "✓ Inkluderas i rapport" : "Inkludera i rapport"}
                   </button>
