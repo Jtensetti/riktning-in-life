@@ -4,7 +4,7 @@ import { AppShell } from "@/components/AppShell";
 import { HeroBanner } from "@/components/HeroBanner";
 import { AbstractIcon } from "@/components/AbstractIcon";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, LogOut, Settings as SettingsIcon, HeartPulse } from "lucide-react";
+import { ChevronLeft, ChevronRight, LogOut, Settings as SettingsIcon } from "lucide-react";
 
 const More = () => {
   const navigate = useNavigate();
