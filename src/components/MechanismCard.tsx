@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
-import { AbstractIcon } from "./AbstractIcon";
+import { ChevronDown, Sparkles } from "lucide-react";
 
 export type Evidence = { source: string; year?: number; url?: string };
 
@@ -20,8 +19,8 @@ export const MechanismCard = ({ mechanism, evidence }: Props) => {
         className="w-full flex items-center gap-3 text-left press-soft"
         aria-expanded={open}
       >
-        <div className="shrink-0">
-          <AbstractIcon name="spark" size={64} />
+        <div className="shrink-0 w-10 h-10 rounded-2xl bg-orange-start/12 grid place-items-center text-orange-deep">
+          <Sparkles size={20} strokeWidth={2.4} />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-[11px] font-extrabold uppercase tracking-wider text-text-secondary">
@@ -55,3 +54,4 @@ export const MechanismCard = ({ mechanism, evidence }: Props) => {
     </div>
   );
 };
+

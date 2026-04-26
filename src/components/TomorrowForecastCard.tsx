@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
-import { AbstractIcon, type IconName } from "@/components/AbstractIcon";
 import type { Forecast } from "@/lib/forecast";
 import type { Exercise } from "@/lib/recommend";
 
@@ -10,12 +9,6 @@ interface Props {
   exercises: Exercise[];
   index?: number;
 }
-
-const KIND_ICON: Record<NonNullable<Forecast["kind"]>, IconName> = {
-  sleep: "moon-soft",
-  anxiety: "breath-wave",
-  both: "blob-smile",
-};
 
 const KIND_LABEL: Record<NonNullable<Forecast["kind"]>, string> = {
   sleep: "Risk för kort sömn",
@@ -43,13 +36,16 @@ export const TomorrowForecastCard = ({ forecast, exercises, index = 0 }: Props) 
   if (!forecast.kind) return null;
 
   const exercise = pickExerciseFor(forecast, exercises);
-  const icon = KIND_ICON[forecast.kind];
   const label = KIND_LABEL[forecast.kind];
 
   const handleClick = () => {
     if (exercise) navigate(`/ovningar/${exercise.id}`);
     else navigate("/ovningar");
   };
+
+  // Lead = förtroendeprocent (numerisk, betyder något) eller minuter om vi har övning.
+  const leadValue = exercise ? exercise.duration_minutes : Math.round(forecast.confidence * 100);
+  const leadUnit = exercise ? "min" : "%";
 
   return (
     <button
@@ -69,8 +65,14 @@ export const TomorrowForecastCard = ({ forecast, exercises, index = 0 }: Props) 
         <span className="text-[11px] font-extrabold opacity-90">{label}</span>
       </div>
 
-      <div className="absolute -right-2 top-6 opacity-95 pointer-events-none z-[1] drop-shadow-[0_6px_14px_rgba(0,0,0,0.18)]">
-        <AbstractIcon name={icon} size={112} color="currentColor" />
+      {/* Numerisk lead — minuter eller säkerhetsprocent */}
+      <div className="absolute right-4 top-12 z-[1] pointer-events-none flex flex-col items-end leading-none">
+        <span className="text-[60px] leading-[56px] font-extrabold tabular-nums tracking-tight">
+          {leadValue}
+        </span>
+        <span className="text-[11px] font-extrabold uppercase tracking-wider opacity-80 mt-1">
+          {leadUnit}
+        </span>
       </div>
 
       <div className="relative z-[1] mt-auto pr-24">
@@ -81,7 +83,7 @@ export const TomorrowForecastCard = ({ forecast, exercises, index = 0 }: Props) 
         <p className="text-[11px] opacity-75 leading-snug mb-3">{forecast.reason}</p>
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs font-extrabold opacity-90">
-            {exercise ? `${exercise.duration_minutes} min · ${exercise.category}` : "Öppna övningar"}
+            {exercise ? exercise.category : "Öppna övningar"}
           </span>
           <span className="shrink-0 grid place-items-center w-9 h-9 rounded-full bg-white/25">
             <ChevronRight size={18} />
@@ -91,3 +93,4 @@ export const TomorrowForecastCard = ({ forecast, exercises, index = 0 }: Props) 
     </button>
   );
 };
+

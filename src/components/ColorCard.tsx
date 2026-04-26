@@ -29,15 +29,28 @@ export interface ColorCardEyebrow {
   variant?: "soft" | "strong";
 }
 
+/**
+ * Stor numerisk/textuell ledning (top-right). Bär ~40 % av kortets visuella vikt.
+ * Använd siffran som faktiskt betyder något (minuter, score, antal) — aldrig
+ * dekorativ illustration.
+ */
+export interface ColorCardLead {
+  /** T.ex. "12" eller "85". Renderas extrafet och stort. */
+  value: ReactNode;
+  /** Liten etikett under, t.ex. "min" eller "/100". */
+  unit?: ReactNode;
+}
+
 interface Props {
   tone: CardTone;
+  /** Bakåtkompat — om `lead` saknas används icon-namnet i en liten Lucide-stil mark. */
   icon?: IconName;
   iconAccent?: string;
   className?: string;
   /** "sm" = ~120px, "md" = ~160px, "lg" = ~210px (carousel-kort). */
   size?: "sm" | "md" | "lg";
   onClick?: () => void;
-  /** Var ikonen sitter. Default top-right. */
+  /** Var det lilla mark/leadet sitter. Default top-right. */
   iconPosition?: "top-right" | "bottom-right";
   /** Liten markörbricka uppe i högra hörnet (t.ex. checkmark när klar). */
   badge?: ReactNode;
@@ -58,6 +71,8 @@ interface Props {
   metaRight?: ReactNode;
   /** Visa default chevron-knapp i nedre högra hörnet. */
   showChevron?: boolean;
+  /** Numerisk/textuell ledning (top-right). Ersätter sticker-illustrationen. */
+  lead?: ColorCardLead;
 
   /** Escape hatch för fri layout (t.ex. kompakta kort). Ignoreras om title sätts. */
   children?: ReactNode;
@@ -66,10 +81,10 @@ interface Props {
 /**
  * Återanvändbart färgat kort i Headspace-stil.
  *
- * Använder strukturerade slots (`eyebrow`, `title`, `reason`, `metaLeft`,
- * `metaRight`/`showChevron`) för att alla "Today-kort" ska få identisk
- * typografi, spacing och chevron-styling. Faller tillbaka till `children`
- * när man behöver en enklare layout (t.ex. QuickLog-mallar).
+ * Den visuella ledningen ligger i `lead` (en stor siffra/text som
+ * faktiskt betyder något — minuter, score, antal). `icon` accepteras för
+ * bakåtkompat men renderas bara som en liten textuell mark när `lead`
+ * saknas, så vi undviker dekorativa stickers.
  */
 export const ColorCard = ({
   tone,
@@ -88,12 +103,10 @@ export const ColorCard = ({
   metaLeft,
   metaRight,
   showChevron,
+  lead,
   children,
 }: Props) => {
   const minH = size === "sm" ? "min-h-[124px]" : size === "lg" ? "min-h-[220px]" : "min-h-[164px]";
-  // Stickern ska bära ~40% av kortets visuella vikt — större format än tidigare,
-  // tillåts överlappa kortets bakgrundsblob så att illustrationen leder ögat.
-  const iconSize = size === "sm" ? 64 : size === "lg" ? 112 : 88;
   const Tag = onClick ? "button" : "div";
   const onYellow = tone === "yellow";
 
@@ -109,6 +122,16 @@ export const ColorCard = ({
   const chevronWrapClass = onYellow ? "bg-foreground text-background" : "bg-white/25";
 
   const useStructuredLayout = title !== undefined;
+  const leadValueClass =
+    size === "sm"
+      ? "text-[36px] leading-[36px]"
+      : size === "lg"
+        ? "text-[64px] leading-[60px]"
+        : "text-[52px] leading-[48px]";
+
+  // Bakåtkompat: om bara `icon` skickas (inget `lead`) renderar vi en liten,
+  // diskret mark — inte längre en dekorativ sticker.
+  const fallbackMark = icon && !lead;
 
   return (
     <Tag
@@ -117,7 +140,7 @@ export const ColorCard = ({
       className={`relative overflow-hidden rounded-3xl ${toneBg[tone]} ${minH} p-4 text-left shadow-soft ${onClick ? "press-soft" : ""} animate-pop-in flex flex-col justify-between ${className}`}
       style={{ animationDelay: `var(--stagger-${Math.min(index, 4)})` }}
     >
-      {/* Bakgrundsblob — Headspace-vibe, alltid mörkare nyans, aldrig gradient */}
+      {/* Bakgrundsblob — mjuk ton-på-ton, aldrig gradient */}
       <span
         aria-hidden
         className={`absolute -bottom-10 -right-12 w-44 h-44 rounded-full ${toneBlob[tone]} opacity-25 pointer-events-none`}
@@ -129,19 +152,38 @@ export const ColorCard = ({
 
       {badge && <span className="absolute top-2 right-2 z-10">{badge}</span>}
 
-      {icon && iconPosition === "top-right" && (
+      {/* Top-right lead — stor siffra/text som bär ~40% av kortets vikt */}
+      {lead && iconPosition === "top-right" && (
         <span
-          className="absolute -top-2 -right-2 z-[1] pointer-events-none drop-shadow-[0_6px_14px_rgba(0,0,0,0.18)]"
+          className="absolute top-3 right-4 z-[1] pointer-events-none flex flex-col items-end leading-none"
           aria-hidden
         >
-          <AbstractIcon name={icon} size={iconSize} color="currentColor" accent={iconAccent} />
+          <span className={`font-extrabold tabular-nums tracking-tight ${leadValueClass}`}>
+            {lead.value}
+          </span>
+          {lead.unit && (
+            <span className="text-[11px] font-extrabold uppercase tracking-wider opacity-80 mt-1">
+              {lead.unit}
+            </span>
+          )}
+        </span>
+      )}
+
+      {/* Bakåtkompat-mark när bara `icon` skickas — diskret, inte sticker */}
+      {fallbackMark && iconPosition === "top-right" && (
+        <span className="absolute top-3 right-3 z-[1] pointer-events-none opacity-90">
+          <AbstractIcon name={icon!} size={28} color="currentColor" accent={iconAccent} inline />
         </span>
       )}
 
       <div className="relative z-[1]">
-        {icon && iconPosition === "bottom-right" && (
-          <div className="w-16 h-16 rounded-3xl bg-white/25 grid place-items-center mb-2">
-            <AbstractIcon name={icon} size={Math.round(iconSize * 0.7)} color="currentColor" accent={iconAccent} />
+        {(lead || icon) && iconPosition === "bottom-right" && (
+          <div className="w-14 h-14 rounded-2xl bg-white/15 grid place-items-center mb-2 leading-none">
+            {lead ? (
+              <span className="text-[22px] font-extrabold tabular-nums">{lead.value}</span>
+            ) : (
+              <AbstractIcon name={icon!} size={24} color="currentColor" accent={iconAccent} inline />
+            )}
           </div>
         )}
       </div>
@@ -161,7 +203,9 @@ export const ColorCard = ({
                 ))}
               </div>
             )}
-            <h4 className="text-[20px] leading-[24px] font-extrabold mb-1 pr-20">{title}</h4>
+            <h4 className={`text-[20px] leading-[24px] font-extrabold mb-1 ${lead && iconPosition === "top-right" ? "pr-24" : "pr-12"}`}>
+              {title}
+            </h4>
             {reason && <p className="text-sm opacity-90 leading-snug mb-3">{reason}</p>}
             {(metaLeft || metaRight || showChevron) && (
               <div className="flex items-center justify-between gap-2">
@@ -181,3 +225,4 @@ export const ColorCard = ({
     </Tag>
   );
 };
+
