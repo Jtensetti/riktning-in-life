@@ -44,6 +44,12 @@ const Checkin = () => {
   const [form, setForm] = useState<Form>(initialForm);
   const [saving, setSaving] = useState(false);
   const [showSafetyDialog, setShowSafetyDialog] = useState(false);
+  const { weather } = useWeather(true);
+  const [weatherOverride, setWeatherOverride] = useState<WeatherKind | null>(null);
+  const [showWeatherPicker, setShowWeatherPicker] = useState(false);
+
+  // Effective weather kind = manual override if set, else autodetected.
+  const effectiveKind: WeatherKind | null = weatherOverride ?? weather?.kind ?? null;
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
@@ -71,9 +77,12 @@ const Checkin = () => {
             safety_status: (data.safety_status as Form["safety_status"]) ?? "none",
             note: data.note ?? "",
           });
+          // Restore prior weather override if user changed it earlier today.
+          const prevKind = (data as any).weather_kind as WeatherKind | null | undefined;
+          if (prevKind && weather && prevKind !== weather.kind) setWeatherOverride(prevKind);
         }
       });
-  }, [user]);
+  }, [user, weather]);
 
   const save = async () => {
     if (!user) return;
@@ -89,7 +98,9 @@ const Checkin = () => {
       medication_taken: form.medication_taken || null,
       movement_today: form.movement_today || null,
       meaningful_activity: form.meaningful_activity || null,
-    }, { onConflict: "user_id,date" });
+      weather_kind: effectiveKind,
+      weather_temp_c: weather ? weather.tempC : null,
+    } as any, { onConflict: "user_id,date" });
     setSaving(false);
     if (error) {
       toast.error("Det gick inte att spara. Försök igen.");
