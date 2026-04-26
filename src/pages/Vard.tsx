@@ -288,6 +288,15 @@ const MedicationsView = ({ meds, onBack, onChanged, onLogFor }: { meds: Med[]; o
 
   const add = async () => {
     if (!user || !name.trim()) return;
+    const dupe = meds.find(
+      (m) => m.active &&
+        m.name.trim().toLowerCase() === name.trim().toLowerCase() &&
+        (m.dose ?? "").trim().toLowerCase() === dose.trim().toLowerCase(),
+    );
+    if (dupe) {
+      toast.error("Den här medicinen finns redan aktiv.");
+      return;
+    }
     const { error } = await supabase.from("medications").insert({
       user_id: user.id,
       name: name.trim(),
@@ -295,7 +304,11 @@ const MedicationsView = ({ meds, onBack, onChanged, onLogFor }: { meds: Med[]; o
       date_started: started || null,
       active: true,
     });
-    if (error) { toast.error("Kunde inte spara"); return; }
+    if (error) {
+      if ((error as { code?: string }).code === "23505") toast.error("Den här medicinen finns redan aktiv.");
+      else toast.error("Kunde inte spara");
+      return;
+    }
     toast.success("Tillagd");
     setName(""); setDose(""); setStarted(""); setAdding(false);
     onChanged();

@@ -596,6 +596,16 @@ const WeeklyReport = () => {
         </span>
       </label>
 
+      {summary && summary.week.length < 3 && (
+        <div className="card-cream p-4 mb-3 border-2 border-yellow-journal/40">
+          <p className="text-sm font-extrabold mb-1">För lite data ännu</p>
+          <p className="text-xs text-text-secondary leading-snug">
+            Rapporten blir mer användbar efter några dagars loggning och minst en veckoskattning.
+            Du kan ändå generera den om du vill.
+          </p>
+        </div>
+      )}
+
       <Button
         onClick={generatePdf}
         className="w-full h-12 rounded-full bg-blue-calm hover:bg-blue-calm/90 text-white font-extrabold"

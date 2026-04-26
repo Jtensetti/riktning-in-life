@@ -189,6 +189,9 @@ const CrisisPlan = () => {
             </a>
           ))}
         </div>
+        <p className="text-[11px] text-text-secondary mt-2 px-1">
+          Kontrollera då och då att telefonnummer och kontakter stämmer.
+        </p>
       </section>
 
       {mode === "read" ? (
