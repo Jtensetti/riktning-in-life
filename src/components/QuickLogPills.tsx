@@ -246,9 +246,18 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
               return (
                 <div
                   key={f.slug}
-                  className={`${colorBg(f.color)} rounded-2xl shadow-card animate-pop-in`}
+                  className={`relative overflow-hidden ${colorBg(f.color)} rounded-2xl shadow-card animate-pop-in`}
                   style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
                 >
+                  {/* Mjuka blob-bakgrunder för visuell rytm */}
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute -bottom-10 -right-10 w-36 h-36 rounded-full bg-white/15"
+                  />
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute -top-6 -left-8 w-20 h-20 rounded-full bg-white/10"
+                  />
                   <button
                     onClick={() => quickLog(f)}
                     disabled={isBusy}
