@@ -114,6 +114,7 @@ const Week = () => {
   const [activitiesAll, setActivitiesAll] = useState<{ activity_slug: string; label: string; icon: string; color: string; mood_delta: number | null }[]>([]);
   const [sessionsAll, setSessionsAll] = useState<{ exercises: { title: string; category: string; color: string } | null; mood_before: number | null; mood_after: number | null; anxiety_before: number | null; anxiety_after: number | null }[]>([]);
   const [historyFilter, setHistoryFilter] = useState<"all" | "checkins" | "exercises" | "activeTime">("all");
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [actionPrefs, setActionPrefs] = useState<ActionPreferences>(() => loadActionPreferences());
 
   const updatePrefs = (patch: Partial<ActionPreferences>) => {
