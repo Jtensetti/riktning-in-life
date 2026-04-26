@@ -694,6 +694,31 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
   );
 };
 
+function activitySummary(acts: any[]): string[] {
+  if (!acts.length) return ["Inga loggade aktiviteter under perioden."];
+  // Per aktivitet: snitt-mooddelta och antal
+  const byLabel = new Map<string, { count: number; sumDelta: number; minutes: number }>();
+  const byCategory = new Map<string, number>();
+  for (const a of acts) {
+    const cur = byLabel.get(a.label) ?? { count: 0, sumDelta: 0, minutes: 0 };
+    cur.count += 1;
+    cur.sumDelta += Number(a.mood_delta ?? 0);
+    cur.minutes += Number(a.duration_minutes ?? 0);
+    byLabel.set(a.label, cur);
+    byCategory.set(a.category, (byCategory.get(a.category) ?? 0) + 1);
+  }
+  const top = Array.from(byLabel.entries())
+    .map(([label, v]) => ({ label, count: v.count, avgDelta: v.sumDelta / v.count, minutes: v.minutes }))
+    .sort((a, b) => (b.avgDelta - a.avgDelta) || (b.count - a.count))
+    .slice(0, 5);
+  const cats = Array.from(byCategory.entries()).sort((a, b) => b[1] - a[1]);
+  return [
+    `Aktiviteter med störst humörlyft:`,
+    ...top.map(t => `  - ${t.label} · ${t.count} ggr · ${t.minutes} min totalt · snittlyft ${t.avgDelta >= 0 ? "+" : ""}${t.avgDelta.toFixed(1)}`),
+    `Fördelning per kategori: ${cats.map(([k, v]) => `${k} (${v})`).join(", ")}`,
+  ];
+}
+
 function summarize(c: any[], f: any[], safety: { passive: number; active: number; acute: number }) {
   if (!c.length) return "För lite data för en sammanfattning.";
   const first = c.slice(0, Math.ceil(c.length / 2));
