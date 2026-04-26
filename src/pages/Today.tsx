@@ -14,7 +14,7 @@ import { useUserSettings } from "@/hooks/useUserSettings";
 import { getTimeContext, type TimeContext } from "@/lib/timeContext";
 import { useWeather, isOutdoorFriendly, weatherLabel, hasAskedWeatherPermission, isWeatherPermissionGranted, isWeatherPermissionDismissed, dismissWeatherPermission, type Weather } from "@/lib/weather";
 import { ForYouCarousel } from "@/components/ForYouCarousel";
-import { recommendForToday, type Exercise as RecExercise, type Pick } from "@/lib/recommend";
+import { recommendForToday, type Exercise as RecExercise, type Pick, type EffectHistory, type ForecastSignal } from "@/lib/recommend";
 import { Moon } from "lucide-react";
 import { StreakRing } from "@/components/StreakRing";
 import { QuickLogPills } from "@/components/QuickLogPills";
