@@ -5,8 +5,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Illustration, colorIll } from "@/components/Illustrations";
-import { ChevronRight, LogOut } from "lucide-react";
-import { toast } from "sonner";
+import { ChevronRight, Settings as SettingsIcon } from "lucide-react";
+import { isOnboarded } from "@/lib/settings";
 
 type Checkin = {
   id: string;
@@ -17,6 +17,12 @@ type Checkin = {
   function_score: number | null;
   sleep_hours: number | null;
   safety_status: string | null;
+};
+
+type RecentSession = {
+  id: string;
+  created_at: string;
+  exercises: { title: string; category: string; duration_minutes: number; color: string } | null;
 };
 
 const todayISO = () => new Date().toISOString().split("T")[0];
@@ -80,28 +86,58 @@ const colorOf = (bg: string) => bg.replace("bg-", "").includes("blue") ? "blue"
   : bg.includes("pink") ? "pink"
   : "orange";
 
+const colorBg = (color: string) => {
+  switch (color) {
+    case "orange": return "bg-orange-start";
+    case "blue": return "bg-blue-calm";
+    case "yellow": return "bg-yellow-journal";
+    case "purple": return "bg-purple-sleep";
+    case "pink": return "bg-pink-move";
+    case "green": return "bg-green-recovery";
+    default: return "bg-cream-card";
+  }
+};
+
 const Today = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [checkin, setCheckin] = useState<Checkin | null>(null);
+  const [recent, setRecent] = useState<RecentSession[]>([]);
   const [fetching, setFetching] = useState(true);
 
   useEffect(() => {
-    if (!loading && !user) navigate("/auth");
+    if (loading) return;
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+    if (!isOnboarded()) {
+      navigate("/onboarding", { replace: true });
+    }
   }, [user, loading, navigate]);
 
   useEffect(() => {
     if (!user) return;
-    supabase
-      .from("daily_checkins")
-      .select("id,date,mood_heaviness,anxiety,energy,function_score,sleep_hours,safety_status")
-      .eq("user_id", user.id)
-      .eq("date", todayISO())
-      .maybeSingle()
-      .then(({ data }) => {
-        setCheckin(data as Checkin | null);
-        setFetching(false);
-      });
+    const load = async () => {
+      const [c, r] = await Promise.all([
+        supabase
+          .from("daily_checkins")
+          .select("id,date,mood_heaviness,anxiety,energy,function_score,sleep_hours,safety_status")
+          .eq("user_id", user.id)
+          .eq("date", todayISO())
+          .maybeSingle(),
+        supabase
+          .from("exercise_sessions")
+          .select("id,created_at,exercises(title,category,duration_minutes,color)")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(3),
+      ]);
+      setCheckin(c.data as Checkin | null);
+      setRecent((r.data ?? []) as unknown as RecentSession[]);
+      setFetching(false);
+    };
+    load();
   }, [user]);
 
   if (loading || fetching) {
@@ -113,8 +149,9 @@ const Today = () => {
   }
 
   const state = stateLabel(checkin);
-  const rec = recommend(checkin);
   const showSafety = checkin?.safety_status === "active_thoughts" || checkin?.safety_status === "acute";
+  // Spec: do not show cheerful recommendations during a safety state
+  const rec = showSafety ? null : recommend(checkin);
 
   return (
     <AppShell>
@@ -124,14 +161,11 @@ const Today = () => {
           <p className="text-sm font-semibold text-text-secondary capitalize mt-1">{formatDate()}</p>
         </div>
         <button
-          onClick={async () => {
-            await supabase.auth.signOut();
-            toast.success("Utloggad");
-          }}
+          onClick={() => navigate("/installningar")}
           className="p-2 rounded-full hover:bg-surface-alt"
-          aria-label="Logga ut"
+          aria-label="Inställningar"
         >
-          <LogOut size={18} className="text-text-secondary" />
+          <SettingsIcon size={20} className="text-text-secondary" strokeWidth={2.2} />
         </button>
       </header>
 
@@ -142,7 +176,7 @@ const Today = () => {
           </div>
           <h3 className="text-lg font-extrabold text-red-risk mb-2">Allvarlig signal</h3>
           <p className="text-sm text-foreground/80 mb-3">
-            Det här ska inte hanteras som vanlig statistik. Kontakta vården, psykiatrisk akutmottagning, 1177 eller 112 vid akut fara.
+            Det här ska inte hanteras som vanlig statistik. Kontakta vården, psykiatrisk akutmottagning, 1177 eller 112 vid akut fara. Kontakta också någon du litar på.
           </p>
           <Button
             onClick={() => navigate("/vard")}
@@ -174,28 +208,65 @@ const Today = () => {
         </Button>
       </section>
 
-      <h3 className="text-xl mb-3">Rekommenderat just nu</h3>
-      <div className={`rounded-3xl ${rec.color} text-white p-1 mb-4 shadow-soft overflow-hidden`}>
-        <div className="rounded-[20px] overflow-hidden mb-1">
-          <Illustration name={colorIll(colorOf(rec.color))} className="w-full h-auto" />
-        </div>
-        <div className="px-4 pb-4 pt-1">
-          <h4 className="text-2xl mb-1">{rec.title}</h4>
-          <p className="text-sm opacity-90 mb-4">{rec.reason}</p>
-          <Button
-            onClick={() => navigate("/ovningar")}
-            className="bg-white/20 hover:bg-white/30 text-white rounded-full font-extrabold backdrop-blur"
-          >
-            Starta <ChevronRight size={18} />
-          </Button>
-        </div>
-      </div>
+      {rec && (
+        <>
+          <h3 className="text-xl mb-3">Rekommenderat just nu</h3>
+          <div className={`rounded-3xl ${rec.color} text-white p-1 mb-4 shadow-soft overflow-hidden`}>
+            <div className="rounded-[20px] overflow-hidden mb-1">
+              <Illustration name={colorIll(colorOf(rec.color))} className="w-full h-auto" />
+            </div>
+            <div className="px-4 pb-4 pt-1">
+              <h4 className="text-2xl mb-1">{rec.title}</h4>
+              <p className="text-sm opacity-90 mb-4">{rec.reason}</p>
+              <Button
+                onClick={() => navigate("/ovningar")}
+                className="bg-white/20 hover:bg-white/30 text-white rounded-full font-extrabold backdrop-blur"
+              >
+                Starta <ChevronRight size={18} />
+              </Button>
+            </div>
+          </div>
 
-      <div className="flex gap-2 flex-wrap mb-4">
-        <Chip onClick={() => navigate("/ovningar")}>Andning 4 min</Chip>
-        <Chip onClick={() => navigate("/journal")}>Skriv tre rader</Chip>
-        <Chip onClick={() => navigate("/ovningar")}>Dagsljus 15 min</Chip>
-      </div>
+          <div className="flex gap-2 flex-wrap mb-7">
+            <Chip onClick={() => navigate("/ovningar")}>Andning 4 min</Chip>
+            <Chip onClick={() => navigate("/journal")}>Skriv tre rader</Chip>
+            <Chip onClick={() => navigate("/ovningar")}>Dagsljus 15 min</Chip>
+          </div>
+        </>
+      )}
+
+      {recent.length > 0 && (
+        <section className="mb-4">
+          <h3 className="text-xl mb-3">Senaste aktivitet</h3>
+          <ul className="relative pl-5 space-y-3">
+            <span className="absolute left-1.5 top-2 bottom-2 w-px border-l-2 border-dashed border-[#D7D0C9]" aria-hidden />
+            {recent.map(s => {
+              const ex = s.exercises;
+              if (!ex) return null;
+              return (
+                <li key={s.id} className="relative">
+                  <span className="absolute -left-[18px] top-3 w-2.5 h-2.5 rounded-full bg-orange-start" aria-hidden />
+                  <button
+                    onClick={() => navigate("/ovningar")}
+                    className="w-full text-left rounded-2xl bg-surface border border-border-soft p-3 flex items-center gap-3 shadow-card"
+                  >
+                    <div className={`w-[72px] h-[56px] rounded-xl shrink-0 overflow-hidden ${colorBg(ex.color)}`}>
+                      <Illustration name={colorIll(ex.color)} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-extrabold truncate">{ex.title}</h4>
+                      <p className="text-[11px] font-semibold text-text-secondary">
+                        {new Date(s.created_at).toLocaleDateString("sv-SE", { day: "numeric", month: "short" })} · {ex.category} · {ex.duration_minutes} min
+                      </p>
+                    </div>
+                    <ChevronRight size={18} className="text-text-secondary shrink-0" />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
     </AppShell>
   );
 };
