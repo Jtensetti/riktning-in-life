@@ -280,4 +280,24 @@ const ToggleRow = ({ label, checked, onChange }: { label: string; checked: boole
   </label>
 );
 
+const LinkRow = ({ icon, iconBg, iconColor, label, sub, onClick }: {
+  icon: React.ReactNode;
+  iconBg: string;
+  iconColor: string;
+  label: string;
+  sub: string;
+  onClick: () => void;
+}) => (
+  <button onClick={onClick} className="w-full card-soft p-4 flex items-center gap-3 text-left press-soft">
+    <div className={`w-11 h-11 rounded-2xl ${iconBg} ${iconColor} grid place-items-center shrink-0`}>
+      {icon}
+    </div>
+    <div className="flex-1 min-w-0">
+      <p className="text-[15px] font-extrabold">{label}</p>
+      <p className="text-xs text-text-secondary">{sub}</p>
+    </div>
+    <ChevronRight size={18} className="text-text-secondary shrink-0" />
+  </button>
+);
+
 export default Settings;
