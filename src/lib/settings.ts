@@ -30,16 +30,20 @@ export const loadReminders = (): Reminders => {
 
 export const saveReminders = (r: Reminders) => {
   localStorage.setItem(REMINDERS_KEY, JSON.stringify(r));
+  void patchUserSettings({ reminders: r });
 };
 
 export const isOnboarded = () => !!localStorage.getItem(ONBOARDED_KEY);
 
 export const markOnboarded = () => {
-  localStorage.setItem(ONBOARDED_KEY, new Date().toISOString());
+  const ts = new Date().toISOString();
+  localStorage.setItem(ONBOARDED_KEY, ts);
+  void patchUserSettings({ onboarded_at: ts });
 };
 
 export const resetOnboarded = () => {
   localStorage.removeItem(ONBOARDED_KEY);
+  void patchUserSettings({ onboarded_at: null });
 };
 
 // ─────────────────────────────────────────────────────────────
