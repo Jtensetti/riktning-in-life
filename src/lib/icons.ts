@@ -78,7 +78,7 @@ const CATEGORY_MAP: Record<string, IconName> = {
   "Sociala mikrosteg": "chat-bubble",
   "Skriv av dig": "pencil-soft",
   "Förbered vårdkontakt": "heart-care",
-  "Rörelse": "walk-figure",
+  "Rörelse": "run-figure",
 };
 
 /** Map any (slug, category, raw icon string) → safe IconName. */
