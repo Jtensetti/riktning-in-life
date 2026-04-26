@@ -55,10 +55,10 @@ export const HeroBanner = ({
         {topLeft && <div className="absolute top-4 left-4 z-10">{topLeft}</div>}
         {topRight && <div className="absolute top-4 right-4 z-10">{topRight}</div>}
         <div
-          className="absolute left-1/2 -translate-x-1/2 top-6 animate-float"
+          className="absolute left-1/2 -translate-x-1/2 top-4 animate-float"
           style={{ animationDuration: `${floatSec}s` }}
         >
-          <AbstractIcon name={icon} size={72} color={iconColor} accent={iconAccent} />
+          <AbstractIcon name={icon} size={80} color={iconColor} accent={iconAccent} inline />
         </div>
         <svg
           className="absolute inset-x-0 bottom-0 w-full"
