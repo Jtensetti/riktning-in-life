@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, Sparkles } from "lucide-react";
-import { AbstractIcon } from "@/components/AbstractIcon";
 import { recommendForToday, type Exercise, type CheckinSignals, type RecentSession } from "@/lib/recommend";
 import { getTimeContext } from "@/lib/timeContext";
 import { useMemo } from "react";
@@ -45,7 +44,7 @@ export const TodayStepCard = ({ exercises, todayCheckin, recentSessions, loggedT
       onClick={() => navigate(`/ovningar/${ex.id}`)}
       className="w-full text-left rounded-3xl bg-orange-start text-white p-5 shadow-soft press-soft animate-pop-in flex flex-col gap-3 min-h-[184px] relative overflow-hidden"
       style={{ animationDelay: `var(--stagger-${Math.min(index, 4)})` }}
-      aria-label={`Dagens lilla steg: ${ex.title}`}
+      aria-label={`Dagens lilla steg: ${ex.title}, ${ex.duration_minutes} minuter`}
     >
       {/* Bakgrundsblob i mörkare ton */}
       <span aria-hidden className="absolute -bottom-10 -right-10 w-44 h-44 rounded-full bg-orange-deep opacity-25 pointer-events-none" />
@@ -61,16 +60,22 @@ export const TodayStepCard = ({ exercises, todayCheckin, recentSessions, loggedT
         </span>
       </div>
 
-      <div className="absolute -right-2 top-6 opacity-95 pointer-events-none z-[1] drop-shadow-[0_6px_14px_rgba(0,0,0,0.18)]">
-        <AbstractIcon name="spark" size={104} color="currentColor" />
+      {/* Numerisk lead — minuter bär ~40% av kortets vikt, inga stickers */}
+      <div className="absolute right-4 top-12 z-[1] pointer-events-none flex flex-col items-end leading-none">
+        <span className="text-[60px] leading-[56px] font-extrabold tabular-nums tracking-tight">
+          {ex.duration_minutes}
+        </span>
+        <span className="text-[11px] font-extrabold uppercase tracking-wider opacity-80 mt-1">
+          min
+        </span>
       </div>
 
       <div className="relative z-[1] mt-auto">
         <h4 className="text-[20px] leading-[24px] font-extrabold mb-1 pr-24">{ex.title}</h4>
-        <p className="text-sm opacity-90 leading-snug mb-3">{pick.reasonLong}</p>
+        <p className="text-sm opacity-90 leading-snug mb-3 pr-2">{pick.reasonLong}</p>
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs font-extrabold opacity-90">
-            {ex.duration_minutes} min · {pick.reasonShort}
+            {pick.reasonShort}
           </span>
           <span className="shrink-0 grid place-items-center w-9 h-9 rounded-full bg-white/25">
             <ChevronRight size={18} />
@@ -80,3 +85,4 @@ export const TodayStepCard = ({ exercises, todayCheckin, recentSessions, loggedT
     </button>
   );
 };
+
