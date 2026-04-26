@@ -46,6 +46,24 @@ export type RecentSession = {
   exercise_id?: string;
 };
 
+/**
+ * Personlig effekt-historik: hur en specifik övning eller kategori brukar
+ * påverka dig. Värden i grova skalsteg (positivt = lyfter, negativt = drar ner).
+ * Optional — fungerar som mjuk bias och bryter ingen befintlig logik.
+ */
+export type EffectHistory = {
+  /** key = exercise.id eller exercise.title — vi försöker båda. */
+  byExerciseId?: Record<string, { avgDelta: number; count: number }>;
+  byExerciseTitle?: Record<string, { avgDelta: number; count: number }>;
+  byCategory?: Record<string, { avgDelta: number; count: number }>;
+};
+
+/** Forecast-signal för riktad rekommendation (t.ex. tvinga calm vid morgon-oro). */
+export type ForecastSignal = {
+  kind: "anxiety" | "sleep" | "both" | null;
+  partOfDay: "morning" | "midday" | "afternoon" | "evening" | "night";
+};
+
 const CALM_CATS = new Set(["Lugna kroppen", "Bryt ältande", "Sov bättre"]);
 const LIFT_CATS = new Set(["Rör dig mjukt", "Kom igång", "Mat & humör", "Sociala mikrosteg"]);
 const LAND_MAX_MIN = 3;
