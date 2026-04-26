@@ -12,7 +12,7 @@ export const WeatherChip = ({ weather, compact = true }: Props) => {
   const color = weatherIconColor(weather.kind, weather.isDaylight);
   return (
     <div className="flex items-center gap-1.5 rounded-full bg-surface/90 backdrop-blur shadow-card px-3 py-1.5">
-      <AbstractIcon name={name} size={compact ? 20 : 24} color={color} />
+      <AbstractIcon name={name} size={compact ? 18 : 22} color={color} inline />
       <span className="text-xs font-extrabold tabular-nums text-foreground">
         {Math.round(weather.tempC)}°
       </span>
