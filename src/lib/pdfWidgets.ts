@@ -425,6 +425,95 @@ export const drawWeekDots = (
   return y + 32;
 };
 
+/* ---------- Sammanfattningsblock (sömn / rörelse / journal / medicin) ---------- */
+export interface SummaryTile {
+  /** Kort etikett (t.ex. "Sömn"). */
+  label: string;
+  /** Stort huvudtal (t.ex. "6,8 h"). */
+  value: string;
+  /** Kompletterande totalsumma eller andra-rad (t.ex. "snitt · 7 nätter"). */
+  sub?: string;
+  /** Trendpil + kort förklaring (t.ex. "+0,4 h vs förra veckan"). */
+  trend?: { dir: "up" | "down" | "flat"; text: string; /** Är "upp" bra? Default true. */ goodWhenUp?: boolean };
+  /** Per-tile accentfärg. */
+  color?: RGB;
+}
+
+/**
+ * Fyrdelat sammanfattningsblock med stora siffror och trendpilar.
+ * Tänkt som "executive summary" överst i kliniska rapporter — vårdgivaren
+ * ska kunna fånga helheten på 5 sekunder. Returnerar nytt `y`.
+ */
+export const drawSummaryBlock = (
+  doc: jsPDF,
+  tiles: SummaryTile[],
+  y: number,
+  margin: number,
+): number => {
+  const pageW = doc.internal.pageSize.getWidth();
+  const gap = 10;
+  const totalW = pageW - margin * 2;
+  const tileW = (totalW - gap * (tiles.length - 1)) / tiles.length;
+  const tileH = 92;
+
+  tiles.forEach((t, i) => {
+    const x = margin + (tileW + gap) * i;
+    const color = t.color ?? PDF_COLORS.blue;
+
+    // Bakgrund
+    setFill(doc, PDF_COLORS.surface);
+    doc.roundedRect(x, y, tileW, tileH, 6, 6, "F");
+    // Vänster accentstripe
+    setFill(doc, color);
+    doc.roundedRect(x, y, 3, tileH, 1.5, 1.5, "F");
+
+    // Etikett
+    setText(doc, PDF_COLORS.inkMuted);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.text(t.label.toUpperCase(), x + 12, y + 18);
+
+    // Huvudvärde
+    setText(doc, PDF_COLORS.ink);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text(t.value, x + 12, y + 42);
+
+    // Sub-rad
+    if (t.sub) {
+      setText(doc, PDF_COLORS.inkSoft);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      const sub = doc.splitTextToSize(t.sub, tileW - 24)[0] ?? t.sub;
+      doc.text(sub, x + 12, y + 58);
+    }
+
+    // Trend-pil och text — ASCII-säkra symboler (Helvetica saknar ▲▼).
+    if (t.trend) {
+      const goodUp = t.trend.goodWhenUp ?? true;
+      const arrow = t.trend.dir === "up" ? "^" : t.trend.dir === "down" ? "v" : "=";
+      const isPositive =
+        t.trend.dir === "flat"
+          ? null
+          : (t.trend.dir === "up" && goodUp) || (t.trend.dir === "down" && !goodUp);
+      const trendColor =
+        isPositive === null
+          ? PDF_COLORS.inkMuted
+          : isPositive
+            ? PDF_COLORS.green
+            : PDF_COLORS.red;
+      setText(doc, trendColor);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      const txt = doc.splitTextToSize(`${arrow} ${t.trend.text}`, tileW - 24)[0] ?? t.trend.text;
+      doc.text(txt, x + 12, y + tileH - 12);
+    }
+  });
+
+  setText(doc, PDF_COLORS.ink);
+  return y + tileH + 14;
+};
+
 /* ---------- Sidnumrering & footer ---------- */
 export const drawFooter = (doc: jsPDF, footerText: string, margin: number) => {
   const pageW = doc.internal.pageSize.getWidth();
