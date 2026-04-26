@@ -38,25 +38,30 @@ export const Sparkline = ({ values, tone = "orange", width = 64, height = 24 }: 
   }
 
   const color = toneHsl(tone);
+  let sum = 0;
+  for (const v of values) sum += v ?? 0;
+  const sig = `${values.length}|${sum}|${tone}`;
 
   return (
-    <div style={{ width, height }} aria-hidden>
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
-          <Line
-            type="monotone"
-            dataKey="v"
-            stroke={color}
-            strokeWidth={2}
-            dot={false}
-            activeDot={false}
-            isAnimationActive={!reduced}
-            animationDuration={650}
-            animationEasing="ease-out"
-            connectNulls
-          />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
+    <AnimatedChart signature={sig}>
+      <div style={{ width, height }} aria-hidden>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
+            <Line
+              type="monotone"
+              dataKey="v"
+              stroke={color}
+              strokeWidth={2}
+              dot={false}
+              activeDot={false}
+              isAnimationActive={!reduced}
+              animationDuration={650}
+              animationEasing="ease-out"
+              connectNulls
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </AnimatedChart>
   );
 };
