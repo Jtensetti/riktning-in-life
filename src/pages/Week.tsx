@@ -433,6 +433,16 @@ const Week = () => {
             ariaSummary="Linjediagram över veckans riktning, sju dagar, skala noll till hundra."
           >
             <WeekDirectionChart data={directionSeries} />
+            <dl className="mt-3 pt-3 border-t border-border-soft grid grid-cols-1 gap-1.5 text-[11px] leading-snug text-text-secondary">
+              <div className="flex items-baseline gap-2">
+                <dt className="font-extrabold text-foreground/80 shrink-0">Riktning</dt>
+                <dd>= 100 − dagens belastning. Högre = lättare dag.</dd>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <dt className="font-extrabold text-foreground/80 shrink-0">—</dt>
+                <dd>Streck betyder att check-in saknas för dagen.</dd>
+              </div>
+            </dl>
           </ChartCard>
         </div>
 
