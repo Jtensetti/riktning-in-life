@@ -53,8 +53,13 @@ export const StackedRecovery = ({ data, height = 160 }: Props) => {
 
   const ariaLabel = "Veckans minuter fördelat på sömn, rörelse, mående och återhämtning";
 
+  let sum = 0;
+  for (const r of chartData) sum += r.sleep + r.movement + r.mood + r.recovery;
+  const sig = `${chartData.length}|${chartData[0]?.date ?? ""}|${chartData[chartData.length - 1]?.date ?? ""}|${sum}`;
+
   return (
-    <div role="img" aria-label={ariaLabel}>
+    <AnimatedChart signature={sig}>
+      <div role="img" aria-label={ariaLabel}>
       <div style={{ height }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 4, right: 0, bottom: 0, left: 0 }} barCategoryGap="22%">
