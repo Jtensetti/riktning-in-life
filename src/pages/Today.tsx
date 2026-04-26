@@ -142,6 +142,7 @@ const Today = () => {
   const navigate = useNavigate();
   const [checkin, setCheckin] = useState<Checkin | null>(null);
   const [recent, setRecent] = useState<RecentSession[]>([]);
+  const [trendData, setTrendData] = useState<TrendCheckin[]>([]);
   const [fetching, setFetching] = useState(true);
 
   useEffect(() => {
@@ -158,7 +159,7 @@ const Today = () => {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const [c, r] = await Promise.all([
+      const [c, r, t] = await Promise.all([
         supabase
           .from("daily_checkins")
           .select("id,date,mood_heaviness,anxiety,energy,function_score,sleep_hours,safety_status")
@@ -171,9 +172,16 @@ const Today = () => {
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
           .limit(3),
+        supabase
+          .from("daily_checkins")
+          .select("date,mood_heaviness,function_score,sleep_hours")
+          .eq("user_id", user.id)
+          .gte("date", isoDaysAgo(13))
+          .order("date", { ascending: true }),
       ]);
       setCheckin(c.data as Checkin | null);
       setRecent((r.data ?? []) as unknown as RecentSession[]);
+      setTrendData((t.data ?? []) as TrendCheckin[]);
       setFetching(false);
     };
     load();
@@ -189,8 +197,13 @@ const Today = () => {
 
   const state = stateLabel(checkin);
   const showSafety = checkin?.safety_status === "active_thoughts" || checkin?.safety_status === "acute";
-  // Spec: do not show cheerful recommendations during a safety state
   const rec = showSafety ? null : recommend(checkin);
+
+  // 7-day insights
+  const moodTrend = computeTrend(trendData, c => c.mood_heaviness, true);
+  const sleepTrend = computeTrend(trendData, c => c.sleep_hours == null ? null : Number(c.sleep_hours), false);
+  const funcTrend = computeTrend(trendData, c => c.function_score, false);
+  const hasInsights = trendData.length >= 2;
 
   return (
     <AppShell>
