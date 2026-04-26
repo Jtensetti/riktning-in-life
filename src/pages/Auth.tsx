@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Illustration } from "@/components/Illustrations";
+import { haptic } from "@/lib/haptics";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -20,9 +21,11 @@ const Auth = () => {
     });
     setSending(false);
     if (error) {
+      haptic("error");
       toast.error("Det gick inte att skicka länken. Försök igen.");
       return;
     }
+    haptic("success");
     setSent(true);
   };
 

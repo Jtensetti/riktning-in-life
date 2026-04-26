@@ -5,6 +5,7 @@ import { AbstractIcon, type IconName } from "./AbstractIcon";
 import { Plus, Sparkles, Info, Star, Loader2, AlertCircle, RefreshCw, Trash2, Pencil, Minus } from "lucide-react";
 import { toast } from "sonner";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
+import { haptic } from "@/lib/haptics";
 
 type FavItem = {
   slug: string;
@@ -135,7 +136,7 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
     if (!user || busy) return;
     setBusy(item.slug);
     setFailed(null);
-    if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.(10);
+    haptic("tap");
 
     const { data: inserted, error } = await supabase.from("activity_logs").insert({
       user_id: user.id,
@@ -151,12 +152,14 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
 
     setBusy(null);
     if (error || !inserted?.id) {
+      haptic("error");
       setFailed({ slug: item.slug, message: error?.message ?? "Okänt fel — försök igen." });
       toast.error(`Kunde inte logga ${item.label}`, {
         description: "Tryck på återförsök i kortet.",
       });
       return;
     }
+    haptic("success");
 
     onLogged?.();
 
