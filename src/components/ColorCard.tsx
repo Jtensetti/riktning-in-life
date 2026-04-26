@@ -130,15 +130,18 @@ export const ColorCard = ({
       {badge && <span className="absolute top-2 right-2 z-10">{badge}</span>}
 
       {icon && iconPosition === "top-right" && (
-        <span className="absolute top-3 right-3 z-[1] pointer-events-none">
+        <span
+          className="absolute -top-2 -right-2 z-[1] pointer-events-none drop-shadow-[0_6px_14px_rgba(0,0,0,0.18)]"
+          aria-hidden
+        >
           <AbstractIcon name={icon} size={iconSize} color="currentColor" accent={iconAccent} />
         </span>
       )}
 
       <div className="relative z-[1]">
         {icon && iconPosition === "bottom-right" && (
-          <div className="w-11 h-11 rounded-full bg-white/25 grid place-items-center mb-2">
-            <AbstractIcon name={icon} size={24} color="currentColor" accent={iconAccent} />
+          <div className="w-16 h-16 rounded-3xl bg-white/25 grid place-items-center mb-2">
+            <AbstractIcon name={icon} size={Math.round(iconSize * 0.7)} color="currentColor" accent={iconAccent} />
           </div>
         )}
       </div>
