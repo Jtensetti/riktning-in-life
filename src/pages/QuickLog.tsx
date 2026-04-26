@@ -231,9 +231,14 @@ const QuickLog = () => {
       .eq("user_id", user.id);
     setSavingMoodEdit(false);
     if (error) { toast.error("Kunde inte spara"); return; }
-    toast.success("Känsla uppdaterad");
-    setMoodEdit(null);
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.(10);
+    // Show in-drawer confirmation, then auto-close
+    setMoodEditSaved(moodEdit);
     setReloadKey(k => k + 1);
+    setTimeout(() => {
+      setMoodEditSaved(null);
+      setMoodEdit(null);
+    }, 1600);
   };
 
   const deleteEntry = async (e: DayEntry) => {
