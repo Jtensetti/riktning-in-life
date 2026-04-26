@@ -35,6 +35,7 @@ export type WeatherStatus =
 const CACHE_KEY = "riktning_weather_v1";
 const PERMISSION_ASKED_KEY = "riktning_weather_perm_asked";
 const PERMISSION_GRANTED_KEY = "riktning_weather_perm_granted";
+const PERMISSION_DISMISSED_KEY = "riktning_weather_perm_dismissed";
 const CACHE_TTL_MS = 30 * 60 * 1000;
 
 // Stockholm fallback when location is unavailable.
