@@ -819,9 +819,9 @@ const Week = () => {
       </section>
       )}
 
-      {/* Måttkort */}
-      {current.length > 0 && (
-        <section className="mb-7">
+      {/* Måttkort — endast inom detaljvyn */}
+      {historyOpen && current.length > 0 && (
+        <section className="mb-7 animate-fade-in-up">
           <h2 className="text-xl mb-1">Jämfört med förra veckan</h2>
           <p className="text-xs text-text-secondary mb-3">Riktning över tid — inte dagsbetyg</p>
           <div className="grid grid-cols-2 gap-3">
