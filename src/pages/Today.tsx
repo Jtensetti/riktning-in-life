@@ -32,6 +32,9 @@ import { ForecastEvidenceStrip } from "@/components/ForecastEvidenceStrip";
 import { heroVisualsFor } from "@/lib/heroVisuals";
 import { readAndUpdateLastSeen, greetingFor as greetingForLastSeen, type LastSeen } from "@/lib/lastSeen";
 import { getToneFor, phrasebookFor } from "@/lib/tone";
+import { decideTodayLayout, type ModuleId, type TodayContext } from "@/lib/todayLayout";
+import { quickStartsFor } from "@/lib/quickStarts";
+import { BASELINE_MIN_DAYS } from "@/lib/baseline";
 
 type Checkin = {
   id: string;
