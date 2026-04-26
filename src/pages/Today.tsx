@@ -15,7 +15,13 @@ import { getTimeContext, type TimeContext } from "@/lib/timeContext";
 import { useWeather, isOutdoorFriendly, weatherLabel, hasAskedWeatherPermission, isWeatherPermissionGranted, type Weather } from "@/lib/weather";
 import { ForYouCarousel } from "@/components/ForYouCarousel";
 import { recommendForToday, type Exercise as RecExercise, type Pick } from "@/lib/recommend";
-import { BookOpen, Sparkles } from "lucide-react";
+import { BookOpen, Sparkles, Moon } from "lucide-react";
+import { StreakRing } from "@/components/StreakRing";
+import { QuickLogPills } from "@/components/QuickLogPills";
+import { QuickLogFab } from "@/components/QuickLogFab";
+import { ActivityPicker, type ActivityDraft } from "@/components/ActivityPicker";
+import { countDaysInWindow, type StreakCounts } from "@/lib/streaks";
+import { toast } from "sonner";
 
 type Checkin = {
   id: string;
