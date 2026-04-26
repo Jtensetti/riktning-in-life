@@ -83,6 +83,7 @@ export const saveBaseline = (b: PersonalBaseline): void => {
   } catch {
     /* tysta — quota etc. */
   }
+  void patchUserSettings({ baseline: b });
 };
 
 /** Sätt baslinjen från check-ins om vi har nog med data. Idempotent. */
