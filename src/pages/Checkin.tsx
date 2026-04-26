@@ -7,6 +7,8 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { useWeather, weatherLabel, type WeatherKind } from "@/lib/weather";
+import { AbstractIcon, weatherIcon, weatherIconColor, weatherIconAccent } from "@/components/AbstractIcon";
 
 const todayISO = () => new Date().toISOString().split("T")[0];
 
