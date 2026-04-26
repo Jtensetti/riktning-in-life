@@ -4,7 +4,7 @@ import { AppShell } from "@/components/AppShell";
 import { HeroBanner } from "@/components/HeroBanner";
 import { AbstractIcon } from "@/components/AbstractIcon";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, LogOut, Settings as SettingsIcon, HeartPulse } from "lucide-react";
+import { ChevronLeft, ChevronRight, LogOut, Settings as SettingsIcon } from "lucide-react";
 
 const More = () => {
   const navigate = useNavigate();
@@ -38,14 +38,6 @@ const More = () => {
       </section>
 
       <section className="mb-7 space-y-3">
-        <Row
-          icon={<HeartPulse size={18} />}
-          iconBg="bg-green-recovery/15"
-          iconColor="text-green-recovery"
-          label="Hälsoanslutning"
-          sub="Synka steg, sömn och hjärtfrekvens"
-          onClick={() => navigate("/health")}
-        />
         <Row
           icon={<SettingsIcon size={18} />}
           iconBg="bg-blue-calm/15"
