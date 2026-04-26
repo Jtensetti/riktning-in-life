@@ -15,6 +15,21 @@ import { toast } from "sonner";
 import { FORMS, FormType, SIDE_EFFECTS } from "@/lib/forms";
 import { burdenScore, functionScore, recoveryScore, stabilityScore, stabilityLabel, pctChange, splitWeeks, type Checkin, type WeeklyFormScore } from "@/lib/metrics";
 import jsPDF from "jspdf";
+import {
+  PDF_COLORS,
+  drawReportHeader,
+  drawSectionHeader,
+  drawScoreCards,
+  drawSparklineRows,
+  drawHBarChart,
+  drawWeekDots,
+  drawFooter,
+  setPdfText,
+  setPdfDraw,
+  sevenDayLabels,
+  sevenDayDates,
+  seriesFor,
+} from "@/lib/pdfWidgets";
 
 type View = "home" | "form" | "meds" | "med_log" | "report";
 
