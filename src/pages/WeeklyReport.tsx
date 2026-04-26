@@ -119,6 +119,7 @@ const WeeklyReport = () => {
   const summary = useMemo(() => {
     if (!data) return null;
     const week = data.checkins.filter((c) => c.date >= isoDaysAgo(6));
+    const prevWeek = data.checkins.filter((c) => c.date < isoDaysAgo(6) && c.date >= isoDaysAgo(13));
     const { current, previous } = splitWeeks(data.checkins);
     const latestPhq = [...data.forms].reverse().find((x) => x.type === "phq9");
     const latestGad = [...data.forms].reverse().find((x) => x.type === "gad7");
@@ -137,17 +138,27 @@ const WeeklyReport = () => {
     const directionPrev = burdenPrev.value == null ? null : 100 - burdenPrev.value;
 
     const sleepHours = meanOf(week, "sleep_hours");
+    const sleepHoursPrev = meanOf(prevWeek, "sleep_hours");
     const sleepQuality = meanOf(week, "sleep_quality");
+    const lowSleepNights = week.filter((c) => c.sleep_hours != null && Number(c.sleep_hours) < 6).length;
     const movementYes = week.filter((c) => c.movement_today === "yes").length;
     const movementLittle = week.filter((c) => c.movement_today === "little").length;
+    const movementYesPrev = prevWeek.filter((c) => c.movement_today === "yes").length;
+    const movementLittlePrev = prevWeek.filter((c) => c.movement_today === "little").length;
     const meaningfulYes = week.filter((c) => c.meaningful_activity === "yes").length;
 
-    const adherence = data.medLogs.length
-      ? Math.round((data.medLogs.filter((x) => x.taken_status === "taken").length / data.medLogs.length) * 100)
+    // Medicin: 7 vs 7 dagar
+    const medLogsWeek = data.medLogs.filter((x) => x.date >= isoDaysAgo(6));
+    const medLogsPrev = data.medLogs.filter((x) => x.date < isoDaysAgo(6) && x.date >= isoDaysAgo(13));
+    const adherence = medLogsWeek.length
+      ? Math.round((medLogsWeek.filter((x) => x.taken_status === "taken").length / medLogsWeek.length) * 100)
+      : null;
+    const adherencePrev = medLogsPrev.length
+      ? Math.round((medLogsPrev.filter((x) => x.taken_status === "taken").length / medLogsPrev.length) * 100)
       : null;
     const sideEffects = Array.from(
       new Set(
-        data.medLogs.flatMap((x) => (Array.isArray(x.side_effects_json) ? (x.side_effects_json as string[]) : [])),
+        medLogsWeek.flatMap((x) => (Array.isArray(x.side_effects_json) ? (x.side_effects_json as string[]) : [])),
       ),
     );
 
@@ -158,6 +169,10 @@ const WeeklyReport = () => {
       acute: week.filter((c) => c.safety_status === "acute").length,
     };
 
+    // Journal-räkning (data.journals är redan filtrerat på senaste 7 dagar via include_in_report)
+    const journalCount = data.journals.length;
+    const journalDays = new Set(data.journals.map((j) => j.date)).size;
+
     return {
       week,
       direction,
@@ -167,14 +182,21 @@ const WeeklyReport = () => {
       rec,
       stab,
       sleepHours,
+      sleepHoursPrev,
       sleepQuality,
+      lowSleepNights,
       movementYes,
       movementLittle,
+      movementYesPrev,
+      movementLittlePrev,
       meaningfulYes,
       adherence,
+      adherencePrev,
       sideEffects,
       totalActMinutes,
       safety,
+      journalCount,
+      journalDays,
     };
   }, [data]);
 
