@@ -17,6 +17,8 @@ import { buildPriorities, type Priority } from "@/lib/priorities";
 import { refreshBaseline, loadBaseline, thresholdsFromBaseline } from "@/lib/baseline";
 import { buildDayHighlights, buildLiftSummary } from "@/lib/dayInsights";
 import { DayHighlightCards } from "@/components/DayHighlightCards";
+import { detectPatterns } from "@/lib/patterns";
+import { PatternsSection } from "@/components/PatternsSection";
 import { ChartCard } from "@/components/charts/ChartCard";
 // Bara WeekDirectionChart syns ovan kollapsen — resten lazy-laddas när
 // "Återhämtningshistorik" öppnas. Det halverar Recharts-overhead på
