@@ -515,9 +515,51 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
     const adherence = ml.length ? Math.round((ml.filter(x => x.taken_status === "taken").length / ml.length) * 100) : null;
     const sideEffects = Array.from(new Set(ml.flatMap(x => (Array.isArray(x.side_effects_json) ? x.side_effects_json : []))));
 
+    // ---- Beräknade scores (0–100) ----
+    const checkinsTyped = c as unknown as Checkin[];
+    const { current: curWeek, previous: prevWeek } = splitWeeks(checkinsTyped);
+    const latestPhq = [...f].reverse().find((x: any) => x.type === "phq9");
+    const latestGad = [...f].reverse().find((x: any) => x.type === "gad7");
+    const latestWho = [...f].reverse().find((x: any) => x.type === "who5");
+    const weekly: WeeklyFormScore = {
+      phq9: latestPhq ? Number(latestPhq.total_score) : undefined,
+      gad7: latestGad ? Number(latestGad.total_score) : undefined,
+      who5: latestWho ? Number(latestWho.total_score) : undefined,
+    };
+    const burdenCur = burdenScore(curWeek, weekly);
+    const burdenPrev = burdenScore(prevWeek, weekly);
+    const fnCur = functionScore(curWeek);
+    const fnPrev = functionScore(prevWeek);
+    const recCur = recoveryScore(curWeek);
+    const recPrev = recoveryScore(prevWeek);
+    const stabCur = stabilityScore(curWeek);
+    const stabPrev = stabilityScore(prevWeek);
+    const directionCur = burdenCur.value == null ? null : 100 - burdenCur.value;
+    const directionPrev = burdenPrev.value == null ? null : 100 - burdenPrev.value;
+    const fmtScore = (v: number | null) => v == null ? "—" : `${Math.round(v)}/100`;
+    const fmtDelta = (cur: number | null, prev: number | null) => {
+      if (cur == null || prev == null) return "";
+      const d = Math.round(cur - prev);
+      if (d === 0) return " (oförändrad)";
+      return ` (${d > 0 ? "+" : ""}${d} vs föregående vecka)`;
+    };
+
+    // ---- Bidragande faktorer (drivare) ----
+    const drivers = computeDrivers(checkinsTyped);
+
     const lines = [
       `RIKTNING – Klinisk rapport`,
       `Period: ${since} till ${new Date().toISOString().split("T")[0]} (${days} dagar)`,
+      ``,
+      `BERÄKNADE SCORES (senaste 7 dagar, 0–100)`,
+      `Riktning (100 − belastning): ${fmtScore(directionCur)}${fmtDelta(directionCur, directionPrev)}`,
+      `Belastning${burdenCur.withWeekly ? " (inkl. PHQ-9/GAD-7)" : " (utan veckoskattning)"}: ${fmtScore(burdenCur.value)}${fmtDelta(burdenCur.value, burdenPrev.value)}`,
+      `Funktion: ${fmtScore(fnCur)}${fmtDelta(fnCur, fnPrev)}`,
+      `Återhämtning: ${fmtScore(recCur)}${fmtDelta(recCur, recPrev)}`,
+      `Stabilitet: ${fmtScore(stabCur)} · ${stabilityLabel(stabCur, stabPrev)}`,
+      ``,
+      `VIKTIGASTE BIDRAGANDE FAKTORER`,
+      ...(drivers.length ? drivers.map(d => `- ${d}`) : ["För lite data för att rangordna drivare."]),
       ``,
       `SKATTNINGAR`,
       `PHQ-9: ${formStat("phq9")}`,
