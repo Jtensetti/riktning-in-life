@@ -22,6 +22,8 @@ import Sequences from "./pages/Sequences";
 import CrisisPlan from "./pages/CrisisPlan";
 import QuickLog from "./pages/QuickLog";
 import Health from "./pages/Health";
+import Explore from "./pages/Explore";
+import More from "./pages/More";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -61,6 +63,9 @@ const App = () => {
           <Route path="/ovningar" element={<Exercises />} />
           <Route path="/ovningar/:id" element={<ExerciseDetail />} />
           <Route path="/vecka" element={<Week />} />
+          <Route path="/insikter" element={<Week />} />
+          <Route path="/utforska" element={<Explore />} />
+          <Route path="/mer" element={<More />} />
           <Route path="/journal" element={<Journal />} />
           <Route path="/vard" element={<Vard />} />
           <Route path="/rapport/vecka" element={<WeeklyReport />} />
