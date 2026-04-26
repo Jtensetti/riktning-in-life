@@ -197,6 +197,20 @@ const Checkin = () => {
       return;
     }
     toast.success("Tack — det här hjälper dig se mönster.");
+
+    // Auto-refresh baseline med färsk data så att tröskelvärden alltid är aktuella.
+    // Body är fire-and-forget — vi blockerar inte navigeringen.
+    void (async () => {
+      const since = new Date();
+      since.setDate(since.getDate() - 30);
+      const { data } = await supabase
+        .from("daily_checkins")
+        .select("date,mood_heaviness,anxiety,energy,sleep_hours,function_score,daytime_bed_sofa_time_minutes")
+        .eq("user_id", user.id)
+        .gte("date", since.toISOString().split("T")[0]);
+      if (data) refreshBaseline(data as any);
+    })();
+
     navigate("/");
   };
 
