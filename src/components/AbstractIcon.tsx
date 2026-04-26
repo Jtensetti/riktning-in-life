@@ -36,9 +36,13 @@ export type IconName =
   | "stethoscope"   // dedicated icon for vård/care
   | "shield-soft"   // dedicated icon for crisis plan / safety
   | "pill"
+  | "pill-bottle"      // dedicated icon for medication bottle / Vård
   | "glass-water"
+  | "droplet"          // hydration / single drop, complements glass-water
   | "apple-bite"
+  | "meal-plate"       // food / meals
   | "lungs-breathe"
+  | "breath-wave"      // breathing exercise (rhythm wave)
   | "bed-soft"
   // Activity
   | "bike"
@@ -51,13 +55,19 @@ export type IconName =
   // Daily / social
   | "chat-bubble"
   | "people-two"
+  | "phone-soft"       // phone / contact (crisis plan, vård contacts)
   | "work-bag"
   | "coffee-cup"
+  | "book-open"        // open book (Learn / read articles)
   // UI / control
   | "plus-soft"
   | "check-soft"
   | "clock-soft"
+  | "clock-alarm"      // alarm clock (reminders)
   | "calendar-soft"
+  | "calendar-check"   // calendar with a checkmark
+  | "play-soft-circle" // play inside a circle (sequences, exercises)
+  | "pause-soft"       // pause (active exercise)
   | "lock-soft"
   | "info-soft"
   | "warning-soft"
