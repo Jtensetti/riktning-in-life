@@ -283,7 +283,7 @@ export const AbstractIcon = ({
               width="2"
               height="4.5"
               rx="1"
-              fill={color}
+              fill={a}
               transform={`rotate(${deg} 16 16)`}
             />
           ))}
@@ -295,9 +295,9 @@ export const AbstractIcon = ({
         <svg {...common}>
           <circle cx="11" cy="11" r="5" fill={color} />
           {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => (
-            <rect key={deg} x="10.2" y="1.5" width="1.6" height="3" rx="0.8" fill={color} transform={`rotate(${deg} 11 11)`} />
+            <rect key={deg} x="10.2" y="1.5" width="1.6" height="3" rx="0.8" fill={a} transform={`rotate(${deg} 11 11)`} />
           ))}
-          <path d="M11 24 a6 6 0 0 1 0 -12 h6 a6 6 0 0 1 6 6 a5 5 0 0 1 -3 9 H12 a4 4 0 0 1 -1 -3 z" fill={a} />
+          <path d="M11 24 a6 6 0 0 1 0 -12 h6 a6 6 0 0 1 6 6 a5 5 0 0 1 -3 9 H12 a4 4 0 0 1 -1 -3 z" fill={color} opacity="0.85" />
         </svg>
       );
 
@@ -308,6 +308,8 @@ export const AbstractIcon = ({
             d="M9 22 a6 6 0 0 1 0 -12 a7 7 0 0 1 13 -1 a5 5 0 0 1 1 10 z"
             fill={color}
           />
+          {/* Accent: mjuk undersida */}
+          <path d="M9 21 a8 8 0 0 0 14 0 z" fill={a} opacity="0.55" />
         </svg>
       );
 
@@ -316,11 +318,11 @@ export const AbstractIcon = ({
         <svg {...common}>
           <path
             d="M9 18 a6 6 0 0 1 0 -12 a7 7 0 0 1 13 -1 a5 5 0 0 1 1 10 z"
-            fill={a}
+            fill={color}
           />
-          <path d="M11 22 l-2 5" stroke={color} strokeWidth="2.4" strokeLinecap="round" />
-          <path d="M16 22 l-2 5" stroke={color} strokeWidth="2.4" strokeLinecap="round" />
-          <path d="M21 22 l-2 5" stroke={color} strokeWidth="2.4" strokeLinecap="round" />
+          <path d="M11 22 l-2 5" stroke={a} strokeWidth="2.4" />
+          <path d="M16 22 l-2 5" stroke={a} strokeWidth="2.4" />
+          <path d="M21 22 l-2 5" stroke={a} strokeWidth="2.4" />
         </svg>
       );
 
@@ -329,11 +331,11 @@ export const AbstractIcon = ({
         <svg {...common}>
           <path
             d="M9 18 a6 6 0 0 1 0 -12 a7 7 0 0 1 13 -1 a5 5 0 0 1 1 10 z"
-            fill={a}
+            fill={color}
           />
-          <circle cx="10" cy="24" r="1.6" fill={color} />
-          <circle cx="16" cy="26" r="1.6" fill={color} />
-          <circle cx="22" cy="24" r="1.6" fill={color} />
+          <circle cx="10" cy="24" r="1.6" fill={a} />
+          <circle cx="16" cy="26" r="1.6" fill={a} />
+          <circle cx="22" cy="24" r="1.6" fill={a} />
         </svg>
       );
 
@@ -344,8 +346,8 @@ export const AbstractIcon = ({
             d="M9 16 a6 6 0 0 1 0 -12 a7 7 0 0 1 13 -1 a5 5 0 0 1 1 10 z"
             fill={color}
           />
-          <path d="M5 22 h22" stroke={color} strokeWidth="2.2" strokeLinecap="round" opacity="0.7" />
-          <path d="M8 27 h16" stroke={color} strokeWidth="2.2" strokeLinecap="round" opacity="0.5" />
+          <path d="M5 22 h22" stroke={a} strokeWidth="2.4" opacity="0.85" />
+          <path d="M8 27 h16" stroke={a} strokeWidth="2.4" opacity="0.65" />
         </svg>
       );
 
@@ -363,9 +365,13 @@ export const AbstractIcon = ({
     case "weather-wind":
       return (
         <svg {...common}>
-          <path d="M3 11 h16 a3 3 0 1 0 -3 -3" stroke={color} strokeWidth="2.4" strokeLinecap="round" fill="none" />
-          <path d="M3 17 h22 a3 3 0 1 1 -3 3" stroke={color} strokeWidth="2.4" strokeLinecap="round" fill="none" />
-          <path d="M3 23 h13 a2.5 2.5 0 1 1 -2.5 2.5" stroke={color} strokeWidth="2.4" strokeLinecap="round" fill="none" />
+          {/* Liten "vind-kropp" som blob */}
+          <path
+            d="M21 10 a6 6 0 0 1 6 6 a5 5 0 0 1 -5 5 H8 a3 3 0 0 1 0 -6 a4 4 0 0 1 4 -4 a5 5 0 0 1 9 -1 z"
+            fill={color}
+          />
+          {/* Accent: vinddrag underifrån */}
+          <path d="M5 24 h14 a2.5 2.5 0 1 1 -2.5 2.5" stroke={a} strokeWidth="2.4" fill="none" />
         </svg>
       );
 
@@ -376,8 +382,9 @@ export const AbstractIcon = ({
             d="M22 4 a13 13 0 1 0 6 14 a10 10 0 0 1 -6 -14 z"
             fill={color}
           />
-          <circle cx="6" cy="8" r="0.9" fill={color} opacity="0.5" />
-          <circle cx="27" cy="26" r="1.1" fill={color} opacity="0.5" />
+          {/* Stjärnor i accent (tidigare i color) */}
+          <circle cx="6" cy="8" r="1.1" fill={a} />
+          <circle cx="27" cy="26" r="1.4" fill={a} />
         </svg>
       );
 
