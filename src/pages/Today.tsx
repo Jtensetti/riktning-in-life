@@ -26,6 +26,9 @@ import { toast } from "sonner";
 import { refreshBaseline, loadBaseline, thresholdsFromBaseline } from "@/lib/baseline";
 import { buildEveningPrediction } from "@/lib/dayInsights";
 import { EveningPredictionCard } from "@/components/EveningPredictionCard";
+import { heroVisualsFor } from "@/lib/heroVisuals";
+import { readAndUpdateLastSeen, greetingFor as greetingForLastSeen, type LastSeen } from "@/lib/lastSeen";
+import { getToneFor, phrasebookFor } from "@/lib/tone";
 
 type Checkin = {
   id: string;
@@ -238,6 +241,8 @@ const Today = () => {
   const [streakReloadKey, setStreakReloadKey] = useState(0);
   const [activitiesToday, setActivitiesToday] = useState<number>(0);
   const [savingEveningGoal, setSavingEveningGoal] = useState(false);
+  // Kontinuitet: kommer ihåg när användaren senast var här. Skrivs vid mount.
+  const [lastSeen] = useState<LastSeen>(() => readAndUpdateLastSeen());
 
   // Refresh time context every minute so partOfDay stays accurate without reload.
   useEffect(() => {
@@ -471,16 +476,20 @@ const Today = () => {
   })();
   void baselineRow; // använd-flagga: vi visar inte ett "personlig baslinje aktiv"-ord just nu
 
-  // Hero icon adapts to weather + daylight; falls back to friendly blob.
-  const heroIcon: IconName = weather
-    ? weatherIcon(weather.kind, weather.isDaylight)
-    : (time.partOfDay === "night" || time.partOfDay === "evening" ? "moon-stars" : "blob-smile");
-  const heroIconColor = weather
-    ? weatherIconColor(weather.kind, weather.isDaylight)
-    : (time.partOfDay === "evening" || time.partOfDay === "night"
-        ? "hsl(var(--surface))"
-        : "hsl(var(--orange-deep))");
-  const heroIconAccent = weather ? weatherIconAccent(weather.kind) : undefined;
+  // Levande hero — tid + väder + säsong + dagens energi avgör ton, ikon och tempo.
+  const hero = heroVisualsFor({
+    time,
+    weather,
+    energy: checkin?.energy ?? null,
+    safetyFlag: showSafety,
+  });
+
+  // Adaptiv ton — vad rubriker och CTA-knappen säger följer hur dagen ser ut.
+  const tone = getToneFor(checkin, thresholds);
+  const phrases = phrasebookFor(tone);
+
+  // Hälsning anpassad efter när användaren senast var här.
+  const greet = greetingForLastSeen(time.greeting, lastSeen);
 
   // Show permission card only once: not asked, no granted permission, not dismissed this session.
   const showWeatherPermission =
@@ -489,10 +498,12 @@ const Today = () => {
   return (
     <AppShell>
       <HeroBanner
-        tone={heroToneFor(time.partOfDay)}
-        icon={heroIcon}
-        iconColor={heroIconColor}
-        iconAccent={heroIconAccent}
+        tone={hero.tone}
+        icon={hero.icon}
+        iconColor={hero.iconColor}
+        iconAccent={hero.iconAccent}
+        mood={hero.mood}
+        pattern={hero.pattern}
         topLeft={
           <button
             onClick={() => navigate("/installningar")}
@@ -506,9 +517,12 @@ const Today = () => {
       />
 
       <header className="mb-6">
-        <p className="text-sm font-extrabold text-orange-deep mb-1 animate-fade-in-up">{time.greeting}</p>
+        <p className="text-sm font-extrabold text-orange-deep mb-1 animate-fade-in-up">{greet.headline}</p>
         <h1 className="text-[32px] leading-[38px]">Idag</h1>
         <p className="text-sm font-semibold text-text-secondary capitalize mt-1">{formatDate()}</p>
+        {greet.sub && (
+          <p className="text-sm text-text-secondary mt-2 animate-fade-in-up">{greet.sub}</p>
+        )}
       </header>
 
       {showWeatherPermission && (
@@ -585,6 +599,7 @@ const Today = () => {
       <section className="card-cream p-5 mb-7 animate-pop-in">
         <div className="flex items-start gap-3 mb-4">
           <div className="flex-1 min-w-0">
+            <p className="text-[11px] font-extrabold uppercase tracking-wider text-text-secondary mb-1">{phrases.whisper}</p>
             <h2 className="text-2xl mb-1">{state.title}</h2>
             <p className="text-sm text-text-secondary">{state.sub}</p>
           </div>
@@ -602,7 +617,7 @@ const Today = () => {
           onClick={() => navigate("/checkin")}
           className="w-full h-12 rounded-full bg-foreground hover:bg-foreground/90 text-background font-extrabold text-[17px] press-soft"
         >
-          {checkin ? "Uppdatera dagen" : "Logga dagen"}
+          {checkin ? phrases.ctaUpdate : phrases.ctaLog}
         </Button>
       </section>
 

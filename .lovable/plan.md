@@ -1,70 +1,124 @@
-## Vad vi redan har (bra grund)
+## Utgångsläge — vad vi redan har
 
-Appen räknar redan på rätt saker — men siffrorna lever lite isolerat:
+Den deterministiska motorn är redan stark:
 
-- **Veckomått**: `burdenScore`, `functionScore`, `recoveryScore`, `stabilityScore` (i `src/lib/metrics.ts`) — alla normaliserade 0–100 med PHQ-9/GAD-7-vikter när veckoformulär finns.
-- **Riktning per dag**: `100 − burden` visas i `WeekDirectionChart`.
-- **Mönster**: `generateInsights` letar enkla samband (rörelse → nästa dags oro, sömn <5h → oro, säng/soffa >120min → funktion).
-- **Prioriteringar**: `buildPriorities` rankar 1–3 fokusområden från senaste 7 dagar.
-- **Rekommendationer**: `recommendForToday` + `suggestedActions` gör tid-, väder-, energi-, längd- och repetitionsmedvetna val.
+- `timeContext` (morgon/midday/eftermiddag/kväll/natt + säsong + helg)
+- `weather` med outdoor-friendly + dagsljusflagga
+- `recommendForToday` med slot-modell, repetitionsstraff, energibudget
+- `buildEveningPrediction` + `buildDayHighlights` + `buildLiftSummary`
+- `PersonalBaseline` med median+IQR per fält
+- `streakCounts` per check-in/aktivitet/session
 
-## Vad som saknas (det som faktiskt skulle hjälpa)
+**Diagnos:** Appen *räknar* mycket — men UI:t reagerar lite. Du ser samma hero, samma rubrik, samma struktur oavsett om det är tisdag morgon med solsken eller söndag kväll efter en tung vecka. Det är där känslan av "den känner mig" tappas.
 
-Det vi inte gör idag — och som datan redan tillåter:
+Sex spår, från mest till minst synligt. Allt deterministiskt — inga AI-anrop, ingen ny tabell om vi inte måste.
 
-1. **Vi mäter aldrig effekten av handling.** `exercise_sessions` har `mood_before/after`, `anxiety_before/after`, `energy_before/after` — men ingen vy summerar "vad som faktiskt lyfter dig". `topActivities` på Week tittar bara på `mood_delta` från `activity_logs`, inte på sessions.
-2. **Veckoriktning saknar kontext.** Linjen visas, men användaren får inte veta *varför* en dag var bra/tung. Vi har all data per dag (sömn, rörelse, oro, mening, säng/soffa) — vi kan automatiskt peka på "bästa" och "tyngsta" dag och förklara skillnaden.
-3. **Vi förutsäger inte morgondagen.** Vi vet att kort sömn → högre oro nästa dag, men vi använder det bara i efterhand i "Mönster vi ser". Vi skulle kunna säga **ikväll**: "Med 4h sömn igår är morgondagens oro ofta högre — här är en kvällsbuffert."
-4. **Streak-data finns men kopplas inte till mående.** `countDaysInWindow` räknar dagar — men vi visar aldrig: "Veckor då du loggat ≥5 dagar har högre Riktning." Det skulle göra själva loggandet meningsfullt.
-5. **Personlig baslinje saknas.** Alla tröskelvärden är hårdkodade (oro ≥6, sömn <5h, säng >120min). När baslinjen ≥14 dagar finns kan vi använda *användarens* median istället, så "hög oro" betyder "högt för dig".
-6. **Lagrad insikts-rörelse.** `topActivities` visar 3 favoriter — men inte den motsatta sidan: "Dagar med >120min skärmtid sammanfaller med tyngre kvällar." (vi har inte skärmtid, men vi har säng/soffa, koffein-vana via aktiviteter, sociala mikrosteg etc.)
+---
 
-## Förslag — fyra spår, allt i bakgrunden, allt visas i befintlig stil
+### Spår 1 — Levande hero ("appen ser likadan ut" → "appen andas med dagen")
 
-### Spår A — "Vad lyfter dig" (utöka, inte bygga om)
-**Mattan:** Slå ihop `activity_logs.mood_delta` + uträknad delta från `exercise_sessions` (`mood_after − mood_before`, `anxiety_before − anxiety_after`). Vikta efter antal observationer (t-test-light: kräv minst 3 instanser innan en aktivitet räknas som "bevisad lyftare/sänkare"). 
+**Idag:** `HeroBanner` på Today får `tone = heroToneFor(partOfDay)` och en fast ikon. Två av fem tider använder samma orange.
 
-**UI:** "Vad lyfte dig?" på Week visar redan top 3. Lägg till:
-- En liten "evidence-chip": *"5 ggr · +1.8 humör"* (vi har redan datan, bara inte siffrorna).
-- En lågmäld rad **under** topplistan: "Drog ner: …" (max 1 — bara om det är statistiskt tydligt). Aldrig skuldbeläggande copy: "Den här verkar ta mer än den ger."
+**Förändring:**
+- Bredda paletten: morgon=orange, midday=yellow, eftermiddag=blue, kväll=purple, natt=djup-purple. Lägg in **säsongstint** ovanpå (vinter = kallare blå-undertone, sommar = varmare). En liten subtil shift, inte en ny färg.
+- **Dynamisk ikon** på heron: `sun` på morgonen, `moon-stars` på kvällen, `cloud-soft` vid mulet väder, `rain-drop` vid regn, `snow` vintertid med kyla, `leaf` höst. Vi har redan ikonbiblioteket i `AbstractIcon`.
+- **Float-amplitud** följer energin: låg energi → långsammare, mjukare animation; hög energi → snabbare. CSS-variabel `--float-duration` styrd från React.
+- **Pattern-cirklar** på/av baserat på `safety_status` — ingen lekfullhet vid akut signal.
 
-### Spår B — "Veckans bästa & tyngsta dag" (förklarande riktning)
-**Mattan:** Per-dag burden finns redan (`directionSeries` på Week). Plocka högsta och lägsta. För varje, jämför med veckosnittet på de 6 daglig-fält vi har — peka ut de 1–2 fält som avvek mest (t.ex. "sömn 8.2h vs snitt 6.1", "rörelse: ja vs sällan"). 
+**UI-arbete:** Liten utvidgning av `HeroBanner` (lägg till `mood?: "calm" | "neutral" | "lively"`-prop), ny helper `heroVisualsFor(time, weather, checkin, season)`. Inga nya assets.
 
-**UI:** Två små kort under `WeekDirectionChart`:
-- 🟢 **Tisdag — bästa dagen** *"Du sov 8h och rörde på dig. Det syns."*
-- 🟠 **Lördag — tyngst** *"Kort sömn + 180min stillasittande. Inget konstigt att det blev tungt."*
+---
 
-Konsekvent med "vi observerar, vi skuldbelägger inte"-tonen.
+### Spår 2 — "Välkommen tillbaka" (kontinuitet mellan besök)
 
-### Spår C — "Riktning ikväll" (prediktiv mikronudge)
-**Mattan:** En enkel 3-dagars rolling regression (vi har redan korrelations-logiken i `generateInsights`). Räkna ut **förväntad oro/funktion imorgon** baserat på dagens loggade signaler:
-- Sömn <5h igår → +1.4 oro imorgon (om sambandet finns i användarens data, annars genomsnitt).
-- Rörelse idag → −1.0 oro imorgon.
-- Säng/soffa >120min → −1.2 funktion imorgon.
+**Idag:** Hälsningen är `"God morgon"` oavsett om du var här för 10 min sen eller 4 dagar sen.
 
-**UI:** Ett nytt litet kort på **Today** efter klockan 19:00 (vi har `timeContext`):
-> 💡 **Tipset till imorgon:** *"Du har sovit kort två nätter — ikväll skulle en kvällsritual göra mest skillnad."*
+**Förändring:** Spara `lastSeenAt` i `localStorage` vid varje Today-render. När den nästa gång läses, härled:
+- `<2h sedan` → ingen ändring
+- `samma dag, >4h` → "Välkommen tillbaka" istället för standardhälsning
+- `igår` → "Välkommen tillbaka. Igår var en {bästa/tyngsta/stabil} dag." (vi har `buildDayHighlights`)
+- `>2 dagar` → "Skönt att se dig igen. Vi väntade." (varm, aldrig skuldbeläggande)
+- `>7 dagar` → "Välkommen tillbaka. Vi börjar om mjukt — bara en check-in idag räcker." + döljer nästan allt utom QuickLog och en enda mjuk övning.
 
-Bara om vi har minst 7 dagars data. Aldrig som larm — alltid som ett mjukt förslag som länkar till en konkret övning från `recommend.ts`.
+**UI-arbete:** Ny `src/lib/lastSeen.ts` (~20 rader) + ersätt rubriken på Today.
 
-### Spår D — "Personlig baslinje" (gradvis kalibrering)
-**Mattan:** När `checkins.length >= 14`, beräkna användarens **median + IQR** för varje fält och spara i `localStorage` (eller en ny `user_baselines`-tabell — fråga om preferens). Trösklarna i `buildPriorities` och `recommend.ts` byts från hårdkodade till `median + 0.5 * IQR`.
+---
 
-**UI:** Ingen ny vy. Bara att "hög oro" plötsligt betyder "högt för dig". Ett litet bevis-band i Settings: *"Din baslinje är kalibrerad — förslagen är nu personliga."*
+### Spår 3 — Kontextkänslig öppningssektion ("vad du först ser")
 
-### Spår E (bonus) — "Logg-konsekvens × Riktning" 
-**Mattan:** Korrelera `streakCounts.checkin` per vecka mot veckans `burdenScore`. Om r > 0.3 över 4+ veckor → en mjuk insikt.
+**Idag:** Today renderar alltid samma sektioner i samma ordning: Hero → State → För dig → Highlights → Quicklog osv.
 
-**UI:** Lägg till i `generateInsights`: *"Veckor då du loggar ofta tenderar att kännas lättare."* Gör loggandet självmotiverande utan att tjata.
+**Förändring:** Inför en **"Top of mind"-slot** allra först (efter hero, före allt annat). Vad som hamnar där bestäms av en enkel prioritetsfunktion `topOfMindFor(time, weather, checkin, baseline, lastSeen)`:
 
-## Vad jag inte föreslår
+| Trigger | Visas |
+|---|---|
+| `safety_status` = akut/aktiv | Direkt safety-card, inget annat ovan |
+| Ingen check-in idag + det är >12 | "Hur är dagen så här långt?" — direkt-inline check-in (3 sliders, save inline) |
+| Ingen check-in idag + morgon | "En mjuk start: bara välj en känsla." — 5 emoji-knappar som triggar QuickLog |
+| Hög oro idag (>baseline) | EveningPredictionCard flyttas upp + ett andnings-CTA |
+| Solen är ute + ingen rörelse loggad + dagtid | "Solen är uppe nu. 10 min ute räknas." — direkt CTA till promenadövning |
+| Tidigare i veckan: kort sömn 2 nätter + det är kväll | "Du har sovit kort. Här är din kvällsritual." |
+| Inget av ovan | Standardflöde |
 
-- **Ingen AI-text-generering** av insikter. All copy är deterministisk, granskad, svensk, varm. (Vi har Lovable AI tillgängligt men risken för svajig ton är för hög här.)
-- **Inga nya diagram-typer.** Vi använder befintliga `MetricBars`, `Sparkline`, `WeekDirectionChart`, `ChartCard`.
-- **Ingen ny tabell** om vi inte måste — `localStorage` räcker för baslinjen i steg ett.
-- **Inga procent-precisioner** ut till användaren ("47% bättre"). Allt formuleras som "tendens", "ofta", "verkar" — det är så vi pratar i appen idag.
+**UI-arbete:** En ny komponent `TopOfMind.tsx` (renderar alltid bara *en* sak), ny helper `src/lib/topOfMind.ts` med ren beslutslogik (lätt att enhetstesta). Återanvänder befintliga ColorCard/QuickLogPills.
 
-## Frågor till dig innan vi bygger
+---
 
-Vill jag att vi kör **alla fem spår på en gång** (stort men sammanhållet), eller börjar med **Spår A + B + C** (det som ger mest synlig nytta direkt)? Ska personlig baslinje (Spår D) lagras i `localStorage` eller i en ny `user_baselines`-tabell i databasen så det följer med över enheter?
+### Spår 4 — Mikro-läroögonblick (knyt data till kunskap)
+
+**Idag:** `Learn`-artiklar finns men ligger i sin egen flik. Du får ingen artikel *när den är relevant*.
+
+**Förändring:** När en daglig signal triggar något specifikt, visa en lågmäld **läs-1-min-rad** under det relaterade kortet:
+- Hög oro 3+ dagar → "Varför andning faktiskt funkar (1 min)" (länk till befintlig artikel)
+- Kort sömn 2+ nätter → "Vad sömnskuld gör med oron (1 min)"
+- Mycket säng/soffa → "Aktiveringsspiralen — och vägen ut (1 min)"
+
+Vi har redan `learn_articles`-tabellen och `read_minutes`. Det vi behöver är en koppling: en `topic_tag` per artikel (`"anxiety" | "sleep" | "activation" | ...`) och en helper som matchar mot dagens dominanta signal.
+
+**UI-arbete:** Migration som lägger `topic_tag text` på `learn_articles` (nullable, sätts manuellt), ny `src/lib/learnMatch.ts`, en liten inline-rad i Today-flödet.
+
+---
+
+### Spår 5 — Levande streak-feedback
+
+**Idag:** `StreakRing` visar siffror men berättar inget om *betydelse*.
+
+**Förändring:** När `streakCounts.checkin >= 5/7`, visa under ringen: "Veckor då du loggar ofta tenderar att kännas lättare för dig." (bara om vi har data som styrker det — annars en mjuk default: "Loggandet är hur vi ser mönster.")
+
+Lägg också in **micro-celebration**: när en streak passerar 3 / 7 / 14 / 30 dagar, en kort konfetti-fri animation (mjuk pulse + en rad text). Använder befintlig `animate-pop-in` + ny `streakMilestone()`-helper.
+
+**UI-arbete:** Liten extension av `StreakRing` + `useEffect` som detekterar tröskelpassage via `localStorage`-snapshot.
+
+---
+
+### Spår 6 — Adaptiv ton i copy
+
+**Idag:** Copy är genomgående mjuk och fin — men *samma* mjukhet vid 4h sömn som vid 8h sömn.
+
+**Förändring:** Inför `src/lib/tone.ts` med `getToneFor(checkin, baseline) → "tender" | "steady" | "energized"`. Tre varianter av varje rubrik på Today:
+- `tender` (hög tyngd/oro/kort sömn): "Idag räcker det att andas."
+- `steady` (i baslinjen): "Det här räcker idag."
+- `energized` (över baslinjen, god sömn): "Bra ingång — använd det."
+
+**UI-arbete:** Ren copy-tabell + en helper. Ingen ny komponent.
+
+---
+
+## Vad jag *inte* föreslår
+
+- **Inga push-notiser eller bakgrundsjobb** — appen är fortfarande klient-only utan service workers; vi gör allt vid render.
+- **Ingen AI-genererad copy** — risk för svaj ton, allt deterministiskt.
+- **Ingen ny "feed"-modell** — vi använder befintliga sektioner och bara *ordnar om* + lägger en topp-slot.
+- **Inga procent ut till användaren** ("47% bättre") — håller oss till "ofta", "tendens", "verkar" som idag.
+
+---
+
+## Förslag på leveranspaket
+
+Tre möjliga storlekar:
+
+1. **Snabb effekt (spår 1 + 2 + 6)** — hero andas, hälsningen minns dig, copy anpassas. Ingen migration, allt i lib + Today + HeroBanner.
+2. **Medel (1+2+3+6)** — också "Top of mind"-sektionen som faktiskt byter vad du ser först.
+3. **Hela paketet (1–6)** — också mikro-lärande och streak-firande. Kräver en liten migration på `learn_articles.topic_tag`.
+
+Säg vilket paket du vill köra på, eller plocka enskilda spår — så bygger jag i nästa steg.
