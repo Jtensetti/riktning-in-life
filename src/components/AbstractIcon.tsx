@@ -1,8 +1,21 @@
 // Riktning abstract icon set — flat, geometric, friendly. Inline SVGs in the same
 // style as the existing illustrations. Use `color` prop to override fill (defaults
 // to currentColor so they inherit text color).
+//
+// All ikoner följer regellistan i `src/lib/iconStyle.ts`. När du lägger till en
+// ny ikon: håll dig till ICON_VIEWBOX, stroke-skalan, currentColor som primär
+// fyllnad och använd `accent`-prop för sekundär ton. Avvikelser fångas i dev
+// av `validateIconStyle` och loggas som console.warn.
 
-import type { SVGProps } from "react";
+import { useEffect, type SVGProps } from "react";
+import {
+  ICON_DEFAULT_ACCENT,
+  ICON_DEFAULT_COLOR,
+  ICON_LINECAP,
+  ICON_LINEJOIN,
+  ICON_VIEWBOX,
+  validateIconStyle,
+} from "@/lib/iconStyle";
 
 export type IconName =
   // Layout / nav
@@ -71,14 +84,32 @@ interface Props extends Omit<SVGProps<SVGSVGElement>, "color"> {
   accent?: string;
 }
 
-export const AbstractIcon = ({ name, size = 28, color = "currentColor", accent, ...rest }: Props) => {
-  const a = accent ?? "hsl(var(--yellow-journal))";
+export const AbstractIcon = ({
+  name,
+  size = 28,
+  color = ICON_DEFAULT_COLOR,
+  accent,
+  ...rest
+}: Props) => {
+  const a = accent ?? ICON_DEFAULT_ACCENT;
+
+  // Dev-only style guardrail — loggar varningar om en ikon avviker från regellistan.
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      const warnings = validateIconStyle({ name, size, color });
+      for (const w of warnings) console.warn(`[icon-style] ${w}`);
+    }
+  }, [name, size, color]);
+
   const common = {
     width: size,
     height: size,
-    viewBox: "0 0 32 32",
+    viewBox: ICON_VIEWBOX,
     xmlns: "http://www.w3.org/2000/svg",
     "aria-hidden": true,
+    // Mjuka linjeändar/hörn ärvs av barn-elementen. Enskilda path kan fortfarande overrida.
+    strokeLinecap: ICON_LINECAP,
+    strokeLinejoin: ICON_LINEJOIN,
     ...rest,
   };
 
