@@ -817,6 +817,7 @@ const Week = () => {
           })()}
         </div>
       </section>
+      )}
 
       {/* Måttkort */}
       {current.length > 0 && (
