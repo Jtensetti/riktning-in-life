@@ -534,11 +534,26 @@ const Week = () => {
         </section>
       )}
 
-      {/* === LAGER 3: STRAVA-STYLE ÅTERHÄMTNINGSHISTORIK === */}
+      {/* === LAGER 3: ÅTERHÄMTNINGSHISTORIK — kollapsad som default === */}
       <section className="mb-7">
+        <button
+          onClick={() => setHistoryOpen((o) => !o)}
+          aria-expanded={historyOpen}
+          className="w-full card-quiet flex items-center justify-between gap-3 press-soft"
+        >
+          <div className="text-left">
+            <p className="text-[11px] font-extrabold uppercase tracking-wider text-text-secondary mb-1">Detaljer</p>
+            <p className="text-base font-extrabold">Återhämtningshistorik</p>
+            <p className="text-xs text-text-secondary mt-0.5">Senaste 7 dagar — diagram och dag-för-dag.</p>
+          </div>
+          <ChevronRight size={20} className={`shrink-0 text-text-secondary transition-transform ${historyOpen ? "rotate-90" : ""}`} />
+        </button>
+      </section>
+
+      {historyOpen && (
+      <section className="mb-7 animate-fade-in-up">
         <div className="mb-3">
-          <h2 className="text-xl">Återhämtningshistorik</h2>
-          <p className="text-xs text-text-secondary">Senaste 7 dagar — varje dag berättar något</p>
+          <p className="text-xs text-text-secondary">Varje dag berättar något</p>
         </div>
 
         {/* Filter-pills: styr både diagram och per-dag-listan */}
