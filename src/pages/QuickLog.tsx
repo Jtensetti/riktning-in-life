@@ -237,29 +237,86 @@ const QuickLog = () => {
 
   const deleteEntry = async (e: DayEntry) => {
     if (!user) return;
-    const tableMap: Record<TemplateKey, string> = {
-      sleep: "daily_checkins",
-      mood: "daily_checkins",
-      movement: "activity_logs",
-      medication: "medication_logs",
-    };
-    // Strip prefix to get raw id
     const rawId = e.id.replace(/^(sleep|mood|mov|med)-/, "");
-    const table = tableMap[e.source] as "daily_checkins" | "activity_logs" | "medication_logs";
 
     if (e.source === "sleep" || e.source === "mood") {
-      // Don't hard-delete the whole checkin if other axes exist; null the relevant fields instead.
-      const updates: any = e.source === "sleep"
-        ? { sleep_hours: null, sleep_quality: null }
-        : { mood_heaviness: null, anxiety: null, energy: null };
-      const { error } = await supabase.from(table).update(updates).eq("id", rawId).eq("user_id", user.id);
+      // Snapshot current values, then null them. Undo restores via UPDATE.
+      const fields = e.source === "sleep"
+        ? ["sleep_hours", "sleep_quality"] as const
+        : ["mood_heaviness", "anxiety", "energy"] as const;
+      const { data: snap, error: snapErr } = await supabase
+        .from("daily_checkins")
+        .select(fields.join(","))
+        .eq("id", rawId).eq("user_id", user.id).maybeSingle();
+      if (snapErr || !snap) { toast.error("Kunde inte ta bort"); return; }
+      const updates: any = Object.fromEntries(fields.map(f => [f, null]));
+      const { error } = await supabase
+        .from("daily_checkins").update(updates).eq("id", rawId).eq("user_id", user.id);
       if (error) { toast.error("Kunde inte ta bort"); return; }
-    } else {
-      const { error } = await supabase.from(table).delete().eq("id", rawId).eq("user_id", user.id);
-      if (error) { toast.error("Kunde inte ta bort"); return; }
+      setReloadKey(k => k + 1);
+      toast.success("Borttagen", {
+        duration: 6000,
+        action: {
+          label: "Ångra",
+          onClick: async () => {
+            const restore: any = Object.fromEntries(fields.map(f => [f, (snap as any)[f]]));
+            const { error: rErr } = await supabase
+              .from("daily_checkins").update(restore).eq("id", rawId).eq("user_id", user.id);
+            if (rErr) { toast.error("Kunde inte ångra"); return; }
+            toast.success("Återställd");
+            setReloadKey(k => k + 1);
+          },
+        },
+      });
+      return;
     }
-    toast.success("Borttagen");
-    setReloadKey(k => k + 1);
+
+    if (e.source === "movement") {
+      const { data: snap, error: snapErr } = await supabase
+        .from("activity_logs")
+        .select("id,user_id,date,activity_slug,label,category,icon,color,duration_minutes,mood_delta,note,created_at")
+        .eq("id", rawId).eq("user_id", user.id).maybeSingle();
+      if (snapErr || !snap) { toast.error("Kunde inte ta bort"); return; }
+      const { error } = await supabase.from("activity_logs").delete().eq("id", rawId).eq("user_id", user.id);
+      if (error) { toast.error("Kunde inte ta bort"); return; }
+      setReloadKey(k => k + 1);
+      toast.success("Borttagen", {
+        duration: 6000,
+        action: {
+          label: "Ångra",
+          onClick: async () => {
+            const { error: rErr } = await supabase.from("activity_logs").insert(snap as any);
+            if (rErr) { toast.error("Kunde inte ångra"); return; }
+            toast.success("Återställd");
+            setReloadKey(k => k + 1);
+          },
+        },
+      });
+      return;
+    }
+
+    if (e.source === "medication") {
+      const { data: snap, error: snapErr } = await supabase
+        .from("medication_logs")
+        .select("id,user_id,date,medication_id,taken_status,note,side_effects_json,created_at")
+        .eq("id", rawId).eq("user_id", user.id).maybeSingle();
+      if (snapErr || !snap) { toast.error("Kunde inte ta bort"); return; }
+      const { error } = await supabase.from("medication_logs").delete().eq("id", rawId).eq("user_id", user.id);
+      if (error) { toast.error("Kunde inte ta bort"); return; }
+      setReloadKey(k => k + 1);
+      toast.success("Borttagen", {
+        duration: 6000,
+        action: {
+          label: "Ångra",
+          onClick: async () => {
+            const { error: rErr } = await supabase.from("medication_logs").insert(snap as any);
+            if (rErr) { toast.error("Kunde inte ångra"); return; }
+            toast.success("Återställd");
+            setReloadKey(k => k + 1);
+          },
+        },
+      });
+    }
   };
 
   if (loading || fetching) {
