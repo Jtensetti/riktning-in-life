@@ -155,8 +155,10 @@ export const splitWeeks = (cs: Checkin[]) => {
 
 /**
  * Generate deterministic insights from the current week's checkins.
+ * `history` (optional) lets us look at fler veckor för meta-insikter
+ * som "veckor då du loggar ofta känns lättare".
  */
-export const generateInsights = (cs: Checkin[]): string[] => {
+export const generateInsights = (cs: Checkin[], history?: Checkin[]): string[] => {
   const insights: string[] = [];
   if (cs.length < 3) return insights;
 
