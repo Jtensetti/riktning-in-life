@@ -195,6 +195,17 @@ const colorBg = (color: string) => {
   }
 };
 
+// Hero tone for the time of day.
+const heroToneFor = (p: TimeContext["partOfDay"]): string => {
+  switch (p) {
+    case "morning": return "var(--orange-start)";
+    case "midday": return "var(--orange-start)";
+    case "afternoon": return "var(--blue-calm)";
+    case "evening": return "var(--purple-sleep)";
+    case "night": return "var(--purple-sleep)";
+  }
+};
+
 const Today = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -202,6 +213,15 @@ const Today = () => {
   const [recent, setRecent] = useState<RecentSession[]>([]);
   const [trendData, setTrendData] = useState<TrendCheckin[]>([]);
   const [fetching, setFetching] = useState(true);
+  const [time, setTime] = useState<TimeContext>(() => getTimeContext());
+  const { weather, status: weatherStatus, requestLocation } = useWeather(true);
+  const [permissionDismissed, setPermissionDismissed] = useState(false);
+
+  // Refresh time context every minute so partOfDay stays accurate without reload.
+  useEffect(() => {
+    const id = setInterval(() => setTime(getTimeContext()), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     if (loading) return;
@@ -255,7 +275,7 @@ const Today = () => {
 
   const state = stateLabel(checkin);
   const showSafety = checkin?.safety_status === "active_thoughts" || checkin?.safety_status === "acute";
-  const rec = showSafety ? null : recommend(checkin);
+  const rec = showSafety ? null : recommend(checkin, time, weather);
 
   // 7-day insights
   const moodTrend = computeTrend(trendData, c => c.mood_heaviness, true);
@@ -263,12 +283,28 @@ const Today = () => {
   const funcTrend = computeTrend(trendData, c => c.function_score, false);
   const hasInsights = trendData.length >= 2;
 
+  // Hero icon adapts to weather + daylight; falls back to friendly blob.
+  const heroIcon: IconName = weather
+    ? weatherIcon(weather.kind, weather.isDaylight)
+    : (time.partOfDay === "night" || time.partOfDay === "evening" ? "moon-soft" : "blob-smile");
+  const heroIconColor = weather
+    ? weatherIconColor(weather.kind, weather.isDaylight)
+    : (time.partOfDay === "evening" || time.partOfDay === "night"
+        ? "hsl(var(--surface))"
+        : "hsl(var(--orange-deep))");
+  const heroIconAccent = weather ? weatherIconAccent(weather.kind) : undefined;
+
+  // Show permission card only once: not asked, no granted permission, not dismissed this session.
+  const showWeatherPermission =
+    !weather && !hasAskedWeatherPermission() && !isWeatherPermissionGranted() && !permissionDismissed;
+
   return (
     <AppShell>
       <HeroBanner
-        tone="var(--orange-start)"
-        icon="blob-smile"
-        iconColor="hsl(var(--orange-deep))"
+        tone={heroToneFor(time.partOfDay)}
+        icon={heroIcon}
+        iconColor={heroIconColor}
+        iconAccent={heroIconAccent}
         topLeft={
           <button
             onClick={() => navigate("/installningar")}
@@ -278,12 +314,21 @@ const Today = () => {
             <SettingsIcon size={18} className="text-foreground" strokeWidth={2.4} />
           </button>
         }
+        topRight={weather ? <WeatherChip weather={weather} /> : undefined}
       />
 
       <header className="mb-6">
+        <p className="text-sm font-extrabold text-orange-deep mb-1 animate-fade-in-up">{time.greeting}</p>
         <h1 className="text-[32px] leading-[38px]">Idag</h1>
         <p className="text-sm font-semibold text-text-secondary capitalize mt-1">{formatDate()}</p>
       </header>
+
+      {showWeatherPermission && (
+        <WeatherPermissionCard
+          onAllow={() => requestLocation()}
+          onDismiss={() => setPermissionDismissed(true)}
+        />
+      )}
 
       {showSafety && (
         <div className="rounded-3xl border-2 border-red-risk bg-red-bg p-5 mb-7 animate-pop-in">
