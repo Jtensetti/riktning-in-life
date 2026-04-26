@@ -204,6 +204,48 @@ const Week = () => {
       .filter((x): x is { priority: Priority; exercise: ExerciseLite } => x !== null);
   }, [priorities, exercises]);
 
+  // Data till "Dagens lilla steg" — uppdateras automatiskt när checkins/activities/sessions ändras.
+  const todayIso = new Date().toISOString().split("T")[0];
+  const todayCheckin = useMemo(() => {
+    const c = checkins.find((x) => x.date === todayIso);
+    if (!c) return null;
+    return {
+      mood_heaviness: c.mood_heaviness ?? null,
+      anxiety: c.anxiety ?? null,
+      energy: c.energy ?? null,
+      function_score: c.function_score ?? null,
+      sleep_hours: c.sleep_hours == null ? null : Number(c.sleep_hours),
+      safety_status: c.safety_status ?? null,
+    };
+  }, [checkins, todayIso]);
+
+  const recentSessionsForRec = useMemo(
+    () => sessions.map((s) => ({
+      category: s.exercises?.category ?? "",
+      created_at: s.created_at,
+    })),
+    [sessions],
+  );
+
+  const loggedToday = useMemo(
+    () => activities.filter((a) => a.date === todayIso).length
+      + sessions.filter((s) => s.created_at.split("T")[0] === todayIso).length,
+    [activities, sessions, todayIso],
+  );
+
+  const exercisesForRec = useMemo(
+    () => exercises.map((e) => ({
+      id: e.id,
+      title: e.title,
+      category: e.category,
+      type: "",
+      duration_minutes: e.duration_minutes,
+      description: "",
+      color: e.color,
+    })),
+    [exercises],
+  );
+
   if (loading || fetching) {
     return <AppShell><div className="h-40 rounded-3xl bg-surface-alt animate-pulse" /></AppShell>;
   }
