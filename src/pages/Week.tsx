@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { Illustration } from "@/components/Illustrations";
 import { AbstractIcon } from "@/components/AbstractIcon";
+import { HeroBanner } from "@/components/HeroBanner";
 import { ArrowDown, ArrowUp, Minus } from "lucide-react";
 import {
   burdenScore, functionScore, recoveryScore, stabilityScore, stabilityLabel,
@@ -95,18 +96,12 @@ const Week = () => {
 
   return (
     <AppShell>
-      {/* Soft hero strip */}
-      <div className="-mx-6 -mt-8 mb-6 relative overflow-hidden rounded-b-[36px]"
-           style={{ background: "linear-gradient(180deg, hsl(var(--green-recovery)) 0%, hsl(var(--green-recovery) / 0.45) 55%, hsl(var(--background)) 100%)" }}>
-        <div className="h-32 relative">
-          <div className="absolute left-1/2 -translate-x-1/2 top-5 animate-float">
-            <AbstractIcon name="pie" size={72} color="hsl(var(--surface))" accent="hsl(var(--yellow-journal))" />
-          </div>
-          <svg className="absolute inset-x-0 bottom-0 w-full" viewBox="0 0 400 60" preserveAspectRatio="none" aria-hidden>
-            <path d="M0 60 Q200 0 400 60 Z" fill="hsl(var(--background))" />
-          </svg>
-        </div>
-      </div>
+      <HeroBanner
+        tone="var(--green-recovery)"
+        icon="pie"
+        iconColor="hsl(var(--surface))"
+        iconAccent="hsl(var(--yellow-journal))"
+      />
 
       <h1 className="text-[32px] leading-[38px] mb-1">Vecka</h1>
       <p className="text-sm text-text-secondary mb-6">Riktning över tid – inte dagsbetyg.</p>
