@@ -13,6 +13,9 @@ import { ChevronRight, Settings as SettingsIcon } from "lucide-react";
 import { isOnboarded } from "@/lib/settings";
 import { getTimeContext, type TimeContext } from "@/lib/timeContext";
 import { useWeather, isOutdoorFriendly, weatherLabel, hasAskedWeatherPermission, isWeatherPermissionGranted, type Weather } from "@/lib/weather";
+import { ForYouCarousel } from "@/components/ForYouCarousel";
+import { recommendForToday, type Exercise as RecExercise, type Pick } from "@/lib/recommend";
+import { BookOpen, Sparkles } from "lucide-react";
 
 type Checkin = {
   id: string;
@@ -212,6 +215,9 @@ const Today = () => {
   const [checkin, setCheckin] = useState<Checkin | null>(null);
   const [recent, setRecent] = useState<RecentSession[]>([]);
   const [trendData, setTrendData] = useState<TrendCheckin[]>([]);
+  const [library, setLibrary] = useState<RecExercise[]>([]);
+  const [featuredArticle, setFeaturedArticle] = useState<{ slug: string; title: string; excerpt: string; color: string; read_minutes: number } | null>(null);
+  const [todayRoutine, setTodayRoutine] = useState<{ slug: string; title: string; description: string; color: string; ids: string[] } | null>(null);
   const [fetching, setFetching] = useState(true);
   const [time, setTime] = useState<TimeContext>(() => getTimeContext());
   const { weather, status: weatherStatus, requestLocation } = useWeather(true);
@@ -237,7 +243,11 @@ const Today = () => {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const [c, r, t] = await Promise.all([
+      const tNow = getTimeContext();
+      const wantTimeOfDay = tNow.partOfDay === "morning" ? "morning"
+        : (tNow.partOfDay === "evening" || tNow.partOfDay === "night") ? "evening"
+        : "afternoon";
+      const [c, r, t, lib, art, seq] = await Promise.all([
         supabase
           .from("daily_checkins")
           .select("id,date,mood_heaviness,anxiety,energy,function_score,sleep_hours,safety_status")
@@ -249,17 +259,46 @@ const Today = () => {
           .select("id,created_at,mood_before,mood_after,anxiety_before,anxiety_after,energy_before,energy_after,exercises(title,category,duration_minutes,color)")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
-          .limit(3),
+          .limit(10),
         supabase
           .from("daily_checkins")
           .select("date,mood_heaviness,function_score,sleep_hours")
           .eq("user_id", user.id)
           .gte("date", isoDaysAgo(13))
           .order("date", { ascending: true }),
+        supabase
+          .from("exercises")
+          .select("id,title,category,type,duration_minutes,description,color,mechanism"),
+        supabase
+          .from("learn_articles")
+          .select("slug,title,excerpt,color,read_minutes")
+          .order("created_at", { ascending: true })
+          .limit(8),
+        supabase
+          .from("exercise_sequences")
+          .select("slug,title,description,color,time_of_day,exercise_ids_json")
+          .eq("time_of_day", wantTimeOfDay)
+          .limit(1)
+          .maybeSingle(),
       ]);
       setCheckin(c.data as Checkin | null);
       setRecent((r.data ?? []) as unknown as RecentSession[]);
       setTrendData((t.data ?? []) as TrendCheckin[]);
+      setLibrary((lib.data ?? []) as RecExercise[]);
+      if (art.data && art.data.length > 0) {
+        // Rotera: dagens datum bestämmer vilken som är featured
+        const idx = new Date().getDate() % art.data.length;
+        setFeaturedArticle(art.data[idx] as typeof featuredArticle);
+      }
+      if (seq.data) {
+        setTodayRoutine({
+          slug: seq.data.slug,
+          title: seq.data.title,
+          description: seq.data.description,
+          color: seq.data.color,
+          ids: (seq.data.exercise_ids_json as unknown as string[]) ?? [],
+        });
+      }
       setFetching(false);
     };
     load();

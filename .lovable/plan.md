@@ -1,137 +1,262 @@
 
-# Dynamisk app: tid, datum & väder
+# Mer innehåll, smartare matchning, samma mjuka känsla
 
-## Mål
-Appen ska känna av **tid på dygnet**, **veckodag**, **årstid** och **aktuellt väder** — och anpassa rekommendationer, hälsningar och loggning därefter. Inga "morgonrutiner kl 15" och inga "gå ut i solen" när det regnar. Vädret loggas dessutom automatiskt med varje check-in så vi senare kan korrelera humör mot väder.
+Mål: appen ska kännas **rik på innehåll**, **forskningsstödd utan att bli torr**, och **lyhörd** — visar rätt sak vid rätt tillfälle. Tonen är fortsatt varm, peppande och kravlös. "Du behöver inte fixa allt — välj en sak."
 
 ---
 
-## 1. Tidskontext (`src/lib/timeContext.ts` – NY)
-Ren funktion utan beroenden. Returnerar:
+## 1. "För dig just nu"-karusell på Today (kärnan i upplevelsen)
+
+Ny sektion direkt under State-kortet, **före** "Rekommenderat just nu" (som vi krymper till en sekundär chip-rad — karusellen tar över huvudrollen).
+
+**Logik (`src/lib/recommend.ts` – NY):** ren funktion som tar `(checkin, weeklyForms, recentSessions, time, weather, library)` och returnerar **3 slots** med olika syften så förslagen aldrig blir varianter av samma sak:
+
 ```ts
-type TimeContext = {
-  partOfDay: "morning" | "midday" | "afternoon" | "evening" | "night"; // 5–10, 10–14, 14–17, 17–22, 22–5
-  greeting: string;          // "God morgon", "God kväll" …
-  isWeekend: boolean;
-  season: "winter" | "spring" | "summer" | "autumn"; // svenskt: dec–feb / mar–maj / jun–aug / sep–nov
-  hour: number;              // 0–23
+type Slot = "calm" | "lift" | "land"; // alltid i denna ordning
+type Pick = {
+  slot: Slot;
+  exercise: Exercise;
+  reasonShort: string;     // "Sänker pulsen" — chip-text
+  reasonLong: string;      // 1 mening på kortet
+  fitScore: number;        // för debug + "stark match"-badge >= 80
 };
 ```
-Används överallt där vi idag hårdkodar formuleringar.
 
-## 2. Väderkontext (`src/lib/weather.ts` – NY)
-**Källa:** [Open-Meteo](https://open-meteo.com/) – gratis, ingen API-nyckel, GDPR-vänligt. Hämtas direkt från klienten.
+**Scoring per övning (0–100):**
+- +30 om kategorin matchar dominerande symptom (oro≥6 → Lugna, mood≥7 → Skriv av/Bryt ältande, sömn<5 → Sov bättre, energi≤3 → Kom igång minimalt)
+- +20 om `time.partOfDay` passar (Sov bättre kvällar/natt, Kom igång morgon, Rör mjukt dag)
+- +15 om vädret passar (utomhus bara när `isOutdoorFriendly`)
+- +10 om duration ≤ tillgängligt energi-utrymme (energi≤3 → max 5 min, ≤6 → max 10 min)
+- −25 om kategorin redan körts ≥2 ggr senaste 3 dagarna (`recentSessions`) → variation
+- −15 om finns i `not_recommended_for_json` för aktuella signaler
 
-Flow:
-1. `navigator.geolocation.getCurrentPosition()` med tydlig in-app prompt först (egen `WeatherPermissionCard` — vi vill INTE skrämma användaren med browser-popupen direkt).
-2. Vid avslag: fall tillbaka på **Stockholm** + visa "Plats avstängd – byt i Inställningar".
-3. Cacha resultat i `localStorage` i 30 min (lat/lon + timestamp + payload). Inga onödiga API-anrop.
-4. Mappa Open-Meteos `weather_code` → vår egen normaliserade typ:
-```ts
-type WeatherKind =
-  | "clear"        // sol
-  | "partly"       // delvis molnigt
-  | "cloudy"
-  | "rain"
-  | "snow"
-  | "fog"
-  | "thunder"
-  | "wind";        // härled från windspeed > 10 m/s
-type Weather = {
-  kind: WeatherKind;
-  tempC: number;
-  feelsLikeC: number;
-  windMs: number;
-  isDaylight: boolean; // från sunrise/sunset
-  fetchedAt: string;
-};
-```
-5. Exportera `useWeather()` hook som ger `{ weather, status, refresh }` (status: `idle | prompting | loading | ready | denied | error`).
+**Slot-mappning:**
+- **calm** = lugna kroppen / bryta loop (alltid med när oro≥5 eller dygnsdel=kväll/natt)
+- **lift** = mjukt höjande (rörelse, dagsljus, 8-min morgonstart) — ALDRIG om kvällslogik aktiv
+- **land** = "minsta möjliga" — alltid en ≤3 min övning så det aldrig känns övermäktigt
 
-## 3. Väderikoner (`src/components/AbstractIcon.tsx` – utöka)
-Lägg till nya `IconName`:s i exakt samma platta, geometriska 32×32-stil och projektets palett:
-- `weather-sun` — orange cirkel, korta strålar (orange-start)
-- `weather-partly` — sol bakom blob-moln (orange + cream)
-- `weather-cloud` — mjuk blob (cream-card / blue-calm tint)
-- `weather-rain` — moln + 3 droppar (blue-calm)
-- `weather-snow` — moln + 3 prickar (purple-sleep ljus)
-- `weather-fog` — moln + 2 horisontella streck (text-secondary)
-- `weather-thunder` — moln + blixt (yellow-journal)
-- `weather-wind` — 3 svepande linjer (blue-calm)
-- `weather-moon` — alias till befintlig `moon-soft` för natt-tillstånd
+**UI:** horisontell snap-scroll-karusell (vi har redan `embla-carousel` via shadcn `carousel.tsx`), 3 kort på 86% viewport-bredd, mjuk skugga, slot-färg, **"Stark match"-badge** när fitScore≥80. Rubrik: *"För dig just nu"* + liten undertext *"Tre vägar in i dagen"*. Animation: `animate-pop-in` med stagger 0/80/160 ms.
 
-Helper: `weatherIcon(kind, isDaylight) → IconName` (sol byts mot moon-soft nattetid).
+---
 
-## 4. Auto-väder i check-in (`src/pages/Checkin.tsx`)
-**Logik orörd, bara visuellt fält + sparning:**
-- Längst upp i formuläret: ny mjuk `card-cream`-rad **"Väder just nu"** med väderikon + temp + plats — ingen slider, bara info. Liten "byt"-länk för manuell override (sol/moln/regn/snö/dimma).
-- Sparas i kolumnen `weather_kind` + `weather_temp_c` på `daily_checkins`.
-- **Kräver migration** (lägga till två nullable kolumner). Logik och RLS rörs inte.
-- Om plats saknas: dölj kortet — vi tvingar inte användaren.
+## 2. Forskningsstött innehåll — två lager
 
-## 5. Tids- & väderkänsliga rekommendationer (`src/pages/Today.tsx`)
-Skriv om `recommend(checkin)` → `recommend(checkin, time, weather)`:
+### Lager A: "Varför funkar det?" på varje övning (`ExerciseDetail.tsx`)
+Mjuk cream-card mellan steg-listan och knappen, **expanderbar** (collapsed default — inga väggar av text):
+- 1–2 meningar mekanism, varm ton ("Längre utandning aktiverar vagusnerven — pulsen sänks och hjärnan får signalen 'vi är trygga'.")
+- Diskret rad: *Stöd: NICE NG222 · Brown & Gerbarg 2005* med liten `info`-AbstractIcon
 
-| Situation | Rekommendation |
-|---|---|
-| `partOfDay === "morning"` + låg energi | "8 min morgonstart" |
-| `partOfDay === "evening"` (efter 19) | **Aldrig** "morgonstart". Visa "Kvällslandning" eller "3 rader i journalen" |
-| `partOfDay === "night"` (22–5) | "Andning för insomning" + dämpad ton |
-| `weather.kind === "clear"` + dagsljus + funktion ≥ 4 | "15 min dagsljuspromenad — solen är uppe just nu" |
-| `weather.kind in {rain, thunder, snow}` ELLER `!isDaylight` | **Aldrig** utomhus-promenad. Byt till "Mjuk rörelse inomhus" eller "Andning" |
-| `tempC < -5` eller `windMs > 12` | Inga utomhusförslag — istället "Värm kroppen mjukt" |
-| `weather.kind === "cloudy"` + morgon | "Dagsljus räknas även när det är molnigt — 10 min ute" |
+Källorna lagras strukturerat i en ny kolumn på `exercises` (se §6) så vi kan rendera dem konsekvent.
 
-Hero-bannern på Today får dessutom:
-- Dynamisk **`tone`** baserat på partOfDay (orange morgon, blue-calm midday, purple-sleep kväll/natt).
-- Dynamisk **ikon**: blob-smile dag, `weather-moon` natt, `weather-rain` om regn, etc.
-- Liten väder-chip i `topRight` (ny prop på `HeroBanner`): t.ex. `☼ 4°` med korrekt AbstractIcon.
-- Hälsning ovanför "Idag"-rubriken: "God morgon" / "God kväll" beroende på tid.
+### Lager B: "Lär dig"-flik (NY route `/lar-dig`)
+Ny rubrik i `BottomNav.tsx` ersätter inget — vi lägger den som **kort-grid på Today** och som **länk i Settings** istället. (BottomNav är full med 5 ikoner, vi rör inte den.)
 
-## 6. Övningsfiltrering (`src/pages/Exercises.tsx`)
-- Sortera om så att tids- och väderlämpliga övningar dyker upp först (tagga med `recommended`-badge istället för att gömma).
-- "Featured nu"-rad överst: 1 stort kort som matchar tid+väder (t.ex. "Andning för kvällslandning" kl 21).
-- Lägg in små "Passar nu"-badge på kort vars `category` matchar kontext (Sov bättre på kvällen, Lugna kroppen vid regn, Rör dig mjukt vid bra väder).
+- Ny sida `src/pages/Learn.tsx` + `src/pages/LearnArticle.tsx`
+- 8 korta artiklar (~250–400 ord var, läsbara på 2 min), kategoriserade och färgkodade som övningarna:
+  1. **Sömn är hjärnans städning** (purple) — varför 7+ h spelar roll, ljus på morgonen, koffein-fönster
+  2. **Beteendeaktivering — vägen ut ur tunga dagar** (orange) — varför handling före motivation funkar
+  3. **Oro i kroppen, inte i huvudet** (blue) — andning, vagusnerven, kall handduk
+  4. **Rörelse som antidepressivum** (pink) — Cooney 2013, dosrespons, "räcker att gå ut"
+  5. **Att bryta ältande utan att slåss** (yellow) — defusion, orostid
+  6. **Mat, blodsocker och humör** (green) — regelbundna måltider, protein på morgonen
+  7. **Människor är medicin** (cream) — sociala mikrosteg, ensamhetens fysiologi
+  8. **När det är tungt på riktigt** (red-bg variant) — varningstecken, vad göra, vart ringa
 
-## 7. HeroBanner-utökning (`src/components/HeroBanner.tsx`)
-Lägg till valfri `topRight?: ReactNode` (matchar befintlig `topLeft`) så vi kan placera väder-chippet utan att bryta nuvarande layout. Padding/radius/timing oförändrade.
+Format per artikel: hero-illustration, "2 min läsning"-chip, brödtext med h2/p/blockquote, **"Pröva nu"-knappar** som länkar till matchande övningar, källista längst ner.
 
-## 8. Inställningar (`src/pages/Settings.tsx`)
-Ny rad: **"Plats & väder"** med toggle och status (Aktiv / Av / Nekad i webbläsaren). Förklarar varför (anpassade tips + automatisk vädersignal i loggen). Knapp "Hämta plats igen".
+Innehållet skrivs av mig, baserat på etablerade riktlinjer (NICE, SBU, Cochrane, Folkhälsomyndigheten) — citerade men aldrig parafraserat utan att jag är säker. Inga påhittade siffror.
 
-## 9. Databas (migration)
+**Ingång:** ny sektion på Today *"Lär dig något nytt"* med 1 featured + "Se alla" → `/lar-dig`. Också länk från `Settings`.
+
+---
+
+## 3. Två nya övningskategorier
+
+Lägger till i `categories`-listan i `Exercises.tsx` + `categoryIll` mapping + `colorBg`:
+
+### Mat & humör (color: `green` återanvänds, eller ny `bg-cream-card` variant)
+- *3 mål, 1 mellanmål* (5 min) — planera dagen
+- *Protein på morgonen* (3 min) — varför + 3 enkla idéer
+- *Koffein-fönstret* (3 min) — sista kaffe innan kl 14
+- *Vatten + en frukt* (2 min) — minsta möjliga
+
+### Sociala mikrosteg (color: nytt mjukt **rosa-cream**, vi använder `pink-move` i ljusare ton)
+- *Skicka ett ❤️ till någon* (1 min)
+- *Ett "hej" till kassören* (2 min)
+- *Föreslå fika på 30 min* (3 min)
+- *Skriv klart meddelandet du börjat på* (5 min)
+
+---
+
+## 4. Morgon- och kvällsrutin-paket (NY: "Sekvenser")
+
+Ny tabell `exercise_sequences` (se §6) — paket av 3–4 övningar i ordning. Visas som:
+- **Today**, längst ner: kort *"Dagens rutin"* som auto-väljer paket utifrån tid (morgon-paket före kl 11, kväll-paket efter kl 19)
+- Ny sida `/sekvenser` listar alla paket
+- I `ExerciseDetail` när man kommer från en sekvens: "Steg 2 av 3" + "Nästa: …"-knapp efter `Klar`
+
+**Initiala paket (4 st):**
+1. **Mjuk morgon** (orange) — En sak räcker → 4 min utandning → 8 min morgonstart
+2. **Bryt eftermiddagsdimman** (pink) — Vatten + frukt → Långsam promenad → Tre rader
+3. **Kvällslandning** (purple) — Kropp först → Imorgon-lista → Skärm-light
+4. **Tung dag, mjuk kväll** (purple) — Sömn efter dålig dag → 4 min utandning → Skicka ett ❤️
+
+---
+
+## 5. Min krisplan (NY)
+
+Ny sida `/krisplan`, länkad från:
+- `Vard.tsx` — primär plats, översta kortet
+- Today's safety-kort när safety_status = active/acute → "Öppna min krisplan"-knapp
+
+**Vad det är:** en mall man fyller i **en gång** (12–18 fält), sparas som JSON i ny tabell `crisis_plans` (en rad per user). Sedan en **läs-vy** med stora färgkodade sektioner så den fungerar i akut läge:
+- Tidiga varningstecken (3 fritextfält)
+- Det här hjälper mig (3 fält)
+- Det här ska jag undvika (3 fält)
+- Personer jag kan ringa (3 namn + nummer)
+- Professionella kontakter (vårdcentral, jourtelefon, mottagning)
+- Trygga platser (3 platser)
+- Skäl att hålla ut (3 fält — varma)
+
+Akut-knapp högst upp i läs-vyn: stora `tel:`-länkar till **112**, **1177**, **Mind Självmordslinjen 90101**, **Jourhavande medmänniska 08-702 16 80**.
+
+Mall-förslagen (placeholder-text i fälten) skrivs av mig så det aldrig är tomt och skrämmande att börja.
+
+---
+
+## 6. Databas — migrationer
+
+Vi behöver schemaändringar (ej dataändringar) → en ny migration:
+
 ```sql
-ALTER TABLE public.daily_checkins
-  ADD COLUMN IF NOT EXISTS weather_kind text,
-  ADD COLUMN IF NOT EXISTS weather_temp_c numeric;
+-- A) Forskningsstöd på övningar
+ALTER TABLE public.exercises
+  ADD COLUMN IF NOT EXISTS mechanism text,        -- "Längre utandning aktiverar..."
+  ADD COLUMN IF NOT EXISTS evidence_json jsonb DEFAULT '[]'::jsonb;
+  -- evidence_json: [{ source: "NICE NG222", year: 2022, url: "..." }]
+
+-- B) Sekvenser
+CREATE TABLE public.exercise_sequences (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug text NOT NULL UNIQUE,                       -- "mjuk-morgon"
+  title text NOT NULL,
+  description text NOT NULL,
+  color text NOT NULL DEFAULT 'orange',
+  time_of_day text,                                -- "morning" | "evening" | null
+  exercise_ids_json jsonb NOT NULL DEFAULT '[]'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.exercise_sequences ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Authenticated read sequences" ON public.exercise_sequences
+  FOR SELECT TO authenticated USING (true);
+
+-- C) Lär dig-artiklar (statiskt innehåll, men i DB så vi kan utöka utan deploy)
+CREATE TABLE public.learn_articles (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug text NOT NULL UNIQUE,
+  title text NOT NULL,
+  category text NOT NULL,
+  color text NOT NULL,
+  read_minutes integer NOT NULL DEFAULT 2,
+  excerpt text NOT NULL,
+  body_md text NOT NULL,
+  related_exercise_ids_json jsonb NOT NULL DEFAULT '[]'::jsonb,
+  sources_json jsonb NOT NULL DEFAULT '[]'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.learn_articles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Authenticated read articles" ON public.learn_articles
+  FOR SELECT TO authenticated USING (true);
+
+-- D) Krisplan (en per user)
+CREATE TABLE public.crisis_plans (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL UNIQUE,
+  warning_signs_json jsonb NOT NULL DEFAULT '[]'::jsonb,
+  helps_json jsonb NOT NULL DEFAULT '[]'::jsonb,
+  avoid_json jsonb NOT NULL DEFAULT '[]'::jsonb,
+  contacts_json jsonb NOT NULL DEFAULT '[]'::jsonb,         -- {name, phone, role}
+  professional_contacts_json jsonb NOT NULL DEFAULT '[]'::jsonb,
+  safe_places_json jsonb NOT NULL DEFAULT '[]'::jsonb,
+  reasons_json jsonb NOT NULL DEFAULT '[]'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.crisis_plans ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users select own crisis plan" ON public.crisis_plans
+  FOR SELECT TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "Users insert own crisis plan" ON public.crisis_plans
+  FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users update own crisis plan" ON public.crisis_plans
+  FOR UPDATE TO authenticated USING (auth.uid() = user_id);
+CREATE TRIGGER set_crisis_plans_updated_at BEFORE UPDATE ON public.crisis_plans
+  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 ```
-Inga RLS-ändringar (befintliga policies täcker alla kolumner). Inga index behövs i denna runda.
 
-## 10. Animationer (lätta)
-- Väderikonen i hero får `animate-float` (befintlig keyframe).
-- Regn/snö: små droppar/flingor med `translateY` 600ms loop, **endast** under `motion-safe`. Max 3 element — ingen partikelstorm.
-- Hälsningstext (`God morgon`) får `animate-fade-in-up` med `--stagger-0`.
+**Sedan dataseed (via insert-tool, inte migration):**
+- Uppdatera alla 28 befintliga övningar med `mechanism` + `evidence_json` + tydligare `description` och `steps_json`
+- Insert: ~10 nya övningar (Mat & humör, Sociala mikrosteg)
+- Insert: 4 sekvenser
+- Insert: 8 lär-dig-artiklar (full body_md)
 
-## 11. Gör INTE
-- Ingen extern karttjänst, ingen Google Maps, ingen IP-geolocation-tjänst som kräver API-nyckel.
-- Inga photoreal väderbilder.
-- Ingen push-notisinfrastruktur i denna runda.
-- Rör inte Checkins logikflöde (validering, safety dialog, save).
+---
 
-## Filer som påverkas
-**Nya:**
-- `src/lib/timeContext.ts`
-- `src/lib/weather.ts` (inkl. `useWeather` hook)
-- `src/components/WeatherChip.tsx` (kompakt visning)
-- `src/components/WeatherPermissionCard.tsx` (mjuk in-app prompt)
+## 7. UI — nya & ändrade komponenter
 
-**Ändras:**
-- `src/components/AbstractIcon.tsx` (9 nya väderikoner)
-- `src/components/HeroBanner.tsx` (`topRight` prop)
-- `src/pages/Today.tsx` (kontextuell hero, hälsning, väder, ny `recommend`)
-- `src/pages/Exercises.tsx` ("Passar nu"-logik + featured-kort)
-- `src/pages/Checkin.tsx` (väderfält + spara — ej logik)
-- `src/pages/Settings.tsx` (plats-toggle)
-- `supabase/migrations/<ny>.sql` (två kolumner på `daily_checkins`)
+**NYA:**
+- `src/lib/recommend.ts` — slot-scoring
+- `src/components/ForYouCarousel.tsx` — Today-karusellen
+- `src/components/MechanismCard.tsx` — expanderbar "Varför funkar det?"
+- `src/components/SequenceCard.tsx` — paketkort
+- `src/pages/Learn.tsx` — listvy artiklar
+- `src/pages/LearnArticle.tsx` — läs-vy (markdown via `react-markdown` + `remark-gfm`, redan vanligt)
+- `src/pages/Sequences.tsx` — alla paket
+- `src/pages/CrisisPlan.tsx` — edit + read-mode (toggle överst)
+- `src/components/ContactRow.tsx` — `tel:`-länk-rad i krisplan
 
-Vecka, Journal och Vård rörs inte denna runda — säg till om du vill att 7-dagarsinsikterna också ska börja korrelera humör mot väder så snart vi har några dagars data.
+**ÄNDRAS:**
+- `src/pages/Today.tsx` — ny karusell, ny "Lär dig"-rad, ny "Dagens rutin"-rad
+- `src/pages/Exercises.tsx` — 2 nya kategorier i `categories`, `fitsNow` utökas, sekvenser-länk längst ner
+- `src/pages/ExerciseDetail.tsx` — `MechanismCard`, sekvens-progress ("Steg 2 av 3"), nästa-knapp
+- `src/pages/Vard.tsx` — krisplan-kort högst upp
+- `src/pages/Settings.tsx` — länk till "Lär dig" + "Min krisplan"
+- `src/components/Illustrations.tsx` + `categoryIll` — mappar för Mat & humör + Sociala mikrosteg
+- `src/components/AbstractIcon.tsx` — 3 nya ikoner: `food-bowl` (grön cream-skål), `chat-bubble` (mjuk blob med två prickar), `book-open` (för Lär dig)
+- `src/integrations/supabase/types.ts` — auto-genereras
+
+**Animation/känsla:** Inget nytt formspråk — vi återanvänder `pop-in`, `fade-in-up`, `press-soft`, stagger-tokens. Karusellkort: `animate-pop-in` + subtil hover/active-scale. Krisplan-edit: stora luftiga input-fält, varma placeholders.
+
+---
+
+## 8. Tonalitet — checklista jag följer
+
+Allt nytt innehåll skrivs enligt:
+- **Du-form, varm, kravlös.** Aldrig "du borde", alltid "det räcker att…"
+- **Konkret, inte abstrakt.** "Drick ett glas vatten" hellre än "ta hand om dig"
+- **Mekanism före moral.** Förklara *varför* så det blir lättare att vilja
+- **Alternativ alltid.** "Om 8 min är för mycket — pröva 2 min"
+- **Aldrig skrämmande siffror.** Inga "X% av deprimerade…"
+
+---
+
+## 9. Gör INTE
+- Ingen ny BottomNav-tab (den är full — Lär dig nås via Today + Settings)
+- Ingen extern AI-generering av artiklarna (statiska, granskade)
+- Ingen push, ingen kalender, ingen kontakt-API till telefonens kontakter
+- Rör inte Checkin-logiken, väder-logiken eller metrics
+
+---
+
+## 10. Genomförandeordning (en runda, men i denna ordning så preview alltid är användbar)
+
+1. Migration (4 tabeller/kolumner) + types regenereras
+2. Seeda övnings-`mechanism` + `evidence_json` + uppdaterade beskrivningar
+3. `recommend.ts` + `ForYouCarousel` på Today
+4. `MechanismCard` på ExerciseDetail
+5. Seeda + bygg sekvenser (`Sequences.tsx`, "Dagens rutin"-kort på Today)
+6. Seeda + bygg Lär dig (`Learn.tsx` + `LearnArticle.tsx` + Today-rad)
+7. Seeda nya kategorier + nya övningar
+8. Krisplan (tabell, sida, ingångar i Vård + Today safety)
+9. Settings-länkar + slutpolering
+
+Hela paketet ska kännas som **samma app, mer levande** — inte som ett nytt lager påklistrat.

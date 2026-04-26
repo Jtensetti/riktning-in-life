@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      crisis_plans: {
+        Row: {
+          avoid_json: Json
+          contacts_json: Json
+          created_at: string
+          helps_json: Json
+          id: string
+          professional_contacts_json: Json
+          reasons_json: Json
+          safe_places_json: Json
+          updated_at: string
+          user_id: string
+          warning_signs_json: Json
+        }
+        Insert: {
+          avoid_json?: Json
+          contacts_json?: Json
+          created_at?: string
+          helps_json?: Json
+          id?: string
+          professional_contacts_json?: Json
+          reasons_json?: Json
+          safe_places_json?: Json
+          updated_at?: string
+          user_id: string
+          warning_signs_json?: Json
+        }
+        Update: {
+          avoid_json?: Json
+          contacts_json?: Json
+          created_at?: string
+          helps_json?: Json
+          id?: string
+          professional_contacts_json?: Json
+          reasons_json?: Json
+          safe_places_json?: Json
+          updated_at?: string
+          user_id?: string
+          warning_signs_json?: Json
+        }
+        Relationships: []
+      }
       daily_checkins: {
         Row: {
           anxiety: number | null
@@ -89,6 +131,39 @@ export type Database = {
         }
         Relationships: []
       }
+      exercise_sequences: {
+        Row: {
+          color: string
+          created_at: string
+          description: string
+          exercise_ids_json: Json
+          id: string
+          slug: string
+          time_of_day: string | null
+          title: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          description: string
+          exercise_ids_json?: Json
+          id?: string
+          slug: string
+          time_of_day?: string | null
+          title: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          description?: string
+          exercise_ids_json?: Json
+          id?: string
+          slug?: string
+          time_of_day?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       exercise_sessions: {
         Row: {
           anxiety_after: number | null
@@ -149,7 +224,9 @@ export type Database = {
           created_at: string
           description: string
           duration_minutes: number
+          evidence_json: Json
           id: string
+          mechanism: string | null
           not_recommended_for_json: Json
           recommended_for_json: Json
           steps_json: Json
@@ -162,7 +239,9 @@ export type Database = {
           created_at?: string
           description: string
           duration_minutes: number
+          evidence_json?: Json
           id?: string
+          mechanism?: string | null
           not_recommended_for_json?: Json
           recommended_for_json?: Json
           steps_json?: Json
@@ -175,7 +254,9 @@ export type Database = {
           created_at?: string
           description?: string
           duration_minutes?: number
+          evidence_json?: Json
           id?: string
+          mechanism?: string | null
           not_recommended_for_json?: Json
           recommended_for_json?: Json
           steps_json?: Json
@@ -233,6 +314,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      learn_articles: {
+        Row: {
+          body_md: string
+          category: string
+          color: string
+          created_at: string
+          excerpt: string
+          id: string
+          read_minutes: number
+          related_exercise_ids_json: Json
+          slug: string
+          sources_json: Json
+          title: string
+        }
+        Insert: {
+          body_md: string
+          category: string
+          color: string
+          created_at?: string
+          excerpt: string
+          id?: string
+          read_minutes?: number
+          related_exercise_ids_json?: Json
+          slug: string
+          sources_json?: Json
+          title: string
+        }
+        Update: {
+          body_md?: string
+          category?: string
+          color?: string
+          created_at?: string
+          excerpt?: string
+          id?: string
+          read_minutes?: number
+          related_exercise_ids_json?: Json
+          slug?: string
+          sources_json?: Json
+          title?: string
+        }
+        Relationships: []
       }
       medication_logs: {
         Row: {
