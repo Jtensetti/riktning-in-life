@@ -5,6 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Today from "./pages/Today";
 import Auth from "./pages/Auth";
+import Onboarding from "./pages/Onboarding";
+import Settings from "./pages/Settings";
 import Checkin from "./pages/Checkin";
 import Exercises from "./pages/Exercises";
 import ExerciseDetail from "./pages/ExerciseDetail";
@@ -24,6 +26,8 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Today />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/installningar" element={<Settings />} />
           <Route path="/checkin" element={<Checkin />} />
           <Route path="/ovningar" element={<Exercises />} />
           <Route path="/ovningar/:id" element={<ExerciseDetail />} />

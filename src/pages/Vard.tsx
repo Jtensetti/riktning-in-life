@@ -8,9 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronLeft, ChevronRight, FileText, Pill as PillIcon, ClipboardList, Plus, Download, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileText, Pill as PillIcon, ClipboardList, Plus, Download, Trash2, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { FORMS, FormType, SIDE_EFFECTS } from "@/lib/forms";
+import jsPDF from "jspdf";
 
 type View = "home" | "form" | "meds" | "med_log" | "report";
 
@@ -428,8 +429,21 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
   const { user } = useAuth();
   const [days, setDays] = useState<14 | 30 | 90>(30);
   const [includeJournal, setIncludeJournal] = useState(false);
+  const [markedJournalCount, setMarkedJournalCount] = useState<number | null>(null);
   const [generating, setGenerating] = useState(false);
   const [report, setReport] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    const since = new Date(Date.now() - days * 86400000).toISOString().split("T")[0];
+    supabase
+      .from("journal_entries")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("include_in_report", true)
+      .gte("date", since)
+      .then(({ count }) => setMarkedJournalCount(count ?? 0));
+  }, [user, days]);
 
   const generate = async () => {
     if (!user) return;
@@ -494,7 +508,7 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
       `Journal-anteckningar: ${j.length}`,
       ``,
       `LÄKEMEDEL`,
-      ...m.map((x: any) => `- ${x.name}${x.dose ? ` ${x.dose}` : ""} · ${x.active ? "aktiv" : "avslutad"}${x.date_started ? ` (start ${x.date_started})` : ""}`),
+      ...(m.length ? m.map((x: any) => `- ${x.name}${x.dose ? ` ${x.dose}` : ""} · ${x.active ? "aktiv" : "avslutad"}${x.date_started ? ` (start ${x.date_started})` : ""}`) : ["Inga registrerade"]),
       `Följsamhet: ${adherence !== null ? adherence + " %" : "ej loggat"}`,
       `Rapporterade biverkningar: ${sideEffects.length ? sideEffects.join(", ") : "inga"}`,
       ``,
@@ -519,7 +533,7 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
     setGenerating(false);
   };
 
-  const download = () => {
+  const downloadText = () => {
     if (!report) return;
     const blob = new Blob([report], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -528,6 +542,60 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
     a.download = `riktning-rapport-${new Date().toISOString().split("T")[0]}.txt`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const downloadPdf = () => {
+    if (!report) return;
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const margin = 48;
+    const maxW = pageW - margin * 2;
+    let y = margin;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text("Riktning – Klinisk rapport", margin, y);
+    y += 24;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    const SECTION_HEADERS = new Set(["SKATTNINGAR", "DAGLIGA MEDELVÄRDEN", "AKTIVITET", "LÄKEMEDEL", "SÄKERHETSSIGNALER", "SAMMANFATTNING", "JOURNAL (utvalda)"]);
+
+    for (const raw of report.split("\n").slice(2)) {
+      const line = raw === "" ? " " : raw;
+      const isHeader = SECTION_HEADERS.has(line.trim());
+      if (isHeader) {
+        if (y > margin + 20) y += 6;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+      } else {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+      }
+      const wrapped = doc.splitTextToSize(line, maxW);
+      for (const w of wrapped) {
+        if (y > pageH - margin - 30) {
+          doc.addPage();
+          y = margin;
+        }
+        doc.text(w, margin, y);
+        y += isHeader ? 16 : 14;
+      }
+    }
+
+    // Page numbers
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(120);
+      doc.text(`Sida ${i} / ${pageCount}`, pageW - margin, pageH - 24, { align: "right" });
+      doc.setTextColor(0);
+    }
+
+    doc.save(`riktning-rapport-${new Date().toISOString().split("T")[0]}.pdf`);
   };
 
   const copy = async () => {
@@ -559,9 +627,14 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
             </button>
           ))}
         </div>
-        <label className="flex items-center gap-2 cursor-pointer">
-          <Checkbox checked={includeJournal} onCheckedChange={(v) => setIncludeJournal(!!v)} />
-          <span className="text-sm font-semibold">Inkludera valda journalanteckningar</span>
+        <label className="flex items-start gap-2 cursor-pointer">
+          <Checkbox checked={includeJournal} onCheckedChange={(v) => setIncludeJournal(!!v)} className="mt-0.5" />
+          <span className="text-sm font-semibold">
+            Inkludera valda journalanteckningar
+            <span className="block text-xs text-text-secondary font-normal mt-0.5">
+              {markedJournalCount === null ? "…" : `${markedJournalCount} markerade i perioden`}
+            </span>
+          </span>
         </label>
       </div>
 
@@ -574,10 +647,13 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
           <div className="card-soft p-4 mb-4 max-h-[420px] overflow-y-auto">
             <pre className="text-xs leading-relaxed whitespace-pre-wrap font-mono text-foreground">{report}</pre>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <Button variant="secondary" onClick={copy} className="rounded-full font-extrabold h-11">Kopiera</Button>
-            <Button onClick={download} className="rounded-full bg-blue-calm hover:bg-blue-calm/90 text-white font-extrabold h-11">
-              <Download size={16} /> Ladda ner
+          <div className="grid grid-cols-3 gap-2">
+            <Button variant="secondary" onClick={copy} className="rounded-full font-extrabold h-11 text-xs">Kopiera</Button>
+            <Button variant="secondary" onClick={downloadText} className="rounded-full font-extrabold h-11 text-xs">
+              <Download size={14} /> Text
+            </Button>
+            <Button onClick={downloadPdf} className="rounded-full bg-blue-calm hover:bg-blue-calm/90 text-white font-extrabold h-11 text-xs">
+              <FileDown size={14} /> PDF
             </Button>
           </div>
         </>

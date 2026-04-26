@@ -19,6 +19,12 @@ export type Checkin = {
   safety_status: string | null;
 };
 
+export type WeeklyFormScore = {
+  phq9?: number; // raw 0-27
+  gad7?: number; // raw 0-21
+  who5?: number; // raw 0-25 (final 0-100)
+};
+
 const norm10 = (v: number | null) => v == null ? null : (v / 10) * 100;
 
 const sleepDeficitNorm = (h: number | null) => {
@@ -53,21 +59,34 @@ const std = (values: number[]) => {
   return Math.sqrt(variance);
 };
 
-export const burdenScore = (cs: Checkin[]) => {
+/**
+ * Burden score with optional weekly forms.
+ * Returns { value, withWeekly } so UI can label "utan veckoskattning" when missing.
+ */
+export const burdenScore = (cs: Checkin[], weekly?: WeeklyFormScore): { value: number | null; withWeekly: boolean } => {
   const m = avg(cs.map(c => norm10(c.mood_heaviness)));
   const h = avg(cs.map(c => norm10(c.hopelessness)));
   const a = avg(cs.map(c => norm10(c.anxiety)));
   const g = avg(cs.map(c => norm10(c.guilt_selfcriticism)));
   const sd = avg(cs.map(c => sleepDeficitNorm(c.sleep_hours == null ? null : Number(c.sleep_hours))));
   const dbs = avg(cs.map(c => daytimeBedNorm(c.daytime_bed_sofa_time_minutes)));
-  // Weighted (without PHQ9/GAD7 in v1)
-  const parts = [
-    [m, 0.30], [h, 0.20], [a, 0.20], [g, 0.15], [sd, 0.10], [dbs, 0.05],
-  ] as const;
+
+  const phq = weekly?.phq9 != null ? (weekly.phq9 / 27) * 100 : null;
+  const gad = weekly?.gad7 != null ? (weekly.gad7 / 21) * 100 : null;
+  const withWeekly = phq != null && gad != null;
+
+  let parts: [number | null, number][];
+  if (withWeekly) {
+    // Per spec: 0.20 PHQ + 0.15 GAD + 0.15 hop + 0.15 anx + 0.15 guilt + 0.10 sleep_def + 0.10 bed
+    parts = [[phq, 0.20], [gad, 0.15], [h, 0.15], [a, 0.15], [g, 0.15], [sd, 0.10], [dbs, 0.10]];
+  } else {
+    // Daily-only fallback
+    parts = [[m, 0.30], [h, 0.20], [a, 0.20], [g, 0.15], [sd, 0.10], [dbs, 0.05]];
+  }
   const valid = parts.filter(([v]) => v != null) as [number, number][];
-  if (valid.length === 0) return null;
+  if (valid.length === 0) return { value: null, withWeekly };
   const totalWeight = valid.reduce((s, [, w]) => s + w, 0);
-  return valid.reduce((s, [v, w]) => s + v * w, 0) / totalWeight;
+  return { value: valid.reduce((s, [v, w]) => s + v * w, 0) / totalWeight, withWeekly };
 };
 
 export const functionScore = (cs: Checkin[]) => {
@@ -99,13 +118,20 @@ export const recoveryScore = (cs: Checkin[]) => {
 };
 
 export const stabilityScore = (cs: Checkin[]) => {
-  // Daily composite = burden core (mood + anxiety + hopelessness) per day
   const daily = cs.map(c => {
     const parts = [norm10(c.mood_heaviness), norm10(c.anxiety), norm10(c.hopelessness)].filter((x): x is number => x != null);
     return parts.length ? parts.reduce((s, x) => s + x, 0) / parts.length : null;
   }).filter((x): x is number => x != null);
   if (daily.length < 2) return null;
   return Math.max(0, 100 - std(daily));
+};
+
+export const stabilityLabel = (current: number | null, prev: number | null): string => {
+  if (current == null) return "—";
+  const delta = prev != null ? current - prev : 0;
+  if (delta > 5) return "Mer stabil";
+  if (delta < -5) return "Mindre stabil";
+  return "Stabil";
 };
 
 export const pctChange = (current: number | null, prev: number | null) => {
@@ -120,9 +146,62 @@ export const isoDaysAgo = (n: number) => {
 };
 
 export const splitWeeks = (cs: Checkin[]) => {
-  const d7 = isoDaysAgo(6); // last 7 days
+  const d7 = isoDaysAgo(6);
   const d14 = isoDaysAgo(13);
   const current = cs.filter(c => c.date >= d7);
   const previous = cs.filter(c => c.date >= d14 && c.date < d7);
   return { current, previous };
+};
+
+/**
+ * Generate deterministic insights from the current week's checkins.
+ */
+export const generateInsights = (cs: Checkin[]): string[] => {
+  const insights: string[] = [];
+  if (cs.length < 3) return insights;
+
+  // 1. Movement → next-day anxiety
+  const moveNext: number[] = [];
+  const noMoveNext: number[] = [];
+  for (let i = 0; i < cs.length - 1; i++) {
+    const moved = cs[i].movement_today === "yes";
+    const nextAnx = cs[i + 1].anxiety;
+    if (nextAnx == null) continue;
+    (moved ? moveNext : noMoveNext).push(nextAnx);
+  }
+  if (moveNext.length && noMoveNext.length) {
+    const a1 = moveNext.reduce((s, x) => s + x, 0) / moveNext.length;
+    const a2 = noMoveNext.reduce((s, x) => s + x, 0) / noMoveNext.length;
+    if (a2 - a1 >= 1) insights.push("Dagar med rörelse följs ofta av lägre oro.");
+  }
+
+  // 2. Sleep < 5h → next-day anxiety higher
+  const lowSleepNext: number[] = [];
+  const okSleepNext: number[] = [];
+  for (let i = 0; i < cs.length - 1; i++) {
+    const sh = cs[i].sleep_hours == null ? null : Number(cs[i].sleep_hours);
+    const nextAnx = cs[i + 1].anxiety;
+    if (sh == null || nextAnx == null) continue;
+    (sh < 5 ? lowSleepNext : okSleepNext).push(nextAnx);
+  }
+  if (lowSleepNext.length && okSleepNext.length) {
+    const a1 = lowSleepNext.reduce((s, x) => s + x, 0) / lowSleepNext.length;
+    const a2 = okSleepNext.reduce((s, x) => s + x, 0) / okSleepNext.length;
+    if (a1 - a2 >= 1) insights.push("Sömn under 5 h följs ofta av högre oro.");
+  }
+
+  // 3. Bed/sofa > 120 min same-day → lower function
+  const highBed: number[] = [];
+  const lowBed: number[] = [];
+  for (const c of cs) {
+    if (c.function_score == null || c.daytime_bed_sofa_time_minutes == null) continue;
+    (c.daytime_bed_sofa_time_minutes > 120 ? highBed : lowBed).push(c.function_score);
+  }
+  if (highBed.length && lowBed.length) {
+    const f1 = highBed.reduce((s, x) => s + x, 0) / highBed.length;
+    const f2 = lowBed.reduce((s, x) => s + x, 0) / lowBed.length;
+    if (f2 - f1 >= 1) insights.push("Säng/sofftid över 120 min sammanfaller med lägre funktion.");
+  }
+
+  return insights;
 };

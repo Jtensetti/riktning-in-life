@@ -1,0 +1,191 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { AppShell } from "@/components/AppShell";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { ChevronLeft, Download, LogOut, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { loadReminders, saveReminders, resetOnboarded, type Reminders } from "@/lib/settings";
+
+const Settings = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [reminders, setReminders] = useState<Reminders>(loadReminders());
+  const [confirmText, setConfirmText] = useState("");
+  const [showDelete, setShowDelete] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const updateReminders = (r: Reminders) => {
+    setReminders(r);
+    saveReminders(r);
+  };
+
+  const exportAll = async () => {
+    if (!user) return;
+    setBusy(true);
+    try {
+      const [c, es, je, wf, m, ml] = await Promise.all([
+        supabase.from("daily_checkins").select("*").eq("user_id", user.id),
+        supabase.from("exercise_sessions").select("*").eq("user_id", user.id),
+        supabase.from("journal_entries").select("*").eq("user_id", user.id),
+        supabase.from("weekly_forms").select("*").eq("user_id", user.id),
+        supabase.from("medications").select("*").eq("user_id", user.id),
+        supabase.from("medication_logs").select("*").eq("user_id", user.id),
+      ]);
+      const dump = {
+        exported_at: new Date().toISOString(),
+        user_email: user.email,
+        daily_checkins: c.data ?? [],
+        exercise_sessions: es.data ?? [],
+        journal_entries: je.data ?? [],
+        weekly_forms: wf.data ?? [],
+        medications: m.data ?? [],
+        medication_logs: ml.data ?? [],
+      };
+      const blob = new Blob([JSON.stringify(dump, null, 2)], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `riktning-export-${new Date().toISOString().split("T")[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Export nedladdad");
+    } catch {
+      toast.error("Något gick fel vid export");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const deleteAll = async () => {
+    if (!user || confirmText !== "RADERA") return;
+    setBusy(true);
+    try {
+      // Delete in order that respects FKs (logs/sessions/journal first)
+      await supabase.from("medication_logs").delete().eq("user_id", user.id);
+      await supabase.from("medications").delete().eq("user_id", user.id);
+      await supabase.from("exercise_sessions").delete().eq("user_id", user.id);
+      await supabase.from("journal_entries").delete().eq("user_id", user.id);
+      await supabase.from("weekly_forms").delete().eq("user_id", user.id);
+      await supabase.from("daily_checkins").delete().eq("user_id", user.id);
+      resetOnboarded();
+      await supabase.auth.signOut();
+      toast.success("All data raderad");
+      navigate("/auth", { replace: true });
+    } catch {
+      toast.error("Något gick fel");
+      setBusy(false);
+    }
+  };
+
+  return (
+    <AppShell>
+      <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm font-bold text-text-secondary mb-4">
+        <ChevronLeft size={18} /> Tillbaka
+      </button>
+      <header className="mb-6">
+        <h1 className="text-[32px] leading-[38px] mb-1">Inställningar</h1>
+        <p className="text-sm text-text-secondary">Konto, påminnelser och din data.</p>
+      </header>
+
+      <section className="mb-7">
+        <h2 className="text-lg font-extrabold mb-3">Konto</h2>
+        <div className="card-soft p-4 mb-3">
+          <p className="text-xs font-bold text-text-secondary uppercase tracking-wide mb-1">E-post</p>
+          <p className="text-sm font-extrabold truncate">{user?.email ?? "—"}</p>
+        </div>
+        <Button
+          onClick={async () => {
+            await supabase.auth.signOut();
+            navigate("/auth", { replace: true });
+          }}
+          variant="secondary"
+          className="w-full h-12 rounded-full font-extrabold"
+        >
+          <LogOut size={16} /> Logga ut
+        </Button>
+      </section>
+
+      <section className="mb-7">
+        <h2 className="text-lg font-extrabold mb-3">Påminnelser</h2>
+        <div className="space-y-3">
+          <ToggleRow label="Morgon-checkin" checked={reminders.morning_checkin} onChange={v => updateReminders({ ...reminders, morning_checkin: v })} />
+          <ToggleRow label="Kvällsjournal" checked={reminders.evening_journal} onChange={v => updateReminders({ ...reminders, evening_journal: v })} />
+          <ToggleRow label="Veckoformulär" checked={reminders.weekly_forms} onChange={v => updateReminders({ ...reminders, weekly_forms: v })} />
+        </div>
+      </section>
+
+      <section className="mb-7">
+        <h2 className="text-lg font-extrabold mb-3">Din data</h2>
+        <div className="space-y-3">
+          <Button
+            onClick={exportAll}
+            disabled={busy}
+            variant="secondary"
+            className="w-full h-12 rounded-full font-extrabold justify-start"
+          >
+            <Download size={16} /> Exportera all data
+          </Button>
+          <Button
+            onClick={() => setShowDelete(s => !s)}
+            disabled={busy}
+            className="w-full h-12 rounded-full font-extrabold justify-start bg-red-bg text-red-risk hover:bg-red-bg/80"
+          >
+            <Trash2 size={16} /> Radera all data
+          </Button>
+          {showDelete && (
+            <div className="rounded-3xl border-2 border-red-risk bg-red-bg p-4">
+              <p className="text-sm font-extrabold text-red-risk mb-1">Detta går inte att ångra</p>
+              <p className="text-xs text-foreground/80 mb-3">
+                All din data raderas permanent. Skriv <strong>RADERA</strong> för att bekräfta.
+              </p>
+              <Input
+                value={confirmText}
+                onChange={e => setConfirmText(e.target.value)}
+                placeholder="RADERA"
+                className="h-11 rounded-2xl bg-surface mb-3"
+              />
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => { setShowDelete(false); setConfirmText(""); }}
+                  className="flex-1 rounded-full font-extrabold"
+                >
+                  Avbryt
+                </Button>
+                <Button
+                  onClick={deleteAll}
+                  disabled={confirmText !== "RADERA" || busy}
+                  className="flex-1 rounded-full bg-red-risk hover:bg-red-risk/90 text-white font-extrabold"
+                >
+                  Radera
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="mb-7">
+        <h2 className="text-lg font-extrabold mb-3">Om Riktning</h2>
+        <div className="card-cream p-4">
+          <p className="text-sm leading-relaxed text-foreground/80">
+            Riktning är inte ett medicintekniskt verktyg och ersätter inte vård eller behandling. Vid akut fara, ring 112 eller besök psykiatrisk akutmottagning.
+          </p>
+        </div>
+      </section>
+    </AppShell>
+  );
+};
+
+const ToggleRow = ({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) => (
+  <label className="flex items-center justify-between card-cream p-4 cursor-pointer">
+    <span className="text-sm font-extrabold">{label}</span>
+    <Switch checked={checked} onCheckedChange={onChange} />
+  </label>
+);
+
+export default Settings;

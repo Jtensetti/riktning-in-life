@@ -6,8 +6,8 @@ import { AppShell } from "@/components/AppShell";
 import { Illustration } from "@/components/Illustrations";
 import { ArrowDown, ArrowUp, Minus } from "lucide-react";
 import {
-  burdenScore, functionScore, recoveryScore, stabilityScore,
-  pctChange, splitWeeks, isoDaysAgo, type Checkin,
+  burdenScore, functionScore, recoveryScore, stabilityScore, stabilityLabel,
+  pctChange, splitWeeks, isoDaysAgo, generateInsights, type Checkin, type WeeklyFormScore,
 } from "@/lib/metrics";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, Tooltip,
@@ -17,6 +17,8 @@ const Week = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [checkins, setCheckins] = useState<Checkin[]>([]);
+  const [weeklyCurrent, setWeeklyCurrent] = useState<WeeklyFormScore>({});
+  const [weeklyPrev, setWeeklyPrev] = useState<WeeklyFormScore>({});
   const [fetching, setFetching] = useState(true);
 
   useEffect(() => {
@@ -25,16 +27,39 @@ const Week = () => {
 
   useEffect(() => {
     if (!user) return;
-    supabase
-      .from("daily_checkins")
-      .select("id,date,mood_heaviness,anxiety,guilt_selfcriticism,hopelessness,energy,getting_started,function_score,daytime_bed_sofa_time_minutes,sleep_hours,sleep_quality,movement_today,meaningful_activity,safety_status")
-      .eq("user_id", user.id)
-      .gte("date", isoDaysAgo(20))
-      .order("date", { ascending: true })
-      .then(({ data }) => {
-        setCheckins((data ?? []) as Checkin[]);
-        setFetching(false);
-      });
+    const load = async () => {
+      const since = isoDaysAgo(20);
+      const [checkinsRes, formsRes] = await Promise.all([
+        supabase
+          .from("daily_checkins")
+          .select("id,date,mood_heaviness,anxiety,guilt_selfcriticism,hopelessness,energy,getting_started,function_score,daytime_bed_sofa_time_minutes,sleep_hours,sleep_quality,movement_today,meaningful_activity,safety_status")
+          .eq("user_id", user.id)
+          .gte("date", since)
+          .order("date", { ascending: true }),
+        supabase
+          .from("weekly_forms")
+          .select("type,total_score,date")
+          .eq("user_id", user.id)
+          .gte("date", since)
+          .order("date", { ascending: false }),
+      ]);
+      setCheckins((checkinsRes.data ?? []) as Checkin[]);
+
+      const d7 = isoDaysAgo(6);
+      const d14 = isoDaysAgo(13);
+      const cur: WeeklyFormScore = {};
+      const prev: WeeklyFormScore = {};
+      for (const f of formsRes.data ?? []) {
+        const target = f.date >= d7 ? cur : (f.date >= d14 ? prev : null);
+        if (!target) continue;
+        const t = f.type as "phq9" | "gad7" | "who5";
+        if (target[t] == null) target[t] = Number(f.total_score);
+      }
+      setWeeklyCurrent(cur);
+      setWeeklyPrev(prev);
+      setFetching(false);
+    };
+    load();
   }, [user]);
 
   if (loading || fetching) {
@@ -45,18 +70,18 @@ const Week = () => {
   const baselineComplete = total >= 14;
   const { current, previous } = splitWeeks(checkins);
 
-  const burdenC = burdenScore(current);
-  const burdenP = burdenScore(previous);
+  const burdenC = burdenScore(current, weeklyCurrent);
+  const burdenP = burdenScore(previous, weeklyPrev);
   const fnC = functionScore(current);
   const fnP = functionScore(previous);
   const recC = recoveryScore(current);
   const recP = recoveryScore(previous);
   const stabC = stabilityScore(current);
+  const stabP = stabilityScore(previous);
 
-  // Build chart data per day for current period
   const chartData = current.map((c) => ({
     day: c.date.slice(8, 10),
-    Belastning: Math.round(burdenScore([c]) ?? 0),
+    Belastning: Math.round(burdenScore([c]).value ?? 0),
     Funktion: Math.round(functionScore([c]) ?? 0),
   }));
 
@@ -64,35 +89,8 @@ const Week = () => {
     const v = current.map(c => c.sleep_hours == null ? null : Number(c.sleep_hours)).filter((x): x is number => x != null);
     return v.length ? (v.reduce((s, x) => s + x, 0) / v.length) : null;
   })();
-
   const movementDays = current.filter(c => c.movement_today === "yes" || c.movement_today === "little").length;
-
-  // Insights
-  const insights: string[] = [];
-  // movement → next-day anxiety
-  if (current.length >= 4) {
-    const moveDayAnxAfter: number[] = [];
-    const noMoveDayAnxAfter: number[] = [];
-    for (let i = 0; i < current.length - 1; i++) {
-      const moved = current[i].movement_today === "yes";
-      const nextAnx = current[i + 1].anxiety;
-      if (nextAnx == null) continue;
-      if (moved) moveDayAnxAfter.push(nextAnx);
-      else noMoveDayAnxAfter.push(nextAnx);
-    }
-    if (moveDayAnxAfter.length && noMoveDayAnxAfter.length) {
-      const a1 = moveDayAnxAfter.reduce((s, x) => s + x, 0) / moveDayAnxAfter.length;
-      const a2 = noMoveDayAnxAfter.reduce((s, x) => s + x, 0) / noMoveDayAnxAfter.length;
-      if (a2 - a1 >= 1) insights.push("Dagar med rörelse följs ofta av lägre oro.");
-    }
-  }
-  if (avgSleep != null && avgSleep < 5) {
-    insights.push("Sömnen är låg den här veckan – det påverkar oftast både oro och funktion.");
-  }
-  if (fnC != null && burdenC != null && fnP != null && burdenP != null
-    && fnC > fnP && burdenC >= burdenP - 5) {
-    insights.push("Funktion rör sig uppåt även om måendet släpar.");
-  }
+  const insights = generateInsights(current);
 
   return (
     <AppShell>
@@ -104,7 +102,9 @@ const Week = () => {
           <Illustration name="baseline" className="w-24 h-auto rounded-xl shrink-0" />
           <div>
             <p className="text-sm font-extrabold mb-1">Baslinje byggs</p>
-            <p className="text-xs text-text-secondary">Dag {total} av 14. Första 14 dagarna lär appen ditt normalläge.</p>
+            <p className="text-xs text-text-secondary">
+              Dag {total} av 14. Vi visar mönster och jämförelser när baslinjen är klar.
+            </p>
           </div>
         </div>
       )}
@@ -118,10 +118,24 @@ const Week = () => {
         <>
           <h2 className="text-xl mb-3">Jämfört med förra veckan</h2>
           <div className="grid grid-cols-2 gap-3 mb-6">
-            <MetricCard title="Belastning" current={burdenC} prev={burdenP} invert />
-            <MetricCard title="Funktion" current={fnC} prev={fnP} />
-            <MetricCard title="Återhämtning" current={recC} prev={recP} />
-            <MetricCard title="Stabilitet" current={stabC} prev={null} />
+            <MetricCard
+              title="Belastning"
+              current={burdenC.value}
+              prev={burdenP.value}
+              invert
+              note={burdenC.withWeekly ? undefined : "utan veckoskattning"}
+              gated={!baselineComplete}
+            />
+            <MetricCard title="Funktion" current={fnC} prev={fnP} gated={!baselineComplete} />
+            <MetricCard title="Återhämtning" current={recC} prev={recP} gated={!baselineComplete} />
+            <MetricCard
+              title="Stabilitet"
+              current={stabC}
+              prev={stabP}
+              hideChange
+              labelOverride={stabilityLabel(stabC, stabP)}
+              gated={!baselineComplete}
+            />
           </div>
 
           <div className="card-soft p-4 mb-6">
@@ -191,7 +205,18 @@ const Week = () => {
   );
 };
 
-const MetricCard = ({ title, current, prev, invert }: { title: string; current: number | null; prev: number | null; invert?: boolean }) => {
+const MetricCard = ({
+  title, current, prev, invert, note, hideChange, labelOverride, gated,
+}: {
+  title: string;
+  current: number | null;
+  prev: number | null;
+  invert?: boolean;
+  note?: string;
+  hideChange?: boolean;
+  labelOverride?: string;
+  gated?: boolean;
+}) => {
   const c = current == null ? null : Math.round(current);
   const change = pctChange(current, prev);
   const positive = change == null ? null : (invert ? change < 0 : change > 0);
@@ -199,20 +224,29 @@ const MetricCard = ({ title, current, prev, invert }: { title: string; current: 
   return (
     <div className="card-cream p-4">
       <p className="text-[11px] font-bold text-text-secondary uppercase tracking-wider mb-1">{title}</p>
-      <p className="text-3xl font-extrabold leading-none mb-2">{c ?? "—"}</p>
-      <div className="flex items-center gap-1 text-xs font-bold">
-        {change == null ? (
-          <span className="text-text-secondary"><Minus size={12} className="inline" /> ingen jmf</span>
-        ) : positive ? (
-          <span className="text-green-recovery flex items-center gap-1">
-            <ArrowUp size={12} /> {Math.abs(Math.round(change))}%
-          </span>
-        ) : (
-          <span className="text-orange-deep flex items-center gap-1">
-            <ArrowDown size={12} /> {Math.abs(Math.round(change))}%
-          </span>
-        )}
-      </div>
+      <p className={`text-3xl font-extrabold leading-none mb-2 ${gated ? "text-text-secondary" : ""}`}>{c ?? "—"}</p>
+      {labelOverride ? (
+        <div className="text-xs font-bold text-text-secondary">{labelOverride}</div>
+      ) : hideChange || gated ? (
+        <div className="text-xs font-bold text-text-secondary">
+          {gated ? "Baslinje byggs" : ""}
+        </div>
+      ) : (
+        <div className="flex items-center gap-1 text-xs font-bold">
+          {change == null ? (
+            <span className="text-text-secondary"><Minus size={12} className="inline" /> ingen jmf</span>
+          ) : positive ? (
+            <span className="text-green-recovery flex items-center gap-1">
+              <ArrowUp size={12} /> {Math.abs(Math.round(change))}%
+            </span>
+          ) : (
+            <span className="text-orange-deep flex items-center gap-1">
+              <ArrowDown size={12} /> {Math.abs(Math.round(change))}%
+            </span>
+          )}
+        </div>
+      )}
+      {note && <div className="text-[10px] font-semibold text-text-secondary mt-1">{note}</div>}
     </div>
   );
 };
