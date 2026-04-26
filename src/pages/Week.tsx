@@ -110,6 +110,9 @@ const Week = () => {
   const [activities, setActivities] = useState<ActivityLite[]>([]);
   const [exercises, setExercises] = useState<ExerciseLite[]>([]);
   const [fetching, setFetching] = useState(true);
+  // Råa 30-dagars samlingar för "Vad lyfter dig?"-evidens (Spår A)
+  const [activitiesAll, setActivitiesAll] = useState<{ activity_slug: string; label: string; icon: string; color: string; mood_delta: number | null }[]>([]);
+  const [sessionsAll, setSessionsAll] = useState<{ exercises: { title: string; category: string; color: string } | null; mood_before: number | null; mood_after: number | null; anxiety_before: number | null; anxiety_after: number | null }[]>([]);
   const [historyFilter, setHistoryFilter] = useState<"all" | "checkins" | "exercises" | "activeTime">("all");
   const [actionPrefs, setActionPrefs] = useState<ActionPreferences>(() => loadActionPreferences());
 
