@@ -65,6 +65,8 @@ export default {
         "cream-card": "hsl(var(--cream-card))",
         "red-risk": "hsl(var(--red-risk))",
         "red-bg": "hsl(var(--red-bg))",
+        "nav-inactive": "hsl(var(--nav-inactive))",
+        "border-soft": "hsl(var(--border-soft))",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",

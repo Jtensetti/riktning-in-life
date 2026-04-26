@@ -1,112 +1,124 @@
+## Sammanfattning av jämförelse
 
-## Mål
-Använda data du redan samlar (check-ins, activity_logs, exercise_sessions, weekly_forms, journal, medication_logs, väder) på ett mer ändamålsenligt sätt — utan att bygga nya fluffiga ytor. Fokus: **rätt signal vid rätt tillfälle, förklarad i din egen data**.
+Din spec är mer komplett än min tidigare plan på alla visuella punkter (tokens, korttaxonomi, header-regler, copy, screen purpose). Min plan tillförde fyra strukturella saker som din inte beskriver i detalj och som vi behåller: **(1) Rutiner som paket**, **(2) Smart back-navigering**, **(3) Kontextuell FAB**, **(4) Avveckla `HeroBanner` till förmån för en regelstyrd `ScreenHeader`**. Allt annat följer din spec ordagrant.
 
-Det finns redan stark logik (`buildForecast`, `buildEveningPrediction`, `buildLiftSummary`, `buildDayHighlights`, `recommendForToday`, personlig baslinje). Mycket är dock antingen **inte ihopkopplat**, **bara visat på en yta**, eller **saknar en feedback-loop** som gör det smartare över tid. Det här åtgärdar det.
-
----
-
-## Spår 1 — Mönsterdetektor (ny `lib/patterns.ts`)
-Deterministisk korrelations-/sekvensdetektor över rullande 28 dagar.
-
-Letar efter sex klassiska mönster och ger varje en *evidensnivå* (obs-antal + effektstorlek):
-
-1. **"X följs ofta av tyngre dag"** — koppla `activity_logs` / fritext-tags / sömntimmar / koffein-loggar till nästa dags `mood_heaviness` & `anxiety`.
-2. **"Y lyfter konsekvent"** — utvidga `buildLiftSummary` till att även titta på *nästa dag* (fördröjd effekt), inte bara samma session.
-3. **"Sömn under Z h ger oro nästa dag"** — personlig tröskel via `baseline.ts`.
-4. **"Veckodag-mönster"** — söndag/måndag-dippar, fredag-uppgångar.
-5. **"Stillasittande > N min korrelerar med tyngd"** — använder `daytime_bed_sofa_time_minutes`.
-6. **"Medicin-missar följs av X"** — `medication_logs.taken_status`.
-
-Tröskel för att alls visas: **n ≥ 5 observationer** och **|effekt| ≥ 1 skalsteg** (= aldrig spekulativa "AI tror"-påståenden).
-
-Surfas på två ytor:
-- **Vecka → ny sektion "Mönster vi sett"** (max 3 st, sorterat efter evidens).
-- **Today → integreras i `forYou`** ("Du loggade kort sömn igår — det brukar ge oro idag").
-
-Inget AI-anrop, allt körs lokalt → snabbt och förklarbart.
+Inget redesignas från scratch — vi polerar befintliga ytor mot regelboken nedan, en yta i taget.
 
 ---
 
-## Spår 2 — AI-veckosammanfattning (ny edge function `weekly-insight`)
-Kör Lovable AI (`google/gemini-3-flash-preview`) **en gång per vecka** mot `get_weekly_report`-RPC:n som redan finns. Returnerar ett JSON-objekt via tool-calling:
+## Fas 0 — Designkontrakt (token-lager, ingen UI ändras)
 
-```
-{
-  headline: string,           // "En lugnare vecka — sömnen lyfte tisdag"
-  trend_summary: string,      // 2-3 meningar, 2:a person, varm ton
-  bright_spot: string,        // 1 mening om något som gick bra
-  one_thing_to_try: string,   // konkret förslag nästa vecka
-  flags: string[]             // valfri lista, t.ex. "möjlig sömnskuld"
-}
-```
+**`src/index.css`**
+- Lås in semantiska färger som CSS-variabler (orange-action, yellow-journal, purple-sleep, blue-care, green-recovery, pink-move, red-risk) — uppdatera HSL-värden till exakt din palett: `#FF6B1A`, `#FFC928`, `#3B1B73`, `#1F7AF2`, `#07945B`, `#C6539A`, `#D64545`.
+- Lägg till `--icon-tile-radius: 14px`, `--card-radius-hero: 32px`, `--card-radius-action: 28px`, `--card-radius-list: 28px`, `--card-radius-insight: 28px`.
+- Lägg till `--header-h-min: 150px`, `--header-h-max: 190px`, `--header-curve: 36px`.
 
-- Cachas i ny tabell `weekly_insights(user_id, week_start, payload jsonb, created_at)` med RLS `auth.uid() = user_id`.
-- Visas på `/vecka` *och* i `WeeklyReport.tsx`-PDF-flödet.
-- Strikt prompt: får aldrig diagnostisera, får aldrig vara alarmerande, måste citera siffror från payloaden.
-- 402/429 fångas och visas som mjuk toast — appen fungerar utan.
+**`src/lib/typeScale.ts` (ny)**
+- Exportera 5 storlekar (H1 40/44/800, H2 26/32/800, CardTitle 22/28/800, Body 16/24/600, Meta 12/16/800-uppercase). Skapa Tailwind-klasser `text-h1`, `text-h2`, `text-card-title`, `text-body`, `text-meta` via `@layer components` så vi slutar slänga ad-hoc-storlekar i sidor.
+
+**`src/lib/screenIdentity.ts` (ny)**
+- En enda källa för: tab → headerColor, tab → headerIcon, tab → screen-question. Importeras av `ScreenHeader`, `BottomNav`, sid-titlar.
+- Idag = dynamisk (morgon/dag/kväll/natt), Utforska = pink, Logga = orange, Insikter = green, Journal = yellow, Vård = blue, Mer = beige.
 
 ---
 
-## Spår 3 — Smartare rekommendationer (utöka `lib/recommend.ts`)
-Lägg till tre signaler som redan finns men inte används i scoring:
+## Fas 1 — Komponentbibliotek (5 kort, 1 header, 1 ikon-tile)
 
-1. **Effekt-bias från historik** — om en övning har `avgDelta ≥ +1` för dig (från `buildLiftSummary`), boosta den med +15 poäng. Om `≤ -0.5`, dra av 20.
-2. **Bryt mönster vid trigger** — när `forecast.kind === "anxiety"` och tid = morgon, tvinga `calm`-slot till en kort andning (≤5 min) oavsett standard sweet-spot.
-3. **Continuity** — om användaren startade en sequence igår men inte slutförde, föreslå nästa steg i den (read från `exercise_sessions`).
+**Nya komponenter under `src/components/ui-kit/`:**
+1. `IconTile.tsx` — 44–48px, radius 14–16px, mjuk tonad bakgrund, centrerad `AbstractIcon`. Ersätter alla ad-hoc emoji-rutor och inline ikon-bakgrunder.
+2. `HeroCard.tsx` — radius 32px, padding 24, en titel + en mening + en CTA + ev. illustration. Används för dagens rekommendation, Idag-toppkort, "Starta dagens rutin".
+3. `ActionCard.tsx` — radius 28px, padding 20, IconTile + titel + meta. Används för: övningar, rutiner, journalmallar, snabblogg-pillrar.
+4. `ListCard.tsx` — vit/cream, radius 28, padding 20, IconTile vänster + titel/meta + chevron. Används för: vård, medicin, formulär, settings.
+5. `InsightCard.tsx` — cream, radius 28, padding 22, **rubrik = mänsklig slutsats först** ("Veckan är stabil"), chart sekundärt.
+6. `ClinicalCard.tsx` — vit/grå, kompakt, ingen illustration. Endast i WeeklyReport.
+7. `ScreenHeader.tsx` — 150–190px böjd header, en centrerad abstrakt ikon, ärver färg från `screenIdentity`. Inga blobs/wave-svg. **Ersätter `HeroBanner` överallt utom CrisisPlan.**
 
-Alla tre är additiva — bryter inte befintlig logik, fångas av befintliga tester.
-
----
-
-## Spår 4 — Adaptiva check-in-frågor
-Idag visar `Checkin.tsx` samma uppsättning frågor varje gång. Gör så här:
-
-- **Kärnfrågor alltid**: tyngd, oro, energi, funktion, sömn (4 st sliders, ~30s).
-- **Roterande "djupfrågor"** (1–2 st per check-in) baserat på vad baslinjen visar är *mest variabelt för dig*:
-  - Hög varians på sömn → fråga kvalitet + sänggåendetid.
-  - Hög varians på oro → fråga "vad triggade?" (taggar).
-  - Stillasittande hög → fråga `daytime_bed_sofa_time_minutes`.
-- Ingen ny tabell — använd `daily_checkins` befintliga kolumner; det vi inte har plats för läggs i `note` som JSON-tags.
+**Avveckling:**
+- `HeroBanner` flaggas `@deprecated` men finns kvar i 1 release.
+- `ColorCard` blir intern wrapper som `ActionCard` använder; egen export tas bort.
+- `card-quiet`-klassen avvecklas till förmån för `InsightCard`.
 
 ---
 
-## Spår 5 — Daglig auto-baseline-refresh
-Idag triggas `refreshBaseline()` bara på Today-mount. Lägg till:
-- Kör om i `Checkin.tsx` direkt efter sparad check-in.
-- Trigger via `riktning:settings-hydrated`-eventet på nya enheter så baslinjen rekomputeras med serverdata, inte bara cache.
+## Fas 2 — Rutiner som paket (struktur)
 
-Liten ändring, men säkrar att alla tröskelvärden alltid är färska.
+**Ny route `/rutiner/:slug` → `src/pages/SequenceDetail.tsx`**
+- Visar rutinen som *ett* objekt: stor `HeroCard` med titel/syfte, sedan numrerad lista över alla steg (radius 28, IconTile per steg), CTA "Starta första steget".
+- I dag länkar `Sequences.tsx` direkt till första övningen → orsaken till "tillbaka leder fel". Vi går via SequenceDetail först.
 
----
+**`src/pages/ExerciseDetail.tsx`**
+- Om `sessionStorage.riktning:sequence` är aktiv: visa en smal **rutin-bandet** högst upp ("Mjuk morgon · steg 2 av 3" + back-pil till SequenceDetail).
+- "Klar"-knappen avancerar till nästa steg i rutinen (eller "Klart, du är genom rutinen").
+- Tas illustrationerna inuti detail-vyn bort (per din regel: "less dashboard, fewer decorative colors" gäller även här).
 
-## Vad som **inte** ändras
-- Ingen ny tabell utöver `weekly_insights`.
-- Ingen ny route, inga nya sidor.
-- Ingen ändring av `daily_checkins`-schemat.
-- Inga nya stora UI-block — befintliga `forYou`, Vecka, WeeklyReport återanvänds.
-- Säkerhetsmodellen (RLS) är oförändrad.
+**`src/hooks/useSmartBack.ts` (ny)**
+- Läser `document.referrer` + intern history-stack (sessionStorage) och returnerar rätt back-target. Tillbakaknappen i ExerciseDetail går då till SequenceDetail när man kom därifrån, annars Exercises.
 
 ---
 
-## Leveranser per filtyp
+## Fas 3 — Sidor harmoniseras mot specen
 
-**Nya filer**
-- `src/lib/patterns.ts` — mönsterdetektor + tester.
-- `src/components/PatternsSection.tsx` — UI på Vecka.
-- `src/components/WeeklyAIInsight.tsx` — kortet på Vecka + i rapport.
-- `supabase/functions/weekly-insight/index.ts` — Lovable AI-anrop med tool calling.
-- `supabase/migrations/<ts>_weekly_insights.sql` — ny tabell + RLS.
+För varje sida: byt `HeroBanner` → `ScreenHeader`, byt ad-hoc kort → kort-kit, kapa moduler som inte svarar på sidans fråga.
 
-**Ändrade filer**
-- `src/lib/recommend.ts` — tre nya scoring-signaler.
-- `src/lib/baseline.ts` — exporta varianskvot per fält (för adaptiva frågor).
-- `src/pages/Checkin.tsx` — adaptiv frågerotation.
-- `src/pages/Today.tsx` — koppla in mönstersignaler i `TodayContext`.
-- `src/pages/Week.tsx` — `<PatternsSection>` + `<WeeklyAIInsight>`.
-- `src/pages/WeeklyReport.tsx` — visa AI-sammanfattning i PDF-flödet.
+| Sida | Fråga | Plocka bort | Behåll/förbättra |
+|---|---|---|---|
+| `Today.tsx` | "Vilket litet steg nu?" | duplicerade widgets, gradient-hero, stagger-spam | 1 HeroCard (rekommendation) + max 3 ActionCards + 1 InsightCard |
+| `Explore.tsx` | "Vilken sorts stöd?" | inget — **redan referensen** | bara byt header till ScreenHeader för konsistens |
+| `Exercises.tsx` | (under Utforska) | egen header | Visa som tab inuti Utforska, inte separat sida |
+| `Sequences.tsx` | (under Utforska) | direktlänk till första övning | navigerar till ny SequenceDetail |
+| `Journal.tsx` | "Vad vill jag skriva?" | inget — referens | byt header, allt annat OK |
+| `Week.tsx` (Insikter) | "Vad visar veckan?" | tomma chart-grid när baseline saknas | **baslinje-kort "Dag X av 14"** först, sedan 1 InsightCard med slutsats + chart |
+| `Vard.tsx` | "Vad behöver vården veta?" | playful illustrationer i medicin/formulärlistor | ListCard överallt, blå header |
+| `Health.tsx` | (slås ihop med Vård om innehåll överlappar) | utvärderas | — |
+| `WeeklyReport.tsx` | klinisk export | färgad illustration, AI-sammanfattning högst upp i färg | ClinicalCard, "Underlaget är begränsat: X av 14"-banner när sparse |
+| `Settings.tsx` / `More.tsx` | sekundär | färgad hero | beige ScreenHeader, ListCard-stack |
+| `CrisisPlan.tsx` | nödläge | — | behåller sin röda framtoning, men radius/typografi från kit |
+| `QuickLog.tsx` | snabblogg | dubblerar FAB-flow | utvärdera om route ska tas bort när FAB öppnar `ActivityPicker` direkt |
 
 ---
 
-## Ungefärlig storlek
-~6 nya filer, ~7 ändrade filer. Inga schema-ändringar utöver `weekly_insights`. Lovable AI används bara på en yta (en funktion, batch-vänlig, billig modell) — exponering minimal, värde högt.
+## Fas 4 — Activity picker enligt specen
+
+`src/components/ActivityPicker.tsx`:
+- 2-kol grid, kort 96px h, radius 24, padding 16, IconTile 44, titel 18–20/800, max 2 rader, ellipsis.
+- Stjärna 28px, opacity 0.55 inactive, full opacity active.
+- Sektioner i ordning: **Senast använda** (max 4), **Favoriter** (om finns), **Kategorier** (collapsible), **Skapa egen**.
+- "Senast använda" hämtas från befintlig `useRecentCheckins`-mönster, ny `useRecentActivities` hook mot `activity_logs`.
+
+---
+
+## Fas 5 — Bottom nav + FAB
+
+`src/components/BottomNav.tsx`:
+- Höjd 82px + safe-area, center-FAB 68px cirkel `#FF6B1A` med shadow `0 8px 24px rgba(255,107,26,0.35)`.
+- Ikoner 24px från samma `AbstractIcon`-familj. Inactive `#746E68`, active = tabbens identitetsfärg.
+- **Beslut om femte tab:** behåll nuvarande 5 (Idag, Utforska, Logga, Insikter, Vård). Journal flyttar in som **prominent ActionCard överst i Utforska** — det matchar din spec ("Journal kan leva inuti Utforska").
+- FAB blir **kontextuell**: på Idag öppnar den check-in om dagens check-in saknas, annars ActivityPicker. På övriga sidor: alltid ActivityPicker. Hanteras av `screenIdentity`.
+
+---
+
+## Fas 6 — Insikter-tomtillstånd + copy-pass
+
+- `src/components/BaselineProgressCard.tsx` (ny): "Bygger baslinje · Dag 4 av 14", listar vad som dyker upp efter 14 dagar. Visas tills `baselineComplete=true`.
+- Globalt copy-pass via `src/lib/tone.ts`: lägg in dina godkända fraser, blockera "streak", "perfekt", "missat mål", "optimera", "du borde". Lägg en lint-regel (rg-grep i CI/precheck) som varnar om något av de förbjudna orden återinförs.
+- WeeklyReport får `<SparseDataNotice />` när < 7 av 14 dagar har check-in.
+
+---
+
+## Fas 7 — Verifiering
+
+1. `tsc --noEmit` + befintliga vitest.
+2. Visuell smoke: rendera varje route, screenshota mobile viewport (390x800), jämför mot din `IMG_3618` (Utforska) och `IMG_3565` (Journal) som referens.
+3. Designregel-test (`src/test/design-system.test.ts`, ny): asserterar att inga sidor importerar `HeroBanner` (utom CrisisPlan-undantag), att alla `text-[NNpx]`-arbiträra storlekar utanför kit-komponenter ger varning.
+
+---
+
+## Leverans-ordning (rekommenderad)
+
+1. **Fas 0 + 1** först (tokens + kit) — påverkar inget visuellt förrän nästa steg.
+2. **Fas 2** (rutiner som paket) — löser ditt navigationsproblem direkt.
+3. **Fas 3** sida för sida i ordningen: Today → Vard → Week → WeeklyReport → Settings/More → Sequences/Exercises → CrisisPlan/QuickLog.
+4. **Fas 4 + 5** (picker + nav) sist så de bygger på det nya kit:et.
+5. **Fas 6** copy/empty states som finishing-pass.
+
+Säg till om du vill att jag drar igång — eller om något steg ska skjutas/strykas.
