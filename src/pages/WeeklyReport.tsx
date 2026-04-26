@@ -18,6 +18,7 @@ import {
   drawSparklineRows,
   drawHBarChart,
   drawWeekDots,
+  drawSummaryBlock,
   drawFooter,
   setPdfText,
   setPdfDraw,
@@ -81,7 +82,7 @@ const WeeklyReport = () => {
         supabase.from("daily_checkins").select("*").eq("user_id", user.id).gte("date", since).order("date"),
         supabase.from("weekly_forms").select("type,total_score,date").eq("user_id", user.id).gte("date", since).order("date"),
         supabase.from("medications").select("name,dose,active,date_started").eq("user_id", user.id),
-        supabase.from("medication_logs").select("taken_status,side_effects_json,date").eq("user_id", user.id).gte("date", sinceWeek),
+        supabase.from("medication_logs").select("taken_status,side_effects_json,date").eq("user_id", user.id).gte("date", since),
         supabase.from("journal_entries").select("date,template_type,title,free_text").eq("user_id", user.id).eq("include_in_report", true).gte("date", sinceWeek).order("date"),
         supabase.from("activity_logs").select("date,label,category,duration_minutes,mood_delta").eq("user_id", user.id).gte("date", sinceWeek).order("date"),
       ]);
@@ -119,6 +120,7 @@ const WeeklyReport = () => {
   const summary = useMemo(() => {
     if (!data) return null;
     const week = data.checkins.filter((c) => c.date >= isoDaysAgo(6));
+    const prevWeek = data.checkins.filter((c) => c.date < isoDaysAgo(6) && c.date >= isoDaysAgo(13));
     const { current, previous } = splitWeeks(data.checkins);
     const latestPhq = [...data.forms].reverse().find((x) => x.type === "phq9");
     const latestGad = [...data.forms].reverse().find((x) => x.type === "gad7");
@@ -137,17 +139,27 @@ const WeeklyReport = () => {
     const directionPrev = burdenPrev.value == null ? null : 100 - burdenPrev.value;
 
     const sleepHours = meanOf(week, "sleep_hours");
+    const sleepHoursPrev = meanOf(prevWeek, "sleep_hours");
     const sleepQuality = meanOf(week, "sleep_quality");
+    const lowSleepNights = week.filter((c) => c.sleep_hours != null && Number(c.sleep_hours) < 6).length;
     const movementYes = week.filter((c) => c.movement_today === "yes").length;
     const movementLittle = week.filter((c) => c.movement_today === "little").length;
+    const movementYesPrev = prevWeek.filter((c) => c.movement_today === "yes").length;
+    const movementLittlePrev = prevWeek.filter((c) => c.movement_today === "little").length;
     const meaningfulYes = week.filter((c) => c.meaningful_activity === "yes").length;
 
-    const adherence = data.medLogs.length
-      ? Math.round((data.medLogs.filter((x) => x.taken_status === "taken").length / data.medLogs.length) * 100)
+    // Medicin: 7 vs 7 dagar
+    const medLogsWeek = data.medLogs.filter((x) => x.date >= isoDaysAgo(6));
+    const medLogsPrev = data.medLogs.filter((x) => x.date < isoDaysAgo(6) && x.date >= isoDaysAgo(13));
+    const adherence = medLogsWeek.length
+      ? Math.round((medLogsWeek.filter((x) => x.taken_status === "taken").length / medLogsWeek.length) * 100)
+      : null;
+    const adherencePrev = medLogsPrev.length
+      ? Math.round((medLogsPrev.filter((x) => x.taken_status === "taken").length / medLogsPrev.length) * 100)
       : null;
     const sideEffects = Array.from(
       new Set(
-        data.medLogs.flatMap((x) => (Array.isArray(x.side_effects_json) ? (x.side_effects_json as string[]) : [])),
+        medLogsWeek.flatMap((x) => (Array.isArray(x.side_effects_json) ? (x.side_effects_json as string[]) : [])),
       ),
     );
 
@@ -158,6 +170,10 @@ const WeeklyReport = () => {
       acute: week.filter((c) => c.safety_status === "acute").length,
     };
 
+    // Journal-räkning (data.journals är redan filtrerat på senaste 7 dagar via include_in_report)
+    const journalCount = data.journals.length;
+    const journalDays = new Set(data.journals.map((j) => j.date)).size;
+
     return {
       week,
       direction,
@@ -167,14 +183,21 @@ const WeeklyReport = () => {
       rec,
       stab,
       sleepHours,
+      sleepHoursPrev,
       sleepQuality,
+      lowSleepNights,
       movementYes,
       movementLittle,
+      movementYesPrev,
+      movementLittlePrev,
       meaningfulYes,
       adherence,
+      adherencePrev,
       sideEffects,
       totalActMinutes,
       safety,
+      journalCount,
+      journalDays,
     };
   }, [data]);
 
@@ -242,6 +265,64 @@ const WeeklyReport = () => {
     if (!summary.burden.withWeekly) {
       writeLine("Belastningen beräknad utan PHQ-9/GAD-7 (ingen aktuell veckoskattning).", { muted: true, size: 9 });
     }
+
+    // ----- Sammanfattningsblock: sömn / rörelse / journal / medicin -----
+    const fmtTrend = (cur: number | null, prev: number | null, unit: string, decimals = 1) => {
+      if (cur == null || prev == null) return undefined;
+      const diff = cur - prev;
+      const dir: "up" | "down" | "flat" = Math.abs(diff) < 0.05 ? "flat" : diff > 0 ? "up" : "down";
+      const sign = diff > 0 ? "+" : "";
+      return { dir, text: `${sign}${diff.toFixed(decimals)}${unit} vs forra veckan` };
+    };
+    const fmtTrendInt = (cur: number, prev: number, unit: string) => {
+      const diff = cur - prev;
+      const dir: "up" | "down" | "flat" = diff === 0 ? "flat" : diff > 0 ? "up" : "down";
+      const sign = diff > 0 ? "+" : "";
+      return { dir, text: `${sign}${diff}${unit} vs forra veckan` };
+    };
+    const movementDays = summary.movementYes + summary.movementLittle;
+    const movementDaysPrev = summary.movementYesPrev + summary.movementLittlePrev;
+    const medsTotal = data.meds.filter((m) => m.active).length;
+
+    ensureSpace(110);
+    y = drawSectionHeader(doc, "Sammanfattning veckan", y, margin);
+    y = drawSummaryBlock(
+      doc,
+      [
+        {
+          label: "Sömn",
+          value: summary.sleepHours == null ? "—" : `${summary.sleepHours.toFixed(1)} h`,
+          sub: `${summary.lowSleepNights} natt${summary.lowSleepNights === 1 ? "" : "er"} under 6 h · kvalitet ${summary.sleepQuality == null ? "—" : summary.sleepQuality.toFixed(1) + "/10"}`,
+          trend: fmtTrend(summary.sleepHours, summary.sleepHoursPrev, " h"),
+          color: PDF_COLORS.purple,
+        },
+        {
+          label: "Rörelse",
+          value: `${movementDays} / 7 dgr`,
+          sub: `${summary.movementYes} full · ${summary.movementLittle} lite · ${summary.totalActMinutes} min loggat`,
+          trend: fmtTrendInt(movementDays, movementDaysPrev, " dgr"),
+          color: PDF_COLORS.green,
+        },
+        {
+          label: "Journal",
+          value: `${summary.journalCount} st`,
+          sub: `${summary.journalDays} dag${summary.journalDays === 1 ? "" : "ar"} med anteckning · ${summary.meaningfulYes} meningsfull aktivitet`,
+          color: PDF_COLORS.blue,
+        },
+        {
+          label: "Medicin",
+          value: summary.adherence == null ? "—" : `${summary.adherence}%`,
+          sub: `${medsTotal} aktiv${medsTotal === 1 ? "" : "a"} · ${summary.sideEffects.length === 0 ? "inga biverkningar" : `${summary.sideEffects.length} biverkning${summary.sideEffects.length === 1 ? "" : "ar"}`}`,
+          trend:
+            summary.adherence != null && summary.adherencePrev != null
+              ? fmtTrendInt(summary.adherence, summary.adherencePrev, " %")
+              : undefined,
+          color: PDF_COLORS.amber,
+        },
+      ],
+      y,
+      margin,
+    );
 
     // ----- Trender (7-dagars sparklines) -----
     ensureSpace(180);

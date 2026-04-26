@@ -23,6 +23,7 @@ import {
   drawSparklineRows,
   drawHBarChart,
   drawWeekDots,
+  drawSummaryBlock,
   drawFooter,
   setPdfText,
   setPdfDraw,
@@ -504,6 +505,21 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
     adherence: number | null;
     sideEffects: string[];
     movementDays: number;
+    // Sammanfattningsblock (sömn / rörelse / journal / medicin)
+    sleepHours: number | null;
+    sleepHoursPrev: number | null;
+    sleepQuality: number | null;
+    lowSleepNights: number;
+    movementYes: number;
+    movementLittle: number;
+    movementCombinedPrev: number;
+    journalCount: number;
+    journalDays: number;
+    meaningfulYes: number;
+    activeMeds: number;
+    adherencePrev: number | null;
+    totalActMinutes: number;
+    periodDays: number;
   } | null>(null);
 
   const generate = async () => {
@@ -526,6 +542,16 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
     const ml = (medLogs.data ?? []) as any[];
     const j = (journals.data ?? []) as any[];
     const acts = (activities.data ?? []) as any[];
+
+    // Föregående period (för trender i sammanfattningsblocket).
+    const prevSince = new Date(Date.now() - days * 2 * 86400000).toISOString().split("T")[0];
+    const prevUntil = since;
+    const [prevCheckins, prevMedLogs] = await Promise.all([
+      supabase.from("daily_checkins").select("sleep_hours,movement_today").eq("user_id", user.id).gte("date", prevSince).lt("date", prevUntil),
+      supabase.from("medication_logs").select("taken_status,date").eq("user_id", user.id).gte("date", prevSince).lt("date", prevUntil),
+    ]);
+    const cPrev = (prevCheckins.data ?? []) as any[];
+    const mlPrev = (prevMedLogs.data ?? []) as any[];
 
     const avg = (arr: any[], k: string) => {
       const xs = arr.map(r => r[k]).filter((v): v is number => typeof v === "number");
@@ -638,6 +664,27 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
       });
     }
 
+    // Sammanfattningssiffror för PDF-block.
+    const avgNum = (arr: any[], k: string): number | null => {
+      const xs = arr.map((r) => r[k]).filter((v): v is number => typeof v === "number");
+      return xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : null;
+    };
+    const sleepHours = avgNum(c, "sleep_hours");
+    const sleepHoursPrev = avgNum(cPrev, "sleep_hours");
+    const sleepQuality = avgNum(c, "sleep_quality");
+    const lowSleepNights = c.filter((x: any) => x.sleep_hours != null && Number(x.sleep_hours) < 6).length;
+    const movementYes = c.filter((x: any) => x.movement_today === "yes").length;
+    const movementLittle = c.filter((x: any) => x.movement_today === "little").length;
+    const movementCombinedPrev = cPrev.filter((x: any) => x.movement_today === "yes" || x.movement_today === "little").length;
+    const journalCount = j.length;
+    const journalDays = new Set(j.map((e: any) => e.date)).size;
+    const meaningfulYes = c.filter((x: any) => x.meaningful_activity === "yes").length;
+    const activeMeds = m.filter((x: any) => x.active).length;
+    const adherencePrev = mlPrev.length
+      ? Math.round((mlPrev.filter((x: any) => x.taken_status === "taken").length / mlPrev.length) * 100)
+      : null;
+    const totalActMinutes = acts.reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
+
     setReport(lines.join("\n"));
     setStructured({
       checkins: checkinsTyped,
@@ -654,6 +701,20 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
       adherence,
       sideEffects,
       movementDays,
+      sleepHours,
+      sleepHoursPrev,
+      sleepQuality,
+      lowSleepNights,
+      movementYes,
+      movementLittle,
+      movementCombinedPrev,
+      journalCount,
+      journalDays,
+      meaningfulYes,
+      activeMeds,
+      adherencePrev,
+      totalActMinutes,
+      periodDays: days,
     });
     setGenerating(false);
   };
@@ -733,7 +794,62 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
       margin,
     );
 
-    // ----- Trender (sparklines) -----
+    // ----- Sammanfattningsblock: sömn / rörelse / journal / medicin -----
+    const fmtTrend = (cur: number | null, prev: number | null, unit: string, decimals = 1) => {
+      if (cur == null || prev == null) return undefined;
+      const diff = cur - prev;
+      const dir: "up" | "down" | "flat" = Math.abs(diff) < 0.05 ? "flat" : diff > 0 ? "up" : "down";
+      const sign = diff > 0 ? "+" : "";
+      return { dir, text: `${sign}${diff.toFixed(decimals)}${unit} vs forra perioden` };
+    };
+    const fmtTrendInt = (cur: number, prev: number, unit: string) => {
+      const diff = cur - prev;
+      const dir: "up" | "down" | "flat" = diff === 0 ? "flat" : diff > 0 ? "up" : "down";
+      const sign = diff > 0 ? "+" : "";
+      return { dir, text: `${sign}${diff}${unit} vs forra perioden` };
+    };
+    const movementCombined = structured.movementYes + structured.movementLittle;
+    const periodLabel = `${structured.periodDays} dgr`;
+    ensureSpace(110);
+    y = drawSectionHeader(doc, `Sammanfattning (${periodLabel})`, y, margin);
+    y = drawSummaryBlock(
+      doc,
+      [
+        {
+          label: "Sömn",
+          value: structured.sleepHours == null ? "—" : `${structured.sleepHours.toFixed(1)} h`,
+          sub: `${structured.lowSleepNights} natt${structured.lowSleepNights === 1 ? "" : "er"} under 6 h · kvalitet ${structured.sleepQuality == null ? "—" : structured.sleepQuality.toFixed(1) + "/10"}`,
+          trend: fmtTrend(structured.sleepHours, structured.sleepHoursPrev, " h"),
+          color: PDF_COLORS.purple,
+        },
+        {
+          label: "Rörelse",
+          value: `${movementCombined} / ${structured.periodDays} dgr`,
+          sub: `${structured.movementYes} full · ${structured.movementLittle} lite · ${structured.totalActMinutes} min loggat`,
+          trend: fmtTrendInt(movementCombined, structured.movementCombinedPrev, " dgr"),
+          color: PDF_COLORS.green,
+        },
+        {
+          label: "Journal",
+          value: `${structured.journalCount} st`,
+          sub: `${structured.journalDays} dag${structured.journalDays === 1 ? "" : "ar"} med anteckning · ${structured.meaningfulYes} meningsfull aktivitet`,
+          color: PDF_COLORS.blue,
+        },
+        {
+          label: "Medicin",
+          value: structured.adherence == null ? "—" : `${structured.adherence}%`,
+          sub: `${structured.activeMeds} aktiv${structured.activeMeds === 1 ? "" : "a"} · ${structured.sideEffects.length === 0 ? "inga biverkningar" : `${structured.sideEffects.length} biverkning${structured.sideEffects.length === 1 ? "" : "ar"}`}`,
+          trend:
+            structured.adherence != null && structured.adherencePrev != null
+              ? fmtTrendInt(structured.adherence, structured.adherencePrev, " %")
+              : undefined,
+          color: PDF_COLORS.amber,
+        },
+      ],
+      y,
+      margin,
+    );
+
     ensureSpace(180);
     y = drawSectionHeader(doc, "Trender senaste 7 dagar", y, margin);
     const recent = structured.checkins.filter((c) => {
