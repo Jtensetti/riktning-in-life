@@ -7,6 +7,7 @@
 // varje render.
 
 import type { Checkin } from "./metrics";
+import { patchUserSettings } from "./userSettingsSync";
 
 export type PersonalBaseline = {
   /** ISO-datum när baslinjen senast uppdaterades. */
@@ -82,6 +83,7 @@ export const saveBaseline = (b: PersonalBaseline): void => {
   } catch {
     /* tysta — quota etc. */
   }
+  void patchUserSettings({ baseline: b });
 };
 
 /** Sätt baslinjen från check-ins om vi har nog med data. Idempotent. */

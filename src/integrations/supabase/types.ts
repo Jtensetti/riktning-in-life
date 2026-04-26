@@ -536,6 +536,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_settings: {
+        Row: {
+          action_prefs: Json
+          baseline: Json | null
+          created_at: string
+          doctor_email: string | null
+          last_seen_at: string | null
+          onboarded_at: string | null
+          reminders: Json
+          updated_at: string
+          user_id: string
+          weekly_questions: Json
+        }
+        Insert: {
+          action_prefs?: Json
+          baseline?: Json | null
+          created_at?: string
+          doctor_email?: string | null
+          last_seen_at?: string | null
+          onboarded_at?: string | null
+          reminders?: Json
+          updated_at?: string
+          user_id: string
+          weekly_questions?: Json
+        }
+        Update: {
+          action_prefs?: Json
+          baseline?: Json | null
+          created_at?: string
+          doctor_email?: string | null
+          last_seen_at?: string | null
+          onboarded_at?: string | null
+          reminders?: Json
+          updated_at?: string
+          user_id?: string
+          weekly_questions?: Json
+        }
+        Relationships: []
+      }
       weekly_forms: {
         Row: {
           answers_json: Json

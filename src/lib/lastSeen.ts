@@ -1,5 +1,8 @@
 // Kontinuitet mellan besök: kommer ihåg när användaren senast var i appen.
-// Helt klient-sidigt, lagrat i localStorage. Ingen tracking utåt.
+// Cachas i localStorage för snabb läsning, mirroras till user_settings.last_seen_at
+// så att en ny enhet ser samma "förra besök".
+
+import { patchUserSettings } from "./userSettingsSync";
 
 const KEY = "riktning_last_seen_at";
 
@@ -51,6 +54,7 @@ export const readAndUpdateLastSeen = (now: Date = new Date()): LastSeen => {
   } catch {
     /* ignore quota */
   }
+  void patchUserSettings({ last_seen_at: now.toISOString() });
   if (!previousAt) {
     return { previousAt: null, bucket: "first-visit", daysSince: null };
   }

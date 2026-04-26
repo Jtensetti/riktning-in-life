@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronLeft, ChevronRight, Plus, Download, Trash2, FileDown, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { patchUserSettings } from "@/lib/userSettingsSync";
 import { FORMS, FormType, SIDE_EFFECTS } from "@/lib/forms";
 import { burdenScore, functionScore, recoveryScore, stabilityScore, stabilityLabel, pctChange, splitWeeks, type Checkin, type WeeklyFormScore } from "@/lib/metrics";
 import jsPDF from "jspdf";
@@ -1048,6 +1049,7 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
       return;
     }
     localStorage.setItem("riktning_doctor_email", trimmed);
+    void patchUserSettings({ doctor_email: trimmed });
     downloadPdf();
     const dateStr = new Date().toISOString().split("T")[0];
     const subject = `Klinisk rapport – ${days} dagar – ${dateStr}`;

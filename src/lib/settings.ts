@@ -1,4 +1,7 @@
-// Lightweight reminder + onboarding settings stored in localStorage.
+// Inställningar lagras både lokalt (snabb läsning) och i databasen (kontinuitet
+// mellan enheter). Setters är fire-and-forget mot servern; läsare är synkrona
+// och svarar från lokal cache som fylls vid inloggning av hydrateUserSettings.
+import { patchUserSettings } from "./userSettingsSync";
 
 export type Reminders = {
   morning_checkin: boolean;
@@ -27,16 +30,20 @@ export const loadReminders = (): Reminders => {
 
 export const saveReminders = (r: Reminders) => {
   localStorage.setItem(REMINDERS_KEY, JSON.stringify(r));
+  void patchUserSettings({ reminders: r });
 };
 
 export const isOnboarded = () => !!localStorage.getItem(ONBOARDED_KEY);
 
 export const markOnboarded = () => {
-  localStorage.setItem(ONBOARDED_KEY, new Date().toISOString());
+  const ts = new Date().toISOString();
+  localStorage.setItem(ONBOARDED_KEY, ts);
+  void patchUserSettings({ onboarded_at: ts });
 };
 
 export const resetOnboarded = () => {
   localStorage.removeItem(ONBOARDED_KEY);
+  void patchUserSettings({ onboarded_at: null });
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -71,6 +78,7 @@ export const loadActionPreferences = (): ActionPreferences => {
 
 export const saveActionPreferences = (p: ActionPreferences) => {
   localStorage.setItem(ACTION_PREFS_KEY, JSON.stringify(p));
+  void patchUserSettings({ action_prefs: p });
 };
 
 /** Översätt "auto" till en konkret bucket utifrån tid på dygnet. */
