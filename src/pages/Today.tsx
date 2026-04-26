@@ -241,6 +241,8 @@ const Today = () => {
   const [streakReloadKey, setStreakReloadKey] = useState(0);
   const [activitiesToday, setActivitiesToday] = useState<number>(0);
   const [savingEveningGoal, setSavingEveningGoal] = useState(false);
+  // Kontinuitet: kommer ihåg när användaren senast var här. Skrivs vid mount.
+  const [lastSeen] = useState<LastSeen>(() => readAndUpdateLastSeen());
 
   // Refresh time context every minute so partOfDay stays accurate without reload.
   useEffect(() => {
