@@ -60,12 +60,16 @@ export const chartGrid = {
   vertical: false as const,
 } as const;
 
-/** Animationsprofil — respekterar reduced-motion globalt. */
+/** Animationsprofil — respekterar reduced-motion och kortar på små viewports
+ *  så historik-vyn känns omedelbar på mobil utan layout-jitter när
+ *  Recharts ritar in sina staplar/linjer. */
 export const chartAnimation = (kind: "bar" | "line" | "donut" = "bar") => {
   const reduced = prefersReducedMotion();
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 480;
+  const base = kind === "bar" ? 650 : 700;
   return {
     isAnimationActive: !reduced,
-    animationDuration: kind === "bar" ? 650 : 700,
+    animationDuration: isMobile ? Math.round(base * 0.45) : base,
     animationEasing: "ease-out" as const,
   };
 };
