@@ -54,7 +54,7 @@ export const TomorrowForecastCard = ({ forecast, exercises, index = 0 }: Props) 
   return (
     <button
       onClick={handleClick}
-      className="w-full text-left rounded-3xl bg-blue-calm text-white p-5 shadow-soft press-soft animate-pop-in flex flex-col gap-3 min-h-[168px] relative overflow-hidden mb-7"
+      className="w-full text-left rounded-3xl bg-blue-calm text-white p-5 shadow-soft press-soft animate-pop-in flex flex-col gap-3 min-h-[196px] relative overflow-hidden mb-7"
       style={{ animationDelay: `var(--stagger-${Math.min(index, 4)})` }}
       aria-label={`Gör detta imorgon: ${exercise?.title ?? forecast.suggestion}`}
     >
