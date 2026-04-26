@@ -495,7 +495,7 @@ const PriorityCard = ({ p, rank }: { p: Priority; rank: number }) => {
 };
 
 const MetricCard = ({
-  title, current, prev, invert, note, hideChange, labelOverride, gated,
+  title, current, prev, invert, note, hideChange, labelOverride, gated, tone, spark,
 }: {
   title: string;
   current: number | null;
@@ -505,15 +505,22 @@ const MetricCard = ({
   hideChange?: boolean;
   labelOverride?: string;
   gated?: boolean;
+  tone?: "orange" | "blue" | "yellow" | "purple" | "pink" | "green";
+  spark?: (number | null)[];
 }) => {
   const c = current == null ? null : Math.round(current);
   const change = pctChange(current, prev);
   const positive = change == null ? null : (invert ? change < 0 : change > 0);
 
   return (
-    <div className="card-cream p-4">
+    <div className="card-cream p-4 relative overflow-hidden">
       <p className="text-[11px] font-bold text-text-secondary uppercase tracking-wider mb-1">{title}</p>
-      <p className={`text-3xl font-extrabold leading-none mb-2 ${gated ? "text-text-secondary" : ""}`}>{c ?? "—"}</p>
+      <div className="flex items-end justify-between gap-2 mb-2">
+        <p className={`text-3xl font-extrabold leading-none ${gated ? "text-text-secondary" : ""}`}>{c ?? "—"}</p>
+        {!gated && spark && spark.some((v) => v != null) && (
+          <Sparkline values={spark} tone={tone ?? "orange"} width={56} height={22} />
+        )}
+      </div>
       {labelOverride ? (
         <div className="text-xs font-bold text-text-secondary">{labelOverride}</div>
       ) : hideChange || gated ? (
