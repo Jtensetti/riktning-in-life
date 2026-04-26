@@ -69,11 +69,11 @@ export const TomorrowForecastCard = ({ forecast, exercises, index = 0 }: Props) 
         <span className="text-[11px] font-extrabold opacity-90">{label}</span>
       </div>
 
-      <div className="absolute right-3 top-12 opacity-90 pointer-events-none z-[1]">
-        <AbstractIcon name={icon} size={48} color="currentColor" />
+      <div className="absolute -right-2 top-6 opacity-95 pointer-events-none z-[1] drop-shadow-[0_6px_14px_rgba(0,0,0,0.18)]">
+        <AbstractIcon name={icon} size={112} color="currentColor" />
       </div>
 
-      <div className="relative z-[1] mt-auto pr-14">
+      <div className="relative z-[1] mt-auto pr-24">
         <h4 className="text-[20px] leading-[24px] font-extrabold mb-1">
           {exercise?.title ?? forecast.suggestion}
         </h4>
