@@ -34,12 +34,12 @@ export const BottomNav = () => {
                       isActive ? "animate-pop-in" : ""
                     }`}
                     style={{
-                      background: isActive ? `${activeColor.replace("hsl(", "hsla(").replace(")", " / 0.14)")}` : "transparent",
+                      background: isActive ? `${activeColor.replace("hsl(", "hsla(").replace(")", " / 0.18)")}` : "transparent",
                     }}
                   >
                     <AbstractIcon
                       name={icon}
-                      size={22}
+                      size={isActive ? 26 : 22}
                       color={isActive ? activeColor : "hsl(var(--text-secondary))"}
                     />
                   </span>

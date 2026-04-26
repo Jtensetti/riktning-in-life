@@ -24,8 +24,8 @@ export const chartMargins = {
 
 /** Bar-layout-konstanter. */
 export const chartBarLayout = {
-  categoryGap: "22%" as const,
-  radiusTop: [12, 12, 4, 4] as [number, number, number, number],
+  categoryGap: "18%" as const,
+  radiusTop: [14, 14, 4, 4] as [number, number, number, number],
   radiusFlat: [0, 0, 0, 0] as [number, number, number, number],
 } as const;
 
@@ -72,15 +72,15 @@ export const chartAnimation = (kind: "bar" | "line" | "donut" = "bar") => {
 
 /** Standard-dot för linjer. Liten "ring" via tooltip-bg så den läses tydligt över linjen. */
 export const chartLineDot = (color: string) => ({
-  r: 4,
-  strokeWidth: 2,
+  r: 5,
+  strokeWidth: 2.5,
   stroke: chartTokens.tooltipBg,
   fill: color,
 });
 
 export const chartLineActiveDot = (color: string) => ({
-  r: 6,
-  strokeWidth: 2,
+  r: 7,
+  strokeWidth: 2.5,
   stroke: chartTokens.tooltipBg,
   fill: color,
 });

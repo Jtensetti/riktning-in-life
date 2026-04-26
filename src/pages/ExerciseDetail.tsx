@@ -7,6 +7,8 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Check, ChevronRight } from "lucide-react";
 import { Illustration, categoryIll } from "@/components/Illustrations";
+import { AbstractIcon } from "@/components/AbstractIcon";
+import { iconForExerciseCategory } from "@/lib/icons";
 import { MechanismCard, type Evidence } from "@/components/MechanismCard";
 import { toast } from "sonner";
 
@@ -139,8 +141,8 @@ const ExerciseDetail = () => {
             {sequence.title} · Steg {stepIndex + 1} av {sequence.exercise_ids.length}
           </div>
         )}
-        <div className="rounded-2xl overflow-hidden mb-4 bg-white/10">
-          <Illustration name={ill} className="w-full h-auto" />
+        <div className="grid place-items-center mb-4 animate-float">
+          <AbstractIcon name={iconForExerciseCategory(ex.category)} size={96} />
         </div>
         <p className="text-xs font-extrabold uppercase tracking-wider opacity-80 mb-1">{ex.category}</p>
         <h1 className="text-[28px] leading-[34px] mb-2">{ex.title}</h1>
@@ -167,7 +169,9 @@ const ExerciseDetail = () => {
             </ol>
             <Button
               onClick={() => setPhase("before")}
-              className="w-full h-14 rounded-full bg-foreground hover:bg-foreground/90 text-background font-extrabold text-[17px]"
+              variant="pill-brand"
+              size="pill"
+              className="w-full"
             >
               Starta
             </Button>
@@ -191,9 +195,9 @@ const ExerciseDetail = () => {
 
         {phase === "doing" && (
           <div className="animate-fade-in-up">
-            <div className="card-cream p-4 text-center mb-6">
-              <div className="rounded-2xl overflow-hidden mb-4 animate-breathe">
-                <Illustration name={ill} className="w-full h-auto" />
+            <div className="card-cream p-6 text-center mb-6">
+              <div className="grid place-items-center mb-4 animate-breathe">
+                <AbstractIcon name={iconForExerciseCategory(ex.category)} size={120} />
               </div>
               <h3 className="text-xl mb-2">Ta din tid</h3>
               <p className="text-sm text-text-secondary mb-4">
@@ -202,7 +206,9 @@ const ExerciseDetail = () => {
             </div>
             <Button
               onClick={() => setPhase("after")}
-              className="w-full h-14 rounded-full bg-foreground hover:bg-foreground/90 text-background font-extrabold text-[17px] press-soft"
+              variant="pill-brand"
+              size="pill"
+              className="w-full"
             >
               <Check size={20} /> Klart
             </Button>

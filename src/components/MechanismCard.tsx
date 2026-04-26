@@ -20,8 +20,8 @@ export const MechanismCard = ({ mechanism, evidence }: Props) => {
         className="w-full flex items-center gap-3 text-left press-soft"
         aria-expanded={open}
       >
-        <div className="w-10 h-10 rounded-2xl bg-orange-start/15 grid place-items-center shrink-0">
-          <AbstractIcon name="spark" size={20} color="hsl(var(--orange-start))" />
+        <div className="shrink-0">
+          <AbstractIcon name="spark" size={40} />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-[11px] font-extrabold uppercase tracking-wider text-text-secondary">

@@ -3,20 +3,19 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
-import { Illustration } from "@/components/Illustrations";
 import { AbstractIcon, type IconName } from "@/components/AbstractIcon";
 import { HeroBanner } from "@/components/HeroBanner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 type TemplateKey = "three_lines" | "thought_loop" | "body_first" | "evidence" | "free";
 
 const TEMPLATES: Record<TemplateKey, {
   title: string; subtitle: string; bg: string; text: string;
-  ill: "journal" | "thoughtLoop" | "bodyScan" | "focus";
+  tone: string;
   icon: IconName;
   iconColor: string;
   fields: { key: string; label: string; placeholder?: string }[];
@@ -25,7 +24,7 @@ const TEMPLATES: Record<TemplateKey, {
     title: "Tre rader",
     subtitle: "En liten avstamp för dagen",
     bg: "bg-yellow-journal", text: "text-foreground",
-    ill: "journal", icon: "pencil-soft", iconColor: "hsl(var(--orange-start))",
+    tone: "var(--yellow-journal)", icon: "pencil-soft", iconColor: "hsl(var(--orange-start))",
     fields: [
       { key: "heaviest", label: "Det tyngsta idag var" },
       { key: "helped", label: "Något som hjälpte lite var" },
@@ -36,7 +35,7 @@ const TEMPLATES: Record<TemplateKey, {
     title: "Tankeloop",
     subtitle: "Fakta vs tolkning",
     bg: "bg-orange-start", text: "text-white",
-    ill: "thoughtLoop", icon: "spark", iconColor: "hsl(var(--yellow-journal))",
+    tone: "var(--orange-start)", icon: "spark", iconColor: "hsl(var(--yellow-journal))",
     fields: [
       { key: "thought", label: "Tanken som fastnat" },
       { key: "for", label: "Fakta som stödjer den" },
@@ -48,7 +47,7 @@ const TEMPLATES: Record<TemplateKey, {
     title: "Kropp först",
     subtitle: "Lyssna på kroppens signaler",
     bg: "bg-blue-calm", text: "text-white",
-    ill: "bodyScan", icon: "heart-pulse", iconColor: "hsl(var(--surface))",
+    tone: "var(--blue-calm)", icon: "heart-pulse", iconColor: "hsl(var(--surface))",
     fields: [
       { key: "where", label: "Var sitter känslan?" },
       { key: "signal", label: "Vad signalerar kroppen?" },
@@ -59,7 +58,7 @@ const TEMPLATES: Record<TemplateKey, {
     title: "Bevislogg",
     subtitle: "Vad gjorde du trots motstånd?",
     bg: "bg-green-recovery", text: "text-white",
-    ill: "focus", icon: "flag", iconColor: "hsl(var(--yellow-journal))",
+    tone: "var(--green-recovery)", icon: "flag", iconColor: "hsl(var(--yellow-journal))",
     fields: [
       { key: "did", label: "Vad gjorde jag trots motstånd?" },
       { key: "means", label: "Vad säger det som depressionen inte säger?" },
@@ -70,7 +69,7 @@ const TEMPLATES: Record<TemplateKey, {
     title: "Fri text",
     subtitle: "Skriv vad du vill",
     bg: "bg-pink-move", text: "text-white",
-    ill: "journal", icon: "bookmark-soft", iconColor: "hsl(var(--surface))",
+    tone: "var(--pink-move)", icon: "bookmark-soft", iconColor: "hsl(var(--surface))",
     fields: [],
   },
 };
@@ -154,14 +153,14 @@ const Journal = () => {
         <button onClick={() => setActive(null)} className="flex items-center gap-1 text-sm font-bold text-text-secondary mb-4 press-soft">
           <ChevronLeft size={18} /> Tillbaka
         </button>
-        <div className={`rounded-3xl ${t.bg} p-1 mb-6 overflow-hidden shadow-soft animate-pop-in`}>
-          <div className="rounded-[20px] overflow-hidden">
-            <Illustration name={t.ill} className="w-full h-auto" />
-          </div>
-          <div className={`px-4 pb-4 pt-3 ${t.text}`}>
-            <h1 className="text-[28px] leading-[34px] mb-1">{t.title}</h1>
-            <p className="text-sm opacity-90">{t.subtitle}</p>
-          </div>
+        <HeroBanner
+          tone={t.tone}
+          icon={t.icon}
+          iconColor={t.iconColor}
+        />
+        <div className={`${t.text === "text-foreground" ? "text-foreground" : ""} mb-6`}>
+          <h1 className="text-[28px] leading-[34px] mb-1">{t.title}</h1>
+          <p className="text-sm text-text-secondary">{t.subtitle}</p>
         </div>
 
         <div className="space-y-4 mb-6">
@@ -191,7 +190,9 @@ const Journal = () => {
         <Button
           disabled={!canSave || saving}
           onClick={save}
-          className="w-full h-12 rounded-full bg-foreground hover:bg-foreground/90 text-background font-extrabold text-[17px] press-soft"
+          variant="pill-brand"
+          size="pill"
+          className="w-full"
         >
           {saving ? "Sparar…" : "Spara"}
         </Button>
@@ -213,22 +214,27 @@ const Journal = () => {
       </header>
 
       <h2 className="text-lg font-extrabold mb-3">Mallar</h2>
-      <div className="space-y-3 mb-8">
+      <div className="grid grid-cols-2 gap-3 mb-8">
         {(Object.keys(TEMPLATES) as TemplateKey[]).map((k, i) => {
           const t = TEMPLATES[k];
+          const onYellow = t.text === "text-foreground";
+          const plusBg = onYellow ? "bg-foreground/10 text-foreground" : "bg-white/25 text-white";
           return (
             <button
               key={k}
               onClick={() => startTemplate(k)}
-              className={`w-full text-left rounded-3xl ${t.bg} ${t.text} px-5 py-4 shadow-card press-soft animate-fade-in-up flex items-center justify-between gap-3`}
-              style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})`, minHeight: "84px" }}
+              className={`relative overflow-hidden w-full text-left rounded-3xl ${t.bg} ${t.text} p-4 shadow-card press-soft animate-pop-in flex flex-col justify-between min-h-[148px]`}
+              style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
             >
-              <div className="min-w-0">
-                <div className="text-[17px] font-extrabold leading-tight">{t.title}</div>
-                <div className="text-[12px] opacity-90 mt-0.5">{t.subtitle}</div>
+              {/* Bakgrundsblob — samma sticker-rytm som ColorCard */}
+              <span aria-hidden className="absolute -bottom-10 -right-10 w-36 h-36 rounded-full bg-foreground/10 pointer-events-none" />
+              <span aria-hidden className="absolute -top-6 -left-6 w-20 h-20 rounded-full bg-white/10 pointer-events-none" />
+              <div className={`relative z-[1] w-9 h-9 rounded-full grid place-items-center ${plusBg}`}>
+                <Plus size={18} strokeWidth={2.6} />
               </div>
-              <div className="shrink-0 grid place-items-center w-12 h-12 rounded-2xl bg-white/20">
-                <AbstractIcon name={t.icon} size={24} color={t.iconColor} />
+              <div className="relative z-[1]">
+                <div className="text-[18px] font-extrabold leading-tight">{t.title}</div>
+                <div className="text-[12px] opacity-90 mt-1 leading-snug">{t.subtitle}</div>
               </div>
             </button>
           );

@@ -91,7 +91,7 @@ export const ColorCard = ({
   children,
 }: Props) => {
   const minH = size === "sm" ? "min-h-[112px]" : size === "lg" ? "min-h-[200px]" : "min-h-[148px]";
-  const iconSize = size === "sm" ? 36 : size === "lg" ? 56 : 44;
+  const iconSize = size === "sm" ? 44 : size === "lg" ? 72 : 56;
   const Tag = onClick ? "button" : "div";
   const onYellow = tone === "yellow";
 
