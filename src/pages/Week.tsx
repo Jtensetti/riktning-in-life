@@ -17,6 +17,10 @@ import { ActivityBars } from "@/components/charts/ActivityBars";
 import { StackedRecovery, type RecoveryDay } from "@/components/charts/StackedRecovery";
 import { Sparkline } from "@/components/charts/Sparkline";
 import { TodayStepCard } from "@/components/TodayStepCard";
+import {
+  loadActionPreferences, saveActionPreferences, resolvePreferredTime, resolvePreferredLength, lengthRange,
+  type ActionPreferences, type PreferredTime, type PreferredLength,
+} from "@/lib/settings";
 
 type ExerciseLite = { id: string; title: string; category: string; duration_minutes: number; color: string };
 type SessionLite = {
