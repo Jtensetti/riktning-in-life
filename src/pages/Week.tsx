@@ -18,6 +18,7 @@ import { ChartCard } from "@/components/charts/ChartCard";
 import { ActivityBars } from "@/components/charts/ActivityBars";
 import { StackedRecovery, type RecoveryDay } from "@/components/charts/StackedRecovery";
 import { Sparkline } from "@/components/charts/Sparkline";
+import { WeekDirectionChart, type DirectionPoint } from "@/components/charts/WeekDirectionChart";
 import { TodayStepCard } from "@/components/TodayStepCard";
 import {
   loadActionPreferences, saveActionPreferences, resolvePreferredTime, resolvePreferredLength, lengthRange,
