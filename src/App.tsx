@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { getTimeContext } from "@/lib/timeContext";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -22,7 +24,27 @@ import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+/** Auto night mode — togglar `dark`-klassen på <html> när klockan är 22–05.
+ *  Inget reglage. Re-evaluerar varje minut + vid visibilitychange. */
+const useAutoNightMode = () => {
+  useEffect(() => {
+    const apply = () => {
+      const isNight = getTimeContext().partOfDay === "night";
+      document.documentElement.classList.toggle("dark", isNight);
+    };
+    apply();
+    const interval = window.setInterval(apply, 60_000);
+    document.addEventListener("visibilitychange", apply);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", apply);
+    };
+  }, []);
+};
+
+const App = () => {
+  useAutoNightMode();
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -49,6 +71,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;
