@@ -221,7 +221,7 @@ const Journal = () => {
               key={k}
               onClick={() => startTemplate(k)}
               className={`w-full text-left rounded-3xl ${t.bg} ${t.text} px-5 py-4 shadow-card press-soft animate-fade-in-up flex items-center justify-between gap-3`}
-              style={{ animationDelay: `${i * 50}ms`, minHeight: "84px" }}
+              style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})`, minHeight: "84px" }}
             >
               <div className="min-w-0">
                 <div className="text-[17px] font-extrabold leading-tight">{t.title}</div>
@@ -259,7 +259,7 @@ const Journal = () => {
               <li
                 key={e.id}
                 className="card-soft p-4 flex gap-3 items-start animate-fade-in-up"
-                style={{ animationDelay: `${i * 50}ms` }}
+                style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
               >
                 <div className={`w-2 self-stretch rounded-full ${t?.bg ?? "bg-surface-alt"}`} />
                 <div className="flex-1 min-w-0">
