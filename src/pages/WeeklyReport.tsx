@@ -81,7 +81,7 @@ const WeeklyReport = () => {
         supabase.from("daily_checkins").select("*").eq("user_id", user.id).gte("date", since).order("date"),
         supabase.from("weekly_forms").select("type,total_score,date").eq("user_id", user.id).gte("date", since).order("date"),
         supabase.from("medications").select("name,dose,active,date_started").eq("user_id", user.id),
-        supabase.from("medication_logs").select("taken_status,side_effects_json,date").eq("user_id", user.id).gte("date", sinceWeek),
+        supabase.from("medication_logs").select("taken_status,side_effects_json,date").eq("user_id", user.id).gte("date", since),
         supabase.from("journal_entries").select("date,template_type,title,free_text").eq("user_id", user.id).eq("include_in_report", true).gte("date", sinceWeek).order("date"),
         supabase.from("activity_logs").select("date,label,category,duration_minutes,mood_delta").eq("user_id", user.id).gte("date", sinceWeek).order("date"),
       ]);
