@@ -147,3 +147,56 @@ export const AbstractIcon = ({
 };
 
 export default AbstractIcon;
+
+// ---------------------------------------------------------------------------
+// Weather helpers (kept for back-compat with Today, Checkin, Settings,
+// WeatherChip). The new sticker pack bakes in colors so the returned `color`
+// / `accent` values are no-ops on render, but consumers still read these
+// helpers to e.g. tint surrounding text/badges.
+// ---------------------------------------------------------------------------
+
+import type { WeatherKind } from "@/lib/weather";
+
+export const weatherIcon = (kind: WeatherKind, isDaylight: boolean = true): IconName => {
+  if (!isDaylight) {
+    if (kind === "clear" || kind === "partly") return "weather-moon";
+    if (kind === "cloudy") return "night-cloud";
+  }
+  switch (kind) {
+    case "clear":   return "weather-sun";
+    case "partly":  return "weather-partly";
+    case "cloudy":  return "weather-cloud";
+    case "rain":    return "weather-rain";
+    case "snow":    return "weather-snow";
+    case "fog":     return "weather-fog";
+    case "thunder": return "weather-thunder";
+    case "wind":    return "weather-wind";
+    default:        return "weather-partly";
+  }
+};
+
+export const weatherIconColor = (kind: WeatherKind, isDaylight: boolean = true): string => {
+  if (!isDaylight) return "hsl(var(--purple-night, var(--blue-calm)))";
+  switch (kind) {
+    case "clear":   return "hsl(var(--orange-start))";
+    case "partly":  return "hsl(var(--orange-start))";
+    case "cloudy":  return "hsl(var(--text-secondary))";
+    case "rain":    return "hsl(var(--blue-calm))";
+    case "snow":    return "hsl(var(--blue-calm))";
+    case "fog":     return "hsl(var(--text-secondary))";
+    case "thunder": return "hsl(var(--purple-night, var(--blue-calm)))";
+    case "wind":    return "hsl(var(--text-secondary))";
+    default:        return "hsl(var(--text-secondary))";
+  }
+};
+
+export const weatherIconAccent = (kind: WeatherKind): string => {
+  switch (kind) {
+    case "clear":
+    case "partly":  return "hsl(var(--yellow-journal))";
+    case "rain":
+    case "snow":    return "hsl(var(--blue-calm))";
+    case "thunder": return "hsl(var(--yellow-journal))";
+    default:        return "hsl(var(--yellow-journal))";
+  }
+};
