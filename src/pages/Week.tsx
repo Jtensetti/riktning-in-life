@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,9 +18,27 @@ import { refreshBaseline, loadBaseline, thresholdsFromBaseline } from "@/lib/bas
 import { buildDayHighlights, buildLiftSummary } from "@/lib/dayInsights";
 import { DayHighlightCards } from "@/components/DayHighlightCards";
 import { ChartCard } from "@/components/charts/ChartCard";
-import { ActivityBars } from "@/components/charts/ActivityBars";
-import { StackedRecovery, type RecoveryDay } from "@/components/charts/StackedRecovery";
-import { Sparkline } from "@/components/charts/Sparkline";
+// Bara WeekDirectionChart syns ovan kollapsen — resten lazy-laddas när
+// "Återhämtningshistorik" öppnas. Det halverar Recharts-overhead på
+// initial load av Insikter-vyn (~100 kB gzip skickas inte i onödan).
+import type { RecoveryDay } from "@/components/charts/StackedRecovery";
+const ActivityBars = lazy(() =>
+  import("@/components/charts/ActivityBars").then((m) => ({ default: m.ActivityBars })),
+);
+const StackedRecovery = lazy(() =>
+  import("@/components/charts/StackedRecovery").then((m) => ({ default: m.StackedRecovery })),
+);
+const Sparkline = lazy(() =>
+  import("@/components/charts/Sparkline").then((m) => ({ default: m.Sparkline })),
+);
+/** Lättviktig placeholder så layout inte hoppar medan chart-chunken hämtas. */
+const ChartFallback = ({ height = 128 }: { height?: number }) => (
+  <div
+    className="w-full rounded-xl bg-surface-alt animate-pulse"
+    style={{ height }}
+    aria-hidden
+  />
+);
 import { WeekDirectionChart, type DirectionPoint } from "@/components/charts/WeekDirectionChart";
 import { TodayStepCard } from "@/components/TodayStepCard";
 import {
@@ -645,16 +663,18 @@ const Week = () => {
                 }
                 className="mb-3"
               >
-                <ActivityBars
-                  data={timeline.map((d) => ({
-                    iso: d.iso,
-                    minutes: minutesFor(d),
-                    color: historyFilter === "all"
-                      ? (d.acts[0]?.color ?? d.sess[0]?.exercises?.color ?? "green")
-                      : colorByFilter[historyFilter],
-                  }))}
-                  height={120}
-                />
+                <Suspense fallback={<ChartFallback height={120} />}>
+                  <ActivityBars
+                    data={timeline.map((d) => ({
+                      iso: d.iso,
+                      minutes: minutesFor(d),
+                      color: historyFilter === "all"
+                        ? (d.acts[0]?.color ?? d.sess[0]?.exercises?.color ?? "green")
+                        : colorByFilter[historyFilter],
+                    }))}
+                    height={120}
+                  />
+                </Suspense>
               </ChartCard>
 
               {historyFilter === "all" && (
@@ -665,24 +685,26 @@ const Week = () => {
                   index={1}
                   className="mb-3"
                 >
-                  <StackedRecovery
-                    data={timeline.map<RecoveryDay>((d) => {
-                      const sleep = d.checkin?.sleep_hours ? Math.round(Number(d.checkin.sleep_hours) * 60) : 0;
-                      const movement = d.acts
-                        .filter((a) => a.color === "pink" || a.color === "green")
-                        .reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
-                      const mood = d.acts
-                        .filter((a) => a.color === "orange" || a.color === "yellow")
-                        .reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
-                      const recovery =
-                        d.sess.reduce((s, x) => s + (x.exercises?.duration_minutes ?? 0), 0) +
-                        d.acts
-                          .filter((a) => a.color === "blue" || a.color === "purple")
+                  <Suspense fallback={<ChartFallback height={150} />}>
+                    <StackedRecovery
+                      data={timeline.map<RecoveryDay>((d) => {
+                        const sleep = d.checkin?.sleep_hours ? Math.round(Number(d.checkin.sleep_hours) * 60) : 0;
+                        const movement = d.acts
+                          .filter((a) => a.color === "pink" || a.color === "green")
                           .reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
-                      return { iso: d.iso, sleep, movement, mood, recovery };
-                    })}
-                    height={150}
-                  />
+                        const mood = d.acts
+                          .filter((a) => a.color === "orange" || a.color === "yellow")
+                          .reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
+                        const recovery =
+                          d.sess.reduce((s, x) => s + (x.exercises?.duration_minutes ?? 0), 0) +
+                          d.acts
+                            .filter((a) => a.color === "blue" || a.color === "purple")
+                            .reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
+                        return { iso: d.iso, sleep, movement, mood, recovery };
+                      })}
+                      height={150}
+                    />
+                  </Suspense>
                 </ChartCard>
               )}
             </>
@@ -993,7 +1015,9 @@ const MetricCard = ({
       <div className="flex items-end justify-between gap-2 mb-2">
         <p className={`text-3xl font-extrabold leading-none ${gated ? "text-text-secondary" : ""}`}>{c ?? "—"}</p>
         {!gated && spark && spark.some((v) => v != null) && (
-          <Sparkline values={spark} tone={tone ?? "orange"} width={56} height={22} />
+          <Suspense fallback={<span style={{ width: 56, height: 22 }} aria-hidden />}>
+            <Sparkline values={spark} tone={tone ?? "orange"} width={56} height={22} />
+          </Suspense>
         )}
       </div>
       {labelOverride ? (

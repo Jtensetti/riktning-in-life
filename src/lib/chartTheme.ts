@@ -31,9 +31,9 @@ export const chartBarLayout = {
 
 /** Typografi för axel-tickar. Två varianter för X (kraftigare) vs Y (lättare). */
 export const chartTypography = {
-  xTick: { fill: chartTokens.axisText, fontSize: 11, fontWeight: 800 },
-  xTickLight: { fill: chartTokens.axisText, fontSize: 11, fontWeight: 700 },
-  yTick: { fill: chartTokens.axisText, fontSize: 10, fontWeight: 700 },
+  xTick: { fill: chartTokens.axisText, fontSize: 11, fontWeight: 800, fontVariantNumeric: "tabular-nums" as const },
+  xTickLight: { fill: chartTokens.axisText, fontSize: 11, fontWeight: 700, fontVariantNumeric: "tabular-nums" as const },
+  yTick: { fill: chartTokens.axisText, fontSize: 10, fontWeight: 700, fontVariantNumeric: "tabular-nums" as const },
 } as const;
 
 /** En enda gemensam tooltip-stil — skiftar bara radius om man vill. */
@@ -60,12 +60,16 @@ export const chartGrid = {
   vertical: false as const,
 } as const;
 
-/** Animationsprofil — respekterar reduced-motion globalt. */
+/** Animationsprofil — respekterar reduced-motion och kortar på små viewports
+ *  så historik-vyn känns omedelbar på mobil utan layout-jitter när
+ *  Recharts ritar in sina staplar/linjer. */
 export const chartAnimation = (kind: "bar" | "line" | "donut" = "bar") => {
   const reduced = prefersReducedMotion();
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 480;
+  const base = kind === "bar" ? 650 : 700;
   return {
     isAnimationActive: !reduced,
-    animationDuration: kind === "bar" ? 650 : 700,
+    animationDuration: isMobile ? Math.round(base * 0.45) : base,
     animationEasing: "ease-out" as const,
   };
 };
