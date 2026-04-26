@@ -246,13 +246,22 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
               return (
                 <div
                   key={f.slug}
-                  className={`${colorBg(f.color)} rounded-2xl shadow-card animate-pop-in`}
+                  className={`relative overflow-hidden ${colorBg(f.color)} rounded-2xl shadow-card animate-pop-in`}
                   style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
                 >
+                  {/* Mjuka blob-bakgrunder för visuell rytm */}
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute -bottom-10 -right-10 w-36 h-36 rounded-full bg-white/15"
+                  />
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute -top-6 -left-8 w-20 h-20 rounded-full bg-white/10"
+                  />
                   <button
                     onClick={() => quickLog(f)}
                     disabled={isBusy}
-                    className={`w-full px-4 pt-3 pb-2 flex items-center gap-3 press-soft text-left ${isBusy ? "opacity-80" : ""}`}
+                    className={`relative z-[1] w-full px-4 pt-3 pb-2 flex items-center gap-3 press-soft text-left ${isBusy ? "opacity-80" : ""}`}
                     aria-busy={isBusy}
                   >
                     <div className="shrink-0 w-10 h-10 rounded-full bg-white/25 grid place-items-center">
@@ -274,7 +283,7 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
                   </button>
 
                   {isFailed ? (
-                    <div className="mx-3 mb-2 px-3 py-2 rounded-2xl bg-white/95 text-foreground flex items-center gap-2">
+                    <div className="relative z-[1] mx-3 mb-2 px-3 py-2 rounded-2xl bg-white/95 text-foreground flex items-center gap-2">
                       <AlertCircle size={14} className="shrink-0 text-destructive" />
                       <p className="flex-1 min-w-0 text-[11px] font-bold leading-tight truncate">
                         Loggning misslyckades. {failed?.message}
@@ -288,7 +297,7 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
                       </button>
                     </div>
                   ) : (
-                    <div className="mx-3 mb-2 px-3 py-1.5 rounded-full bg-white/20 flex items-center gap-1.5">
+                    <div className="relative z-[1] mx-3 mb-2 px-3 py-1.5 rounded-full bg-white/20 flex items-center gap-1.5">
                       {why.icon === "star" ? (
                         <Star size={11} className="shrink-0" fill="currentColor" />
                       ) : (
