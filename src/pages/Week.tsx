@@ -459,6 +459,9 @@ const Week = () => {
       <h1 className="text-[32px] leading-[38px] mb-1">Insikter</h1>
       <p className="text-sm text-text-secondary mb-6">Vad veckan visar — på en skärm.</p>
 
+      {/* AI-veckosammanfattning — varm sammanfattning baserad på riktig data. Göms tyst om AI inte svarar. */}
+      <WeeklyAIInsight />
+
       {/* Spår 1: bevisbaserade mönster från senaste 28 dagarna. */}
       <PatternsSection patterns={patterns} />
 
