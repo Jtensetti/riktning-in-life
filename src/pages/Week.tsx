@@ -206,6 +206,17 @@ const Week = () => {
   const priorities = useMemo(() => buildPriorities(current), [current]);
   const insights = useMemo(() => generateInsights(current), [current]);
 
+  /** Per-dag Riktning (0–100, högre = bättre) för senaste 7 dagar.
+   *  Riktning = 100 − burden för dagens checkin. Saknas dagen → null. */
+  const directionSeries: DirectionPoint[] = useMemo(() => {
+    return last7Dates().map((iso) => {
+      const c = checkins.find((x) => x.date === iso);
+      if (!c) return { date: iso, value: null };
+      const { value } = burdenScore([c]);
+      return { date: iso, value: value == null ? null : Math.max(0, Math.min(100, 100 - value)) };
+    });
+  }, [checkins]);
+
   const timeline = useMemo(() => {
     const days = last7Dates();
     return days.map((iso) => {
