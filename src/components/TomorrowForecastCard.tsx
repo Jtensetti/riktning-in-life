@@ -12,8 +12,8 @@ interface Props {
 }
 
 const KIND_ICON: Record<NonNullable<Forecast["kind"]>, IconName> = {
-  sleep: "moon-stars",
-  anxiety: "wave-line",
+  sleep: "moon-soft",
+  anxiety: "breath-wave",
   both: "blob-smile",
 };
 
