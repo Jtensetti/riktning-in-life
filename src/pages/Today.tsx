@@ -231,6 +231,7 @@ const heroToneFor = (p: TimeContext["partOfDay"]): string => {
 
 const Today = () => {
   const { user, loading } = useAuth();
+  const settings = useUserSettings();
   const navigate = useNavigate();
   const [checkin, setCheckin] = useState<Checkin | null>(null);
   const [recent, setRecent] = useState<RecentSession[]>([]);
