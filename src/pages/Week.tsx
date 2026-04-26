@@ -21,6 +21,7 @@ const Week = () => {
   const [checkins, setCheckins] = useState<Checkin[]>([]);
   const [weeklyCurrent, setWeeklyCurrent] = useState<WeeklyFormScore>({});
   const [weeklyPrev, setWeeklyPrev] = useState<WeeklyFormScore>({});
+  const [topActivities, setTopActivities] = useState<{ label: string; icon: string; color: string; count: number; avgDelta: number }[]>([]);
   const [fetching, setFetching] = useState(true);
 
   useEffect(() => {
