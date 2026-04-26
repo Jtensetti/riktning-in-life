@@ -1,4 +1,7 @@
-// Lightweight reminder + onboarding settings stored in localStorage.
+// Inställningar lagras både lokalt (snabb läsning) och i databasen (kontinuitet
+// mellan enheter). Setters är fire-and-forget mot servern; läsare är synkrona
+// och svarar från lokal cache som fylls vid inloggning av hydrateUserSettings.
+import { patchUserSettings } from "./userSettingsSync";
 
 export type Reminders = {
   morning_checkin: boolean;
