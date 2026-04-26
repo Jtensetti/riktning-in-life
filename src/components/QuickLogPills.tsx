@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AbstractIcon, type IconName } from "./AbstractIcon";
-import { Plus, Sparkles, Info, Star } from "lucide-react";
+import { Plus, Sparkles, Info, Star, Loader2, AlertCircle, RefreshCw, Trash2, Pencil, Minus } from "lucide-react";
 import { toast } from "sonner";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 
@@ -66,12 +66,21 @@ interface Props {
   onLogged?: () => void;
 }
 
+type EditState = {
+  id: string;
+  label: string;
+  mood: number;
+  minutes: number;
+};
+
 export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
   const { user } = useAuth();
   const [favs, setFavs] = useState<FavItem[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
-  const [moodSheet, setMoodSheet] = useState<{ id: string; label: string; current: number } | null>(null);
-  const [savingMood, setSavingMood] = useState<number | null>(null);
+  const [failed, setFailed] = useState<{ slug: string; message: string } | null>(null);
+  const [editSheet, setEditSheet] = useState<EditState | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -125,6 +134,7 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
   const quickLog = async (item: FavItem) => {
     if (!user || busy) return;
     setBusy(item.slug);
+    setFailed(null);
     if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.(10);
 
     const { data: inserted, error } = await supabase.from("activity_logs").insert({
@@ -140,38 +150,61 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
     }).select("id").maybeSingle();
 
     setBusy(null);
-    if (error) {
-      toast.error("Kunde inte logga. Försök igen.");
+    if (error || !inserted?.id) {
+      setFailed({ slug: item.slug, message: error?.message ?? "Okänt fel — försök igen." });
+      toast.error(`Kunde inte logga ${item.label}`, {
+        description: "Tryck på återförsök i kortet.",
+      });
       return;
     }
 
     onLogged?.();
 
     toast.success(`${item.label} loggad`, {
-      description: `${item.default_minutes} min · kändes lite bättre`,
-      action: inserted?.id ? {
-        label: "Ändra känsla",
-        onClick: () => setMoodSheet({ id: inserted.id, label: item.label, current: 1 }),
-      } : undefined,
+      description: `${item.default_minutes} min · 🙂 lite bättre`,
+      action: {
+        label: "Ändra",
+        onClick: () => setEditSheet({ id: inserted.id, label: item.label, mood: 1, minutes: item.default_minutes }),
+      },
     });
   };
 
-  const updateMood = async (delta: number) => {
-    if (!moodSheet || !user) return;
-    setSavingMood(delta);
+  const saveEdit = async () => {
+    if (!editSheet || !user || savingEdit) return;
+    setSavingEdit(true);
     const { error } = await supabase
       .from("activity_logs")
-      .update({ mood_delta: delta })
-      .eq("id", moodSheet.id)
+      .update({ mood_delta: editSheet.mood, duration_minutes: editSheet.minutes })
+      .eq("id", editSheet.id)
       .eq("user_id", user.id);
-    setSavingMood(null);
+    setSavingEdit(false);
     if (error) {
-      toast.error("Kunde inte uppdatera känslan.");
+      toast.error("Kunde inte spara ändringen.", { description: error.message });
       return;
     }
-    const picked = MOOD_OPTIONS.find(o => o.delta === delta);
-    toast.success(`Känsla uppdaterad`, { description: picked ? `${picked.emoji} ${picked.text}` : undefined });
-    setMoodSheet(null);
+    const picked = MOOD_OPTIONS.find(o => o.delta === editSheet.mood);
+    toast.success("Sparat", {
+      description: `${editSheet.minutes} min${picked ? ` · ${picked.emoji} ${picked.text}` : ""}`,
+    });
+    setEditSheet(null);
+    onLogged?.();
+  };
+
+  const deleteLog = async () => {
+    if (!editSheet || !user || deleting) return;
+    setDeleting(true);
+    const { error } = await supabase
+      .from("activity_logs")
+      .delete()
+      .eq("id", editSheet.id)
+      .eq("user_id", user.id);
+    setDeleting(false);
+    if (error) {
+      toast.error("Kunde inte radera loggen.", { description: error.message });
+      return;
+    }
+    toast.success("Loggen raderad");
+    setEditSheet(null);
     onLogged?.();
   };
 
@@ -208,38 +241,64 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
           <div className="grid grid-cols-1 gap-2">
             {favs.map((f, i) => {
               const why = whyReason(f);
+              const isBusy = busy === f.slug;
+              const isFailed = failed?.slug === f.slug;
               return (
                 <div
                   key={f.slug}
-                  className={`${colorBg(f.color)} rounded-2xl shadow-card animate-pop-in ${busy === f.slug ? "opacity-60" : ""}`}
+                  className={`${colorBg(f.color)} rounded-2xl shadow-card animate-pop-in`}
                   style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
                 >
                   <button
                     onClick={() => quickLog(f)}
-                    disabled={busy === f.slug}
-                    className="w-full px-4 pt-3 pb-2 flex items-center gap-3 press-soft text-left"
+                    disabled={isBusy}
+                    className={`w-full px-4 pt-3 pb-2 flex items-center gap-3 press-soft text-left ${isBusy ? "opacity-80" : ""}`}
+                    aria-busy={isBusy}
                   >
                     <div className="shrink-0 w-10 h-10 rounded-full bg-white/25 grid place-items-center">
-                      <AbstractIcon name={f.icon as IconName} size={22} color="currentColor" />
+                      {isBusy ? (
+                        <Loader2 size={20} className="animate-spin" />
+                      ) : (
+                        <AbstractIcon name={f.icon as IconName} size={22} color="currentColor" />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-extrabold text-[15px] leading-tight truncate">{f.label}</p>
-                      <p className="text-[11px] opacity-90 font-bold">{f.default_minutes} min · ett klick = loggad</p>
+                      <p className="text-[11px] opacity-90 font-bold">
+                        {isBusy ? "Sparar…" : `${f.default_minutes} min · ett klick = loggad`}
+                      </p>
                     </div>
                     <div className="shrink-0 w-8 h-8 rounded-full bg-white/25 grid place-items-center">
-                      <Plus size={16} />
+                      {isBusy ? <Loader2 size={14} className="animate-spin" /> : <Plus size={16} />}
                     </div>
                   </button>
-                  <div className="mx-3 mb-2 px-3 py-1.5 rounded-full bg-white/20 flex items-center gap-1.5">
-                    {why.icon === "star" ? (
-                      <Star size={11} className="shrink-0" fill="currentColor" />
-                    ) : (
-                      <Info size={11} className="shrink-0" />
-                    )}
-                    <p className="text-[11px] font-bold leading-tight opacity-95 truncate">
-                      <span className="opacity-75">Varför den här? </span>{why.text}
-                    </p>
-                  </div>
+
+                  {isFailed ? (
+                    <div className="mx-3 mb-2 px-3 py-2 rounded-2xl bg-white/95 text-foreground flex items-center gap-2">
+                      <AlertCircle size={14} className="shrink-0 text-destructive" />
+                      <p className="flex-1 min-w-0 text-[11px] font-bold leading-tight truncate">
+                        Loggning misslyckades. {failed?.message}
+                      </p>
+                      <button
+                        onClick={() => quickLog(f)}
+                        disabled={isBusy}
+                        className="shrink-0 h-7 px-3 rounded-full bg-foreground text-background text-[11px] font-extrabold press-soft inline-flex items-center gap-1"
+                      >
+                        <RefreshCw size={11} /> Försök igen
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="mx-3 mb-2 px-3 py-1.5 rounded-full bg-white/20 flex items-center gap-1.5">
+                      {why.icon === "star" ? (
+                        <Star size={11} className="shrink-0" fill="currentColor" />
+                      ) : (
+                        <Info size={11} className="shrink-0" />
+                      )}
+                      <p className="text-[11px] font-bold leading-tight opacity-95 truncate">
+                        <span className="opacity-75">Varför den här? </span>{why.text}
+                      </p>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -247,35 +306,86 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
         </section>
       )}
 
-      <Drawer open={!!moodSheet} onOpenChange={(o) => !o && setMoodSheet(null)}>
+      <Drawer open={!!editSheet} onOpenChange={(o) => !o && !savingEdit && !deleting && setEditSheet(null)}>
         <DrawerContent className="bg-cream-bg">
           <DrawerHeader className="text-left">
             <DrawerTitle className="text-xl font-extrabold">
-              Hur kändes {moodSheet?.label.toLowerCase()}?
+              Ändra {editSheet?.label.toLowerCase()}
             </DrawerTitle>
             <DrawerDescription className="text-text-secondary">
-              Välj hur du mår efteråt — du kan alltid ändra senare.
+              Justera tid och känsla — eller radera helt.
             </DrawerDescription>
           </DrawerHeader>
-          <div className="px-4 pb-8 grid grid-cols-1 gap-2">
-            {MOOD_OPTIONS.map((o, i) => {
-              const active = moodSheet?.current === o.delta;
-              return (
+
+          <div className="px-4 pb-6 space-y-5">
+            {/* Tid */}
+            <div>
+              <p className="text-[11px] font-extrabold uppercase tracking-wider text-text-secondary mb-2">Tid</p>
+              <div className="flex items-center gap-3 bg-cream-card rounded-2xl p-3">
                 <button
-                  key={o.delta}
-                  onClick={() => updateMood(o.delta)}
-                  disabled={savingMood !== null}
-                  className={`w-full rounded-2xl px-4 py-4 flex items-center gap-4 press-soft animate-pop-in border-2 ${
-                    active ? "border-foreground" : "border-transparent"
-                  } ${o.tone} ${savingMood === o.delta ? "opacity-60" : ""}`}
-                  style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
+                  onClick={() => setEditSheet(s => s ? { ...s, minutes: Math.max(1, s.minutes - 5) } : s)}
+                  className="shrink-0 w-10 h-10 rounded-full bg-foreground/10 grid place-items-center press-soft"
+                  aria-label="Minska 5 min"
                 >
-                  <span className="text-3xl leading-none">{o.emoji}</span>
-                  <span className="flex-1 text-left font-extrabold text-[15px]">{o.text}</span>
-                  {active && <span className="text-xs font-extrabold uppercase tracking-wider opacity-70">Vald</span>}
+                  <Minus size={16} />
                 </button>
-              );
-            })}
+                <div className="flex-1 text-center">
+                  <p className="text-2xl font-extrabold leading-none">{editSheet?.minutes ?? 0}</p>
+                  <p className="text-[11px] font-bold text-text-secondary">minuter</p>
+                </div>
+                <button
+                  onClick={() => setEditSheet(s => s ? { ...s, minutes: s.minutes + 5 } : s)}
+                  className="shrink-0 w-10 h-10 rounded-full bg-foreground/10 grid place-items-center press-soft"
+                  aria-label="Öka 5 min"
+                >
+                  <Plus size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* Känsla */}
+            <div>
+              <p className="text-[11px] font-extrabold uppercase tracking-wider text-text-secondary mb-2">Hur kändes det?</p>
+              <div className="grid grid-cols-1 gap-2">
+                {MOOD_OPTIONS.map((o, i) => {
+                  const active = editSheet?.mood === o.delta;
+                  return (
+                    <button
+                      key={o.delta}
+                      onClick={() => setEditSheet(s => s ? { ...s, mood: o.delta } : s)}
+                      className={`w-full rounded-2xl px-4 py-3 flex items-center gap-4 press-soft border-2 ${
+                        active ? "border-foreground" : "border-transparent"
+                      } ${o.tone}`}
+                      style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
+                    >
+                      <span className="text-2xl leading-none">{o.emoji}</span>
+                      <span className="flex-1 text-left font-extrabold text-[14px]">{o.text}</span>
+                      {active && <span className="text-[10px] font-extrabold uppercase tracking-wider opacity-70">Vald</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                onClick={deleteLog}
+                disabled={savingEdit || deleting}
+                className="shrink-0 h-12 px-4 rounded-full bg-destructive/10 text-destructive font-extrabold text-sm press-soft inline-flex items-center gap-2 disabled:opacity-60"
+              >
+                {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                Radera
+              </button>
+              <button
+                onClick={saveEdit}
+                disabled={savingEdit || deleting}
+                className="flex-1 h-12 rounded-full bg-foreground text-background font-extrabold text-[15px] press-soft inline-flex items-center justify-center gap-2 disabled:opacity-60"
+              >
+                {savingEdit ? <Loader2 size={14} className="animate-spin" /> : <Pencil size={14} />}
+                {savingEdit ? "Sparar…" : "Spara ändringar"}
+              </button>
+            </div>
           </div>
         </DrawerContent>
       </Drawer>
