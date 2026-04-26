@@ -135,7 +135,7 @@ const CrisisPlan = () => {
     <AppShell>
       <HeroBanner
         tone="var(--orange-start)"
-        icon="heart-pulse"
+        icon="shield-soft"
         iconColor="hsl(var(--surface))"
       />
       <button
