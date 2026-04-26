@@ -766,17 +766,31 @@ const Week = () => {
         </section>
       )}
 
-      {topActivities.length > 0 && (
+      {(liftSummary.lifters.length > 0 || liftSummary.drainers.length > 0 || topActivities.length > 0) && (
         <section className="mb-2">
           <h2 className="text-xl mb-1 flex items-center gap-2">
             <AbstractIcon name="heart-care" size={18} color="hsl(var(--pink-move))" />
             Vad lyfte dig?
           </h2>
-          <p className="text-xs text-text-secondary mb-3">Aktiviteterna som gjorde störst skillnad denna vecka</p>
+          <p className="text-xs text-text-secondary mb-3">
+            {liftSummary.lifters.length > 0
+              ? "Bevisat lyftande — minst 3 gångers data per aktivitet"
+              : "Aktiviteterna som gjorde störst skillnad denna vecka"}
+          </p>
+
           <div className="space-y-2">
-            {topActivities.map((a, i) => {
-              const delta = a.avgDelta;
-              const deltaLabel = delta >= 1.5 ? "Lyfte mycket" : delta >= 0.5 ? "Lyfte" : delta >= -0.5 ? "Neutralt" : "Drog ner";
+            {(liftSummary.lifters.length > 0
+              ? liftSummary.lifters
+              : topActivities.map((a) => ({
+                  ...a,
+                  effectLabel:
+                    a.avgDelta >= 1.5 ? "Lyfte mycket"
+                    : a.avgDelta >= 0.5 ? "Lyfte"
+                    : a.avgDelta >= -0.5 ? "Neutralt"
+                    : "Drog ner",
+                }))
+            ).map((a, i) => {
+              const deltaSign = a.avgDelta > 0 ? "+" : "";
               return (
                 <ColorCard
                   key={i}
@@ -785,15 +799,33 @@ const Week = () => {
                   iconPosition="bottom-right"
                   size="sm"
                   index={i}
-                  ariaLabel={`${a.label}: ${a.count} gånger, ${deltaLabel}`}
+                  ariaLabel={`${a.label}: ${a.count} gånger, ${a.effectLabel}`}
                   className="!min-h-0"
                 >
                   <p className="font-extrabold text-[15px] truncate">{a.label}</p>
-                  <p className="text-[11px] opacity-90 font-bold">{a.count} ggr · {deltaLabel}</p>
+                  <p className="text-[11px] opacity-90 font-bold">
+                    {a.count} ggr · {a.effectLabel}
+                    {Math.abs(a.avgDelta) >= 0.1 && (
+                      <span className="ml-1 opacity-80">· {deltaSign}{a.avgDelta} humör</span>
+                    )}
+                  </p>
                 </ColorCard>
               );
             })}
           </div>
+
+          {liftSummary.drainers.length > 0 && (
+            <div className="mt-3 rounded-2xl bg-surface-alt p-3 flex items-start gap-2 animate-fade-in-up">
+              <AbstractIcon name="info-soft" size={16} color="hsl(var(--text-secondary))" />
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-extrabold uppercase tracking-wider text-text-secondary mb-0.5">Värt att märka</p>
+                <p className="text-sm leading-snug">
+                  <span className="font-extrabold">{liftSummary.drainers[0].label}</span> verkar ta mer än den ger just nu
+                  <span className="text-text-secondary"> · {liftSummary.drainers[0].count} ggr · {liftSummary.drainers[0].avgDelta} humör</span>
+                </p>
+              </div>
+            </div>
+          )}
         </section>
       )}
     </AppShell>
