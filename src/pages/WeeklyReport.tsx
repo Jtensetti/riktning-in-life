@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
+import { SparseDataNotice } from "@/components/SparseDataNotice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -528,6 +529,14 @@ const WeeklyReport = () => {
           Sammanställer senaste 7 dagar: sömn, rörelse, journal, medicin — plus tomma anteckningsfält för vården.
         </p>
       </header>
+
+      {data && (
+        <SparseDataNotice
+          daysWithCheckin={new Set(data.checkins.map((c) => c.date)).size}
+          windowDays={14}
+          threshold={7}
+        />
+      )}
 
       {/* AI-veckosammanfattning visas också här som mjuk preamble — göms tyst utan AI. */}
       <WeeklyAIInsight minDays={3} />

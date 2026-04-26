@@ -4,6 +4,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { AbstractIcon, type IconName } from "./AbstractIcon";
+import { useRecentActivities } from "@/hooks/useRecentActivities";
 import { Search, Plus, Minus, Check, Star } from "lucide-react";
 
 export type CatalogItem = {
@@ -48,6 +49,70 @@ const moodFaces: { value: number; label: string; emoji: string }[] = [
 
 const durationPresets = [15, 30, 60, 90];
 
+/**
+ * PickerCard — locked spec per design plan:
+ *  - 96px h, radius 24, padding 16
+ *  - IconTile 44 in left
+ *  - title 18–20/800, max 2 rader, ellipsis
+ *  - star 28px, opacity 0.55 inactive, full opacity active
+ */
+const PickerCard = ({
+  item,
+  isFav,
+  onPick,
+  onToggleFav,
+  delayMs,
+}: {
+  item: CatalogItem;
+  isFav: boolean;
+  onPick: () => void;
+  onToggleFav: (e: React.MouseEvent) => void;
+  delayMs?: number;
+}) => (
+  <div
+    className={`relative shadow-card animate-fade-in-up ${colorBg(item.color)}`}
+    style={{
+      borderRadius: 24,
+      height: 96,
+      animationDelay: delayMs ? `${delayMs}ms` : undefined,
+    }}
+  >
+    <button
+      onClick={onPick}
+      className="w-full h-full text-left press-soft flex items-center gap-3"
+      style={{ padding: 16 }}
+    >
+      <div
+        className="shrink-0 grid place-items-center"
+        style={{
+          width: 44,
+          height: 44,
+          borderRadius: "var(--icon-tile-radius)",
+          background: "hsl(0 0% 100% / 0.22)",
+        }}
+        aria-hidden
+      >
+        <AbstractIcon name={item.icon as IconName} size={26} color="currentColor" inline />
+      </div>
+      <span className="font-extrabold text-[18px] leading-[22px] pr-7 line-clamp-2">
+        {item.label}
+      </span>
+    </button>
+    <button
+      onClick={onToggleFav}
+      aria-label={isFav ? "Ta bort favorit" : "Spara som favorit"}
+      className="absolute top-2 right-2 grid place-items-center press-soft"
+      style={{
+        width: 32,
+        height: 32,
+        opacity: isFav ? 1 : 0.55,
+      }}
+    >
+      <Star size={28} className={isFav ? "fill-current" : ""} strokeWidth={2.2} />
+    </button>
+  </div>
+);
+
 interface Props {
   open: boolean;
   onOpenChange: (o: boolean) => void;
@@ -63,6 +128,7 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
   const [duration, setDuration] = useState(30);
   const [mood, setMood] = useState(1);
   const [customLabel, setCustomLabel] = useState("");
+  const recentSlugs = useRecentActivities(4);
 
   useEffect(() => {
     if (!open) return;
@@ -131,6 +197,12 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
     () => catalog.filter((c) => favorites.has(c.slug)),
     [catalog, favorites]
   );
+
+  const recentItems = useMemo(() => {
+    if (!recentSlugs.length) return [] as CatalogItem[];
+    const bySlug = new Map(catalog.map((c) => [c.slug, c]));
+    return recentSlugs.map((s) => bySlug.get(s)).filter((c): c is CatalogItem => !!c);
+  }, [catalog, recentSlugs]);
 
   const pick = (item: CatalogItem) => {
     setSelected(item);
@@ -225,60 +297,53 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
               ))}
             </div>
 
-            {favoriteItems.length > 0 && !activeCat && !q.trim() && (
-              <div className="mb-4">
-                <p className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-2 inline-flex items-center gap-1">
-                  <Star size={12} className="fill-current" /> Dina favoriter
-                </p>
-                <div className="grid grid-cols-2 gap-2.5">
-                  {favoriteItems.map((item) => (
-                    <div key={`fav-${item.slug}`} className={`relative rounded-2xl shadow-card ${colorBg(item.color)}`}>
-                      <button
-                        onClick={() => pick(item)}
-                        className="w-full p-3 text-left press-soft flex items-center gap-2.5 min-h-[70px]"
-                      >
-                        <div className="shrink-0 w-10 h-10 rounded-full bg-white/25 grid place-items-center">
-                          <AbstractIcon name={item.icon as IconName} size={22} color="currentColor" />
-                        </div>
-                        <span className="font-extrabold text-[13px] leading-tight pr-6">{item.label}</span>
-                      </button>
-                      <button
-                        onClick={(e) => toggleFavorite(item.slug, e)}
-                        aria-label="Ta bort favorit"
-                        className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-white/30 grid place-items-center press-soft"
-                      >
-                        <Star size={14} className="fill-current" />
-                      </button>
-                    </div>
+            {recentItems.length > 0 && !activeCat && !q.trim() && (
+              <div className="mb-5">
+                <p className="text-meta text-text-secondary mb-2">Senast använda</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {recentItems.map((item) => (
+                    <PickerCard
+                      key={`recent-${item.slug}`}
+                      item={item}
+                      isFav={favorites.has(item.slug)}
+                      onPick={() => pick(item)}
+                      onToggleFav={(e) => toggleFavorite(item.slug, e)}
+                    />
                   ))}
                 </div>
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-2.5 pb-4">
-              {filtered.map((item, i) => {
-                const isFav = favorites.has(item.slug);
-                return (
-                  <div key={item.slug} className={`relative rounded-2xl shadow-card animate-fade-in-up ${colorBg(item.color)}`} style={{ animationDelay: `${Math.min(i, 8) * 25}ms` }}>
-                    <button
-                      onClick={() => pick(item)}
-                      className="w-full p-3 text-left press-soft flex items-center gap-2.5 min-h-[70px]"
-                    >
-                      <div className="shrink-0 w-10 h-10 rounded-full bg-white/25 grid place-items-center">
-                        <AbstractIcon name={item.icon as IconName} size={22} color="currentColor" />
-                      </div>
-                      <span className="font-extrabold text-[13px] leading-tight pr-6">{item.label}</span>
-                    </button>
-                    <button
-                      onClick={(e) => toggleFavorite(item.slug, e)}
-                      aria-label={isFav ? "Ta bort favorit" : "Spara som favorit"}
-                      className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-white/25 grid place-items-center press-soft"
-                    >
-                      <Star size={14} className={isFav ? "fill-current" : ""} />
-                    </button>
-                  </div>
-                );
-              })}
+            {favoriteItems.length > 0 && !activeCat && !q.trim() && (
+              <div className="mb-5">
+                <p className="text-meta text-text-secondary mb-2 inline-flex items-center gap-1">
+                  <Star size={12} className="fill-current" /> Dina favoriter
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {favoriteItems.map((item) => (
+                    <PickerCard
+                      key={`fav-${item.slug}`}
+                      item={item}
+                      isFav
+                      onPick={() => pick(item)}
+                      onToggleFav={(e) => toggleFavorite(item.slug, e)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3 pb-4">
+              {filtered.map((item, i) => (
+                <PickerCard
+                  key={item.slug}
+                  item={item}
+                  isFav={favorites.has(item.slug)}
+                  onPick={() => pick(item)}
+                  onToggleFav={(e) => toggleFavorite(item.slug, e)}
+                  delayMs={Math.min(i, 8) * 25}
+                />
+              ))}
               {filtered.length === 0 && q.trim() && (
                 <div className="col-span-2 card-cream p-4">
                   <p className="text-sm font-extrabold mb-2">Inget i listan?</p>
