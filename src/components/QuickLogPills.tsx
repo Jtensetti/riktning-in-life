@@ -283,7 +283,7 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
                   </button>
 
                   {isFailed ? (
-                    <div className="mx-3 mb-2 px-3 py-2 rounded-2xl bg-white/95 text-foreground flex items-center gap-2">
+                    <div className="relative z-[1] mx-3 mb-2 px-3 py-2 rounded-2xl bg-white/95 text-foreground flex items-center gap-2">
                       <AlertCircle size={14} className="shrink-0 text-destructive" />
                       <p className="flex-1 min-w-0 text-[11px] font-bold leading-tight truncate">
                         Loggning misslyckades. {failed?.message}
@@ -297,7 +297,7 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
                       </button>
                     </div>
                   ) : (
-                    <div className="mx-3 mb-2 px-3 py-1.5 rounded-full bg-white/20 flex items-center gap-1.5">
+                    <div className="relative z-[1] mx-3 mb-2 px-3 py-1.5 rounded-full bg-white/20 flex items-center gap-1.5">
                       {why.icon === "star" ? (
                         <Star size={11} className="shrink-0" fill="currentColor" />
                       ) : (
