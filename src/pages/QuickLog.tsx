@@ -373,8 +373,48 @@ const QuickLog = () => {
           </DrawerHeader>
           {openTpl === "sleep" && <SleepForm onSaved={onSaved} userId={user?.id} />}
           {openTpl === "movement" && <MovementForm onSaved={onSaved} userId={user?.id} />}
-          {openTpl === "mood" && <MoodForm onSaved={onSaved} userId={user?.id} />}
+          {openTpl === "mood" && <MoodForm onSaved={onMoodSaved} userId={user?.id} />}
           {openTpl === "medication" && <MedicationForm onSaved={onSaved} userId={user?.id} meds={meds} />}
+        </DrawerContent>
+      </Drawer>
+
+      {/* === MOOD EDIT DRAWER — samma "Ändra känsla"-mönster som aktivitetsloggen === */}
+      <Drawer open={!!moodEdit} onOpenChange={(o) => !o && !savingMoodEdit && setMoodEdit(null)}>
+        <DrawerContent className="px-5 pb-8 max-h-[88vh]">
+          <DrawerHeader className="px-0 pt-2">
+            <DrawerTitle className="text-2xl">Ändra känsla</DrawerTitle>
+          </DrawerHeader>
+          {moodEdit && (
+            <div className="space-y-5">
+              <MoodSliderRow
+                label="Tyngd / nedstämdhet"
+                value={moodEdit.heaviness}
+                set={(n) => setMoodEdit(s => s ? { ...s, heaviness: n } : s)}
+                tone="orange"
+              />
+              <MoodSliderRow
+                label="Oro / ångest"
+                value={moodEdit.anxiety}
+                set={(n) => setMoodEdit(s => s ? { ...s, anxiety: n } : s)}
+                tone="blue"
+              />
+              <MoodSliderRow
+                label="Energi"
+                value={moodEdit.energy}
+                set={(n) => setMoodEdit(s => s ? { ...s, energy: n } : s)}
+                tone="pink"
+              />
+              <Button
+                onClick={saveMoodEdit}
+                disabled={savingMoodEdit}
+                variant="pill-strong"
+                size="pill-lg"
+                className="w-full"
+              >
+                {savingMoodEdit ? "Sparar…" : "Spara ändring"}
+              </Button>
+            </div>
+          )}
         </DrawerContent>
       </Drawer>
     </AppShell>
