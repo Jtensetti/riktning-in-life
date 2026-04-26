@@ -561,11 +561,30 @@ const Today = () => {
 
   const MODULES: Record<ModuleId, () => React.ReactNode> = {
     weatherPermission: () => (
-      <WeatherPermissionCard
+      <div
         key="weatherPermission"
-        onAllow={() => requestLocation()}
-        onDismiss={() => { dismissWeatherPermission(); setPermissionDismissed(true); }}
-      />
+        className="collapsible mb-7"
+        data-open={!permissionExiting}
+        onTransitionEnd={(e) => {
+          if (e.propertyName === "grid-template-rows" && permissionExiting) {
+            setPermissionDismissed(true);
+            setPermissionExiting(false);
+          }
+        }}
+      >
+        <div>
+          <WeatherPermissionCard
+            onAllow={() => {
+              setPermissionExiting(true);
+              requestLocation();
+            }}
+            onDismiss={() => {
+              dismissWeatherPermission();
+              setPermissionExiting(true);
+            }}
+          />
+        </div>
+      </div>
     ),
     safety: () => (
       <div key="safety" className="rounded-3xl border-2 border-red-risk bg-red-bg p-5 mb-7 animate-pop-in">
