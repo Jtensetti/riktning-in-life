@@ -663,6 +663,27 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
       });
     }
 
+    // Sammanfattningssiffror för PDF-block.
+    const avgNum = (arr: any[], k: string): number | null => {
+      const xs = arr.map((r) => r[k]).filter((v): v is number => typeof v === "number");
+      return xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : null;
+    };
+    const sleepHours = avgNum(c, "sleep_hours");
+    const sleepHoursPrev = avgNum(cPrev, "sleep_hours");
+    const sleepQuality = avgNum(c, "sleep_quality");
+    const lowSleepNights = c.filter((x: any) => x.sleep_hours != null && Number(x.sleep_hours) < 6).length;
+    const movementYes = c.filter((x: any) => x.movement_today === "yes").length;
+    const movementLittle = c.filter((x: any) => x.movement_today === "little").length;
+    const movementCombinedPrev = cPrev.filter((x: any) => x.movement_today === "yes" || x.movement_today === "little").length;
+    const journalCount = j.length;
+    const journalDays = new Set(j.map((e: any) => e.date)).size;
+    const meaningfulYes = c.filter((x: any) => x.meaningful_activity === "yes").length;
+    const activeMeds = m.filter((x: any) => x.active).length;
+    const adherencePrev = mlPrev.length
+      ? Math.round((mlPrev.filter((x: any) => x.taken_status === "taken").length / mlPrev.length) * 100)
+      : null;
+    const totalActMinutes = acts.reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
+
     setReport(lines.join("\n"));
     setStructured({
       checkins: checkinsTyped,
@@ -679,6 +700,20 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
       adherence,
       sideEffects,
       movementDays,
+      sleepHours,
+      sleepHoursPrev,
+      sleepQuality,
+      lowSleepNights,
+      movementYes,
+      movementLittle,
+      movementCombinedPrev,
+      journalCount,
+      journalDays,
+      meaningfulYes,
+      activeMeds,
+      adherencePrev,
+      totalActMinutes,
+      periodDays: days,
     });
     setGenerating(false);
   };
