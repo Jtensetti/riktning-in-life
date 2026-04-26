@@ -508,6 +508,21 @@ const Today = () => {
           >
             Logga kvällen
           </Button>
+          {activitiesToday === 0 && (
+            <button
+              onClick={saveEveningGoal}
+              disabled={savingEveningGoal}
+              className={`mt-2 w-full h-12 rounded-full bg-white/15 hover:bg-white/25 text-white font-extrabold press-soft inline-flex items-center justify-center gap-2 transition-colors ${savingEveningGoal ? "opacity-60" : ""}`}
+            >
+              <Moon size={16} />
+              {savingEveningGoal ? "Sparar…" : "Spara kvällsmål (10 min mjuk stund)"}
+            </button>
+          )}
+          {activitiesToday > 0 && (
+            <p className="mt-3 text-xs font-bold opacity-80 text-center">
+              ✓ Du har redan loggat {activitiesToday} {activitiesToday === 1 ? "sak" : "saker"} idag.
+            </p>
+          )}
         </section>
       )}
 
