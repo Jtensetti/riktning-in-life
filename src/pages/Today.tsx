@@ -70,6 +70,7 @@ const computeTrend = (cs: TrendCheckin[], pick: (c: TrendCheckin) => number | nu
 type RecentSession = {
   id: string;
   created_at: string;
+  exercise_id: string | null;
   mood_before: number | null;
   mood_after: number | null;
   anxiety_before: number | null;
@@ -256,7 +257,7 @@ const Today = () => {
           .maybeSingle(),
         supabase
           .from("exercise_sessions")
-          .select("id,created_at,mood_before,mood_after,anxiety_before,anxiety_after,energy_before,energy_after,exercises(title,category,duration_minutes,color)")
+          .select("id,created_at,exercise_id,mood_before,mood_after,anxiety_before,anxiety_after,energy_before,energy_after,exercises(title,category,duration_minutes,color)")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
           .limit(10),
@@ -318,8 +319,12 @@ const Today = () => {
 
   // Smart "För dig just nu"-rekommendationer
   const recentForRec = recent
-    .filter(s => s.exercises)
-    .map(s => ({ category: s.exercises!.category, created_at: s.created_at }));
+    .filter((s) => s.exercises)
+    .map((s) => ({
+      category: s.exercises!.category,
+      created_at: s.created_at,
+      exercise_id: s.exercise_id ?? undefined,
+    }));
   const picks: Pick[] = showSafety ? [] : recommendForToday(library, checkin, time, weather, recentForRec);
 
   // 7-day insights

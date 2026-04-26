@@ -42,6 +42,8 @@ export type CheckinSignals = {
 export type RecentSession = {
   category: string;
   created_at: string;
+  /** Optional — when present, enables per-exercise repetition penalties. */
+  exercise_id?: string;
 };
 
 const CALM_CATS = new Set(["Lugna kroppen", "Bryt ältande", "Sov bättre"]);
@@ -120,7 +122,7 @@ const scoreExercise = (
   // 2) Tid på dygnet
   if (t.partOfDay === "morning" && ex.category === "Kom igång") score += 20;
   if ((t.partOfDay === "evening" || t.partOfDay === "night") && ex.category === "Sov bättre") score += 25;
-  if ((t.partOfDay === "evening" || t.partOfDay === "night") && ex.category === "Kom igång") score -= 40; // aldrig morgonrutin på kvällen
+  if ((t.partOfDay === "evening" || t.partOfDay === "night") && ex.category === "Kom igång") score -= 40;
   if ((t.partOfDay === "morning" || t.partOfDay === "midday" || t.partOfDay === "afternoon") && ex.category === "Rör dig mjukt") score += 15;
 
   // 3) Väder
@@ -129,15 +131,53 @@ const scoreExercise = (
   if (isOutdoor && !outdoorOk) score -= 30;
   if (isOutdoor && outdoorOk && w && (w.kind === "clear" || w.kind === "partly")) score += 15;
 
-  // 4) Energi-utrymme: kort övning vid låg energi
-  if (energy <= 3 && ex.duration_minutes <= 5) score += 10;
-  if (energy <= 6 && ex.duration_minutes <= 10) score += 5;
-  if (energy <= 3 && ex.duration_minutes > 10) score -= 15;
+  // 4) LÄNGD — sweet-spot-modell istället för bara "kort vid låg energi".
+  //    Bygger ett "energibudget"-tak: ju lägre energi/sömn/sen kväll, desto kortare passar bäst.
+  const lateEvening = t.partOfDay === "evening" || t.partOfDay === "night";
+  let budgetMin = 12; // standard sweet spot
+  if (energy <= 3) budgetMin = 4;
+  else if (energy <= 5) budgetMin = 7;
+  else if (energy >= 8) budgetMin = 15;
+  if (sleep < 5) budgetMin = Math.min(budgetMin, 6);          // sömnskuld → kortare
+  if (lateEvening) budgetMin = Math.min(budgetMin, 8);         // sent → kortare
+  if (anx >= 7) budgetMin = Math.min(budgetMin, 5);            // hög oro → kortast
 
-  // 5) Variation: dra ner kategorier som körts mycket senaste 3 dagarna
-  const recentInCat = recent.filter(r => r.category === ex.category && daysSince(r.created_at) <= 3).length;
-  if (recentInCat >= 2) score -= 25;
-  if (recentInCat >= 4) score -= 15;
+  // Glockenkurva runt budget: max-bonus när duration ≈ budget, faller av i båda riktningar.
+  const lengthDelta = Math.abs(ex.duration_minutes - budgetMin);
+  if (lengthDelta <= 2) score += 14;
+  else if (lengthDelta <= 5) score += 8;
+  else if (lengthDelta <= 9) score += 0;
+  else score -= Math.min(20, lengthDelta - 9);                 // grovt > 9 min från budget
+
+  // Hård broms när det verkligen inte passar
+  if (energy <= 2 && ex.duration_minutes >= 10) score -= 18;
+  if (lateEvening && ex.duration_minutes >= 15) score -= 12;
+
+  // 5) ÅTERFALLSRISK — eskalerande, både per kategori och (om data finns) per övning.
+  //    Vi viktar nyligen tyngre än för flera dagar sen via en exponentiell decay.
+  const decayWeight = (days: number) => Math.exp(-days / 2.5); // halveringstid ~1.7 dagar
+  let catWeight = 0;
+  let exWeight = 0;
+  let exYesterday = false;
+  for (const r of recent) {
+    const d = daysSince(r.created_at);
+    if (d > 7) continue;
+    if (r.category === ex.category) catWeight += decayWeight(d);
+    if (r.exercise_id && r.exercise_id === ex.id) {
+      exWeight += decayWeight(d);
+      if (d <= 1.2) exYesterday = true;
+    }
+  }
+  // Eskalerande kategoristraff (max -28). Liten nyhetsbonus om kategorin INTE setts på en vecka.
+  if (catWeight > 0) score -= Math.min(28, Math.round(catWeight * 14));
+  else score += 6;
+
+  // Per-övningsstraff är hårdare — vi vill aldrig serva exakt samma övning två dagar i rad.
+  if (exWeight > 0) score -= Math.min(35, Math.round(exWeight * 22));
+  if (exYesterday) score -= 18;
+
+  // 6) Säkerhetsnät: om allt scoreas ner ska land-kategorin (mycket korta) ändå alltid få en chans.
+  if (ex.duration_minutes <= 3 && score < 25) score = 25;
 
   return Math.max(0, Math.min(100, score));
 };
