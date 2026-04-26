@@ -68,6 +68,14 @@ const Checkin = () => {
   const [activities, setActivities] = useState<ActivityDraft[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [step, setStep] = useState(0);
+  const [deepAnswer, setDeepAnswer] = useState<string>("");
+
+  // Välj en adaptiv "djupfråga" baserat på vad som varierar mest för dig.
+  // Stabil per session — räknas en gång på mount.
+  const [deepField] = useState<VarianceField | null>(() => {
+    const ranked = rankVariance(loadBaseline());
+    return ranked[0] ?? null;
+  });
 
   const effectiveKind: WeatherKind | null = weatherOverride ?? weather?.kind ?? null;
 
