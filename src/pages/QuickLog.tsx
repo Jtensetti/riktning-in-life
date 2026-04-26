@@ -385,7 +385,7 @@ const SleepForm = ({ onSaved, userId }: { onSaved: () => void; userId: string | 
     const { data: existing } = await supabase
       .from("daily_checkins").select("id").eq("user_id", userId).eq("date", today).maybeSingle();
 
-    const payload = { sleep_hours: hours, sleep_quality: quality };
+    const payload: any = { sleep_hours: hours, sleep_quality: quality };
     const { error } = existing
       ? await supabase.from("daily_checkins").update(payload).eq("id", existing.id)
       : await supabase.from("daily_checkins").insert({ ...payload, user_id: userId, date: today });
@@ -552,7 +552,7 @@ const MoodForm = ({ onSaved, userId }: { onSaved: () => void; userId: string | u
     const { data: existing } = await supabase
       .from("daily_checkins").select("id").eq("user_id", userId).eq("date", today).maybeSingle();
 
-    const payload = { mood_heaviness: heaviness, anxiety, energy };
+    const payload: any = { mood_heaviness: heaviness, anxiety, energy };
     const { error } = existing
       ? await supabase.from("daily_checkins").update(payload).eq("id", existing.id)
       : await supabase.from("daily_checkins").insert({ ...payload, user_id: userId, date: today });
