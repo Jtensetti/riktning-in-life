@@ -391,6 +391,18 @@ const Week = () => {
           <h2 className="text-xl">Riktning</h2>
           <span className="text-xs font-bold text-text-secondary">Vad veckan visar</span>
         </div>
+
+        <div className="mb-3">
+          <ChartCard
+            title="Veckans riktning"
+            subtitle="7 dagar · högre = bättre dag"
+            tone="green"
+            ariaSummary="Linjediagram över veckans riktning, sju dagar, skala noll till hundra."
+          >
+            <WeekDirectionChart data={directionSeries} />
+          </ChartCard>
+        </div>
+
         <div className="space-y-3">
           {priorities.map((p, i) => (
             <PriorityCard key={p.key} p={p} rank={i} />
