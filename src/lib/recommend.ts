@@ -121,7 +121,9 @@ const scoreExercise = (
   c: CheckinSignals | null,
   t: TimeContext,
   w: Weather | null,
-  recent: RecentSession[]
+  recent: RecentSession[],
+  history?: EffectHistory,
+  forecast?: ForecastSignal,
 ): number => {
   let score = 30; // baseline
 
