@@ -402,11 +402,17 @@ const Week = () => {
           <h2 className="text-xl mb-1">Jämfört med förra veckan</h2>
           <p className="text-xs text-text-secondary mb-3">Riktning över tid — inte dagsbetyg</p>
           <div className="grid grid-cols-2 gap-3">
-            <MetricCard title="Belastning" current={burdenC.value} prev={burdenP.value} invert
+            <MetricCard title="Belastning" current={burdenC.value} prev={burdenP.value} invert tone="orange"
+              spark={current.map((c) => (c.mood_heaviness == null ? null : c.mood_heaviness * 10))}
               note={burdenC.withWeekly ? undefined : "utan veckoskattning"} gated={!baselineComplete} />
-            <MetricCard title="Funktion" current={fnC} prev={fnP} gated={!baselineComplete} />
-            <MetricCard title="Återhämtning" current={recC} prev={recP} gated={!baselineComplete} />
-            <MetricCard title="Stabilitet" current={stabC} prev={stabP} hideChange
+            <MetricCard title="Funktion" current={fnC} prev={fnP} tone="green"
+              spark={current.map((c) => (c.function_score == null ? null : c.function_score * 10))}
+              gated={!baselineComplete} />
+            <MetricCard title="Återhämtning" current={recC} prev={recP} tone="purple"
+              spark={current.map((c) => (c.sleep_hours == null ? null : Number(c.sleep_hours) * 10))}
+              gated={!baselineComplete} />
+            <MetricCard title="Stabilitet" current={stabC} prev={stabP} hideChange tone="blue"
+              spark={current.map((c) => (c.anxiety == null ? null : 100 - c.anxiety * 10))}
               labelOverride={stabilityLabel(stabC, stabP)} gated={!baselineComplete} />
           </div>
         </section>
