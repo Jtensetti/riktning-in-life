@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { AbstractIcon, type IconName } from "@/components/AbstractIcon";
-import { HeroBanner } from "@/components/HeroBanner";
+import { ScreenHeader } from "@/components/ui-kit/ScreenHeader";
 import { ColorCard } from "@/components/ColorCard";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
@@ -331,15 +331,11 @@ const QuickLog = () => {
 
   return (
     <AppShell>
-      <HeroBanner
-        tone="var(--orange-start)"
-        icon="spark"
-        iconColor="hsl(var(--surface))"
-        iconAccent="hsl(var(--yellow-journal))"
+      <ScreenHeader
+        screen="log"
+        title="Snabblogg"
+        subtitle="Tryck på en knapp och svara kort. Det går snabbt."
       />
-
-      <h1 className="text-[32px] leading-[38px] mb-1">Snabblogg</h1>
-      <p className="text-sm text-text-secondary mb-6">Tryck på en knapp och svara kort. Det går snabbt.</p>
 
       {/* === FOUR TEMPLATE BUTTONS === */}
       <section className="grid grid-cols-2 gap-3 mb-7">

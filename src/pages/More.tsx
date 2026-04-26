@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
-import { HeroBanner } from "@/components/HeroBanner";
+import { ScreenHeader } from "@/components/ui-kit/ScreenHeader";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, LogOut } from "lucide-react";
 
@@ -10,14 +10,20 @@ const More = () => {
 
   return (
     <AppShell>
-      <HeroBanner tone="var(--cream-card)" icon="blob-smile" iconColor="hsl(var(--orange-start))" />
-      <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm font-bold text-text-secondary mb-4 press-soft">
-        <ChevronLeft size={18} /> Tillbaka
-      </button>
-      <header className="mb-8">
-        <h1 className="text-[32px] leading-[38px] mb-1">Mer</h1>
-        <p className="text-sm text-text-secondary">Stöd och konto.</p>
-      </header>
+      <ScreenHeader
+        screen="more"
+        title="Mer"
+        subtitle="Stöd och konto."
+        topLeft={
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-1 text-sm font-bold text-foreground/80 press-soft"
+          >
+            <ChevronLeft size={18} /> Tillbaka
+          </button>
+        }
+      />
+
 
       {/* Krisplan — stort, lugnt rött hjältekort. Enda ikon-bilden på sidan. */}
       <section className="mb-8">

@@ -6,7 +6,7 @@ import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Illustration, colorIll } from "@/components/Illustrations";
 import { AbstractIcon, weatherIcon, weatherIconColor, weatherIconAccent, type IconName } from "@/components/AbstractIcon";
-import { HeroBanner } from "@/components/HeroBanner";
+import { ScreenHeader } from "@/components/ui-kit/ScreenHeader";
 import { WeatherChip } from "@/components/WeatherChip";
 import { WeatherPermissionCard } from "@/components/WeatherPermissionCard";
 import { ChevronRight, Settings as SettingsIcon } from "lucide-react";
@@ -937,13 +937,9 @@ const Today = () => {
 
   return (
     <AppShell>
-      <HeroBanner
-        tone={hero.tone}
-        icon={hero.icon}
-        iconColor={hero.iconColor}
-        iconAccent={hero.iconAccent}
-        mood={hero.mood}
-        pattern={hero.pattern}
+      <ScreenHeader
+        screen="today"
+        subtitle={greet.headline}
         topLeft={
           <button
             onClick={() => navigate("/mer")}
@@ -957,9 +953,7 @@ const Today = () => {
       />
 
       <header className="mb-6">
-        <p className="text-sm font-extrabold text-orange-deep mb-1 animate-fade-in-up">{greet.headline}</p>
-        <h1 className="text-[32px] leading-[38px]">Idag</h1>
-        <p className="text-sm font-semibold text-text-secondary capitalize mt-1">{formatDate()}</p>
+        <p className="text-sm font-semibold text-text-secondary capitalize">{formatDate()}</p>
         {greet.sub && (
           <p className="text-sm text-text-secondary mt-2 animate-fade-in-up">{greet.sub}</p>
         )}

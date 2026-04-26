@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
-import { HeroBanner } from "@/components/HeroBanner";
+import { ScreenHeader } from "@/components/ui-kit/ScreenHeader";
 import { ColorCard, type CardTone } from "@/components/ColorCard";
 import { ChevronRight } from "lucide-react";
 
@@ -57,15 +57,11 @@ const Explore = () => {
 
   return (
     <AppShell>
-      <HeroBanner
-        tone="var(--pink-move)"
-        icon="spark"
-        iconColor="hsl(var(--surface))"
+      <ScreenHeader
+        screen="explore"
+        title="Utforska"
+        subtitle="Övningar, rutiner och korta texter."
       />
-      <header className="mb-8">
-        <h1 className="text-[32px] leading-[38px] mb-1">Utforska</h1>
-        <p className="text-sm text-text-secondary">Övningar, rutiner och korta texter.</p>
-      </header>
 
       {/* Övningar — carousell, större kort, kategori syns i färgen */}
       <section className="mb-10 -mx-6">

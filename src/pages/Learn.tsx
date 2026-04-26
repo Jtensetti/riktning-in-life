@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
-import { HeroBanner } from "@/components/HeroBanner";
+import { ScreenHeader } from "@/components/ui-kit/ScreenHeader";
 import { AbstractIcon } from "@/components/AbstractIcon";
 import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
 
@@ -54,23 +54,19 @@ const Learn = () => {
 
   return (
     <AppShell>
-      <HeroBanner
-        tone="var(--yellow-journal)"
-        icon="bookmark-soft"
-        iconColor="hsl(var(--foreground))"
+      <ScreenHeader
+        screen="explore"
+        title="Lär dig"
+        subtitle="Korta texter — varför saker funkar, och vad du kan pröva."
+        topLeft={
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-1 text-sm font-bold opacity-90 press-soft"
+          >
+            <ChevronLeft size={18} /> Tillbaka
+          </button>
+        }
       />
-      <button
-        onClick={() => navigate(-1)}
-        className="flex items-center gap-1 text-sm font-bold text-text-secondary mb-4 press-soft"
-      >
-        <ChevronLeft size={18} /> Tillbaka
-      </button>
-      <header className="mb-6">
-        <h1 className="text-[32px] leading-[38px] mb-1">Lär dig</h1>
-        <p className="text-sm text-text-secondary">
-          Korta texter — varför saker funkar, och vad du kan pröva.
-        </p>
-      </header>
 
       <div className="space-y-3">
         {items.map((a, i) => (
