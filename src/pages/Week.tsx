@@ -473,7 +473,21 @@ const Week = () => {
             const date = new Date(d.iso);
             const isToday = d.iso === new Date().toISOString().split("T")[0];
             const dayLabel = isToday ? "Idag" : date.toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "short" });
-            const isEmpty = d.acts.length === 0 && d.sess.length === 0 && !d.checkin;
+
+            // Filtrera vad som faktiskt visas per dag enligt valt filter
+            const showActs = historyFilter === "all" || historyFilter === "activeTime";
+            const showSess = historyFilter === "all" || historyFilter === "exercises" || historyFilter === "activeTime";
+            const showCheckin = historyFilter === "all" || historyFilter === "checkins";
+
+            const visibleActs = showActs ? d.acts : [];
+            const visibleSess = showSess ? d.sess : [];
+            const visibleCheckin = showCheckin ? d.checkin : null;
+            const isEmpty = visibleActs.length === 0 && visibleSess.length === 0 && !visibleCheckin;
+
+            const dayMinutes =
+              visibleActs.reduce((s, a) => s + (a.duration_minutes ?? 0), 0)
+              + visibleSess.reduce((s, x) => s + (x.exercises?.duration_minutes ?? 0), 0);
+
             return (
               <div
                 key={d.iso}
@@ -482,16 +496,21 @@ const Week = () => {
               >
                 <div className="flex items-baseline justify-between gap-2 mb-2">
                   <p className={`text-sm font-extrabold capitalize ${isToday ? "text-orange-deep" : ""}`}>{dayLabel}</p>
-                  {d.totalMinutes > 0 && (
-                    <p className="text-[11px] font-extrabold text-text-secondary tabular-nums">{d.totalMinutes} min</p>
+                  {dayMinutes > 0 && (
+                    <p className="text-[11px] font-extrabold text-text-secondary tabular-nums">{dayMinutes} min</p>
                   )}
                 </div>
 
                 {isEmpty ? (
-                  <p className="text-xs text-text-secondary italic">Ingen aktivitet loggad</p>
+                  <p className="text-xs text-text-secondary italic">
+                    {historyFilter === "checkins" ? "Ingen check-in" :
+                     historyFilter === "exercises" ? "Ingen övning" :
+                     historyFilter === "activeTime" ? "Ingen aktiv tid" :
+                     "Ingen aktivitet loggad"}
+                  </p>
                 ) : (
                   <div className="flex flex-wrap gap-1.5">
-                    {d.acts.map((a) => (
+                    {visibleActs.map((a) => (
                       <span
                         key={a.id}
                         className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-extrabold ${colorBg(a.color)} shadow-card`}
@@ -501,7 +520,7 @@ const Week = () => {
                         {a.duration_minutes != null && <span className="opacity-80">· {a.duration_minutes}m</span>}
                       </span>
                     ))}
-                    {d.sess.map((s) => s.exercises && (
+                    {visibleSess.map((s) => s.exercises && (
                       <span
                         key={s.id}
                         className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-extrabold ${colorBg(s.exercises.color)} shadow-card`}
@@ -511,10 +530,13 @@ const Week = () => {
                         <span className="opacity-80">· {s.exercises.duration_minutes}m</span>
                       </span>
                     ))}
-                    {d.checkin && (
+                    {visibleCheckin && (
                       <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold bg-surface border border-border-soft text-text-secondary">
                         <AbstractIcon name="pencil-soft" size={12} color="currentColor" />
                         Check-in
+                        {visibleCheckin.sleep_hours != null && (
+                          <span className="opacity-80">· {Number(visibleCheckin.sleep_hours)}h sömn</span>
+                        )}
                       </span>
                     )}
                   </div>
