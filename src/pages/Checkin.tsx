@@ -5,10 +5,25 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { useWeather, weatherLabel, type WeatherKind } from "@/lib/weather";
-import { AbstractIcon, weatherIcon, weatherIconColor, weatherIconAccent } from "@/components/AbstractIcon";
+import { AbstractIcon, weatherIcon, weatherIconColor, weatherIconAccent, type IconName } from "@/components/AbstractIcon";
+import { ActivityPicker, type ActivityDraft } from "@/components/ActivityPicker";
+
+const colorBg = (color: string): string => {
+  switch (color) {
+    case "orange": return "bg-orange-start text-white";
+    case "blue": return "bg-blue-calm text-white";
+    case "yellow": return "bg-yellow-journal text-foreground";
+    case "purple": return "bg-purple-sleep text-white";
+    case "pink": return "bg-pink-move text-white";
+    case "green": return "bg-green-recovery text-white";
+    default: return "bg-cream-card text-foreground";
+  }
+};
+
+const moodEmoji = (d: number) => (d >= 2 ? "😊" : d === 1 ? "🙂" : d === 0 ? "😐" : d === -1 ? "🙁" : "😔");
 
 const todayISO = () => new Date().toISOString().split("T")[0];
 
@@ -47,6 +62,8 @@ const Checkin = () => {
   const { weather } = useWeather(true);
   const [weatherOverride, setWeatherOverride] = useState<WeatherKind | null>(null);
   const [showWeatherPicker, setShowWeatherPicker] = useState(false);
+  const [activities, setActivities] = useState<ActivityDraft[]>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   // Effective weather kind = manual override if set, else autodetected.
   const effectiveKind: WeatherKind | null = weatherOverride ?? weather?.kind ?? null;
@@ -84,6 +101,78 @@ const Checkin = () => {
       });
   }, [user, weather]);
 
+  // Load today's activities
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("activity_logs")
+      .select("activity_slug,label,category,icon,color,duration_minutes,mood_delta")
+      .eq("user_id", user.id).eq("date", todayISO()).order("created_at")
+      .then(({ data }) => {
+        if (data) {
+          setActivities(data.map((r: any) => ({
+            slug: r.activity_slug, label: r.label, category: r.category,
+            icon: r.icon, color: r.color,
+            duration_minutes: r.duration_minutes ?? 30,
+            mood_delta: r.mood_delta ?? 0,
+          })));
+        }
+      });
+  }, [user]);
+
+  const addActivity = async (a: ActivityDraft) => {
+    setActivities((prev) => [...prev, a]);
+    if (!user) return;
+    await supabase.from("activity_logs").insert({
+      user_id: user.id,
+      date: todayISO(),
+      activity_slug: a.slug,
+      label: a.label,
+      category: a.category,
+      icon: a.icon,
+      color: a.color,
+      duration_minutes: a.duration_minutes,
+      mood_delta: a.mood_delta,
+    });
+  };
+
+  const removeActivity = async (idx: number) => {
+    const a = activities[idx];
+    setActivities((prev) => prev.filter((_, i) => i !== idx));
+    if (!user) return;
+    const { data } = await supabase
+      .from("activity_logs")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("date", todayISO())
+      .eq("activity_slug", a.slug)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    if (data && data[0]) await supabase.from("activity_logs").delete().eq("id", data[0].id);
+  };
+
+  // Auto-derive legacy fields so recommend/week-trend keeps working
+  const deriveLegacy = () => {
+    if (activities.length === 0) {
+      return { movement_today: form.movement_today, meaningful_activity: form.meaningful_activity };
+    }
+    const meaningfulCats = new Set([
+      "Mästring & mening", "Familj & nära", "Social kontakt",
+      "Utomhus & natur", "Villa & trädgård", "Lugn glädje",
+    ]);
+    const movementSlugs = new Set([
+      "promenad", "jogg", "cykla", "simma", "skogspromenad", "langpromenad-skog",
+      "tradgardsarbete", "klippa-gras", "snoskottning", "vedhuggning",
+    ]);
+    const movementCount = activities.filter(
+      (a) => a.category === "Rörelse & kropp" || movementSlugs.has(a.slug),
+    ).length;
+    const meaningfulCount = activities.filter((a) => meaningfulCats.has(a.category)).length;
+    return {
+      movement_today: (movementCount === 0 ? "none" : movementCount === 1 ? "little" : "yes") as Form["movement_today"],
+      meaningful_activity: (meaningfulCount === 0 ? "none" : meaningfulCount === 1 ? "little" : "yes") as Form["meaningful_activity"],
+    };
+  };
+
   const save = async () => {
     if (!user) return;
     if ((form.safety_status === "active_thoughts" || form.safety_status === "acute") && !showSafetyDialog) {
@@ -91,13 +180,14 @@ const Checkin = () => {
       return;
     }
     setSaving(true);
+    const legacy = deriveLegacy();
     const { error } = await supabase.from("daily_checkins").upsert({
       user_id: user.id,
       date: todayISO(),
       ...form,
       medication_taken: form.medication_taken || null,
-      movement_today: form.movement_today || null,
-      meaningful_activity: form.meaningful_activity || null,
+      movement_today: legacy.movement_today || null,
+      meaningful_activity: legacy.meaningful_activity || null,
       weather_kind: effectiveKind,
       weather_temp_c: weather ? weather.tempC : null,
     } as any, { onConflict: "user_id,date" });
@@ -198,10 +288,43 @@ const Checkin = () => {
 
         <SegField label="Medicin" value={form.medication_taken} onChange={(v) => setForm(f => ({ ...f, medication_taken: v as Form["medication_taken"] }))}
           opts={[["yes", "Tagit"], ["partial", "Delvis"], ["no", "Inte tagit"]]} />
-        <SegField label="Rört på dig" value={form.movement_today} onChange={(v) => setForm(f => ({ ...f, movement_today: v as Form["movement_today"] }))}
-          opts={[["none", "Inte alls"], ["little", "Lite"], ["yes", "Ja"]]} />
-        <SegField label="Meningsfull aktivitet" value={form.meaningful_activity} onChange={(v) => setForm(f => ({ ...f, meaningful_activity: v as Form["meaningful_activity"] }))}
-          opts={[["none", "Ingen"], ["little", "Lite"], ["yes", "Ja"]]} />
+        <div className="card-cream p-5 mb-4 animate-fade-in-up" style={{ animationDelay: "var(--stagger-4)" }}>
+          <div className="flex items-baseline justify-between mb-1">
+            <label className="text-sm font-extrabold">Vad gjorde du idag?</label>
+            <span className="text-[11px] font-bold text-text-secondary">{activities.length} loggat</span>
+          </div>
+          <p className="text-xs text-text-secondary mb-3">Litet räknas också. Kaffe i solen lika mycket som en löprunda.</p>
+
+          {activities.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {activities.map((a, i) => (
+                <div
+                  key={i}
+                  className={`inline-flex items-center gap-2 rounded-full pl-2 pr-1 py-1 ${colorBg(a.color)} animate-pop-in shadow-card`}
+                >
+                  <AbstractIcon name={a.icon as IconName} size={16} color="currentColor" />
+                  <span className="text-xs font-extrabold">{a.label}</span>
+                  <span className="text-[10px] opacity-90 font-bold">· {a.duration_minutes}m {moodEmoji(a.mood_delta)}</span>
+                  <button
+                    onClick={() => removeActivity(i)}
+                    className="ml-1 w-6 h-6 rounded-full bg-white/25 grid place-items-center press-soft"
+                    aria-label="Ta bort"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <button
+            onClick={() => setPickerOpen(true)}
+            className="w-full h-12 rounded-full bg-foreground text-background font-extrabold text-sm press-soft inline-flex items-center justify-center gap-2"
+          >
+            <Plus size={18} />
+            {activities.length === 0 ? "Lägg till aktivitet" : "Lägg till en till"}
+          </button>
+        </div>
 
         <div className="card-cream p-5 mb-4 animate-fade-in-up" style={{ animationDelay: "var(--stagger-4)" }}>
           <label className="text-sm font-extrabold mb-3 block">Säkerhet</label>
@@ -263,6 +386,8 @@ const Checkin = () => {
           {saving ? "Sparar..." : "Spara dagen"}
         </Button>
       </div>
+
+      <ActivityPicker open={pickerOpen} onOpenChange={setPickerOpen} onAdd={addActivity} />
     </div>
   );
 };

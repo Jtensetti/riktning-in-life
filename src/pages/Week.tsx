@@ -21,6 +21,7 @@ const Week = () => {
   const [checkins, setCheckins] = useState<Checkin[]>([]);
   const [weeklyCurrent, setWeeklyCurrent] = useState<WeeklyFormScore>({});
   const [weeklyPrev, setWeeklyPrev] = useState<WeeklyFormScore>({});
+  const [topActivities, setTopActivities] = useState<{ label: string; icon: string; color: string; count: number; avgDelta: number }[]>([]);
   const [fetching, setFetching] = useState(true);
 
   useEffect(() => {
@@ -59,6 +60,30 @@ const Week = () => {
       }
       setWeeklyCurrent(cur);
       setWeeklyPrev(prev);
+
+      // Top activities last 7 days, sorted by avg mood_delta then count
+      const since7 = isoDaysAgo(6);
+      const { data: actsData } = await supabase
+        .from("activity_logs")
+        .select("activity_slug,label,icon,color,mood_delta")
+        .eq("user_id", user.id)
+        .gte("date", since7);
+      if (actsData) {
+        const map = new Map<string, { label: string; icon: string; color: string; count: number; sumDelta: number }>();
+        for (const r of actsData as any[]) {
+          const key = r.activity_slug;
+          const cur = map.get(key) ?? { label: r.label, icon: r.icon, color: r.color, count: 0, sumDelta: 0 };
+          cur.count += 1;
+          cur.sumDelta += Number(r.mood_delta ?? 0);
+          map.set(key, cur);
+        }
+        const arr = Array.from(map.values())
+          .map((v) => ({ label: v.label, icon: v.icon, color: v.color, count: v.count, avgDelta: v.sumDelta / v.count }))
+          .sort((a, b) => (b.avgDelta - a.avgDelta) || (b.count - a.count))
+          .slice(0, 3);
+        setTopActivities(arr);
+      }
+
       setFetching(false);
     };
     load();
@@ -228,6 +253,45 @@ const Week = () => {
                 ))}
               </div>
             </>
+          )}
+
+          {topActivities.length > 0 && (
+            <div className="mt-7">
+              <h2 className="text-xl mb-1 flex items-center gap-2">
+                <AbstractIcon name="heart-pulse" size={20} color="hsl(var(--pink-move))" />
+                Vad lyfte dig?
+              </h2>
+              <p className="text-xs text-text-secondary mb-3">Senaste 7 dagar — det här gjorde störst skillnad.</p>
+              <div className="space-y-2">
+                {topActivities.map((a, i) => {
+                  const bg =
+                    a.color === "orange" ? "bg-orange-start text-white" :
+                    a.color === "blue" ? "bg-blue-calm text-white" :
+                    a.color === "yellow" ? "bg-yellow-journal text-foreground" :
+                    a.color === "purple" ? "bg-purple-sleep text-white" :
+                    a.color === "pink" ? "bg-pink-move text-white" :
+                    a.color === "green" ? "bg-green-recovery text-white" :
+                    "bg-cream-card text-foreground";
+                  const delta = a.avgDelta;
+                  const deltaLabel = delta >= 1.5 ? "Lyfte mycket" : delta >= 0.5 ? "Lyfte" : delta >= -0.5 ? "Neutralt" : "Drog ner";
+                  return (
+                    <div
+                      key={i}
+                      className={`rounded-3xl p-4 ${bg} flex items-center gap-3 shadow-card animate-fade-in-up`}
+                      style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
+                    >
+                      <div className="shrink-0 w-11 h-11 rounded-full bg-white/25 grid place-items-center">
+                        <AbstractIcon name={a.icon as any} size={22} color="currentColor" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-extrabold text-[15px] truncate">{a.label}</p>
+                        <p className="text-[11px] opacity-90 font-bold">{a.count} ggr · {deltaLabel}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           )}
         </>
       )}
