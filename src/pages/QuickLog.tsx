@@ -474,18 +474,21 @@ const QuickLog = () => {
                 value={moodEdit.heaviness}
                 set={(n) => setMoodEdit(s => s ? { ...s, heaviness: n } : s)}
                 tone="orange"
+                disabled={savingMoodEdit}
               />
               <MoodSliderRow
                 label="Oro / ångest"
                 value={moodEdit.anxiety}
                 set={(n) => setMoodEdit(s => s ? { ...s, anxiety: n } : s)}
                 tone="blue"
+                disabled={savingMoodEdit}
               />
               <MoodSliderRow
                 label="Energi"
                 value={moodEdit.energy}
                 set={(n) => setMoodEdit(s => s ? { ...s, energy: n } : s)}
                 tone="pink"
+                disabled={savingMoodEdit}
               />
               <Button
                 onClick={saveMoodEdit}
