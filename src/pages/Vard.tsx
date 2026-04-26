@@ -24,6 +24,7 @@ import {
   drawHBarChart,
   drawWeekDots,
   drawSummaryBlock,
+  drawClinicianSummary,
   drawFooter,
   setPdfText,
   setPdfDraw,
