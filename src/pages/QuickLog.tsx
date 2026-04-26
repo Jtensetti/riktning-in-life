@@ -451,7 +451,7 @@ const MovementForm = ({ onSaved, userId }: { onSaved: () => void; userId: string
     { slug: "stretch", label: "Stretch", icon: "stretch-figure", mins: 10, category: "Rörelse" },
     { slug: "household", label: "Hushåll", icon: "house-soft", mins: 20, category: "Rörelse" },
     { slug: "bike", label: "Cykla", icon: "bike", mins: 30, category: "Rörelse" },
-    { slug: "workout", label: "Träning", icon: "spark", mins: 45, category: "Rörelse" },
+    { slug: "workout", label: "Träning", icon: "run-figure", mins: 45, category: "Rörelse" },
   ];
   const [pick, setPick] = useState(presets[0]);
   const [mins, setMins] = useState(presets[0].mins);
