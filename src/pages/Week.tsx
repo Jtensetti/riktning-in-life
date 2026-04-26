@@ -90,6 +90,15 @@ const Week = () => {
   const [exercises, setExercises] = useState<ExerciseLite[]>([]);
   const [fetching, setFetching] = useState(true);
   const [historyFilter, setHistoryFilter] = useState<"all" | "checkins" | "exercises" | "activeTime">("all");
+  const [actionPrefs, setActionPrefs] = useState<ActionPreferences>(() => loadActionPreferences());
+
+  const updatePrefs = (patch: Partial<ActionPreferences>) => {
+    setActionPrefs((p) => {
+      const next = { ...p, ...patch };
+      saveActionPreferences(next);
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
