@@ -495,19 +495,12 @@ const Week = () => {
                   onClick={() => navigate(`/ovningar/${exercise.id}`)}
                   ariaLabel={`${priority.title}: ${exercise.title}`}
                   className="shrink-0 w-[78%] snap-start"
-                >
-                  <span className={`inline-block text-[10px] font-extrabold uppercase tracking-wider px-2 py-1 rounded-full mb-3 ${onYellow ? "bg-foreground/10" : "bg-white/20"}`}>
-                    {priority.title}
-                  </span>
-                  <h4 className="text-[20px] leading-[24px] font-extrabold mb-1 pr-12">{exercise.title}</h4>
-                  <p className="text-sm opacity-90 leading-snug mb-3">{priority.nudge}</p>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-extrabold opacity-80">{exercise.duration_minutes} min · {exercise.category}</span>
-                    <span className={`shrink-0 grid place-items-center w-9 h-9 rounded-full ${onYellow ? "bg-foreground text-background" : "bg-white/25"}`}>
-                      <ChevronRight size={18} />
-                    </span>
-                  </div>
-                </ColorCard>
+                  eyebrow={{ label: priority.title }}
+                  title={exercise.title}
+                  reason={priority.nudge}
+                  metaLeft={`${exercise.duration_minutes} min · ${exercise.category}`}
+                  showChevron
+                />
               );
             })}
           </div>
