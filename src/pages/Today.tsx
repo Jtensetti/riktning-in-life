@@ -319,8 +319,12 @@ const Today = () => {
 
   // Smart "För dig just nu"-rekommendationer
   const recentForRec = recent
-    .filter(s => s.exercises)
-    .map(s => ({ category: s.exercises!.category, created_at: s.created_at }));
+    .filter((s) => s.exercises)
+    .map((s) => ({
+      category: s.exercises!.category,
+      created_at: s.created_at,
+      exercise_id: s.exercise_id ?? undefined,
+    }));
   const picks: Pick[] = showSafety ? [] : recommendForToday(library, checkin, time, weather, recentForRec);
 
   // 7-day insights
