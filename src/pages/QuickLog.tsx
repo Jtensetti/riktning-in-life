@@ -428,7 +428,7 @@ const QuickLog = () => {
 
       {/* === TEMPLATE DRAWERS === */}
       <Drawer open={openTpl !== null} onOpenChange={(o) => !o && setOpenTpl(null)}>
-        <DrawerContent className="px-5 pb-8 max-h-[88vh]">
+        <DrawerContent className="px-5 pb-[max(2rem,env(safe-area-inset-bottom))] max-h-[88vh]">
           <DrawerHeader className="px-0 pt-2">
             <DrawerTitle className="text-2xl">
               {openTpl ? TEMPLATES.find(t => t.key === openTpl)?.title : ""}
@@ -450,7 +450,7 @@ const QuickLog = () => {
           setMoodEdit(null);
         }}
       >
-        <DrawerContent className="px-5 pb-8 max-h-[88vh]">
+        <DrawerContent className="px-5 pb-[max(2rem,env(safe-area-inset-bottom))] max-h-[88vh]">
           <DrawerHeader className="px-0 pt-2">
             <DrawerTitle className="text-2xl">
               {moodEditSaved ? "Sparat" : "Ändra känsla"}
