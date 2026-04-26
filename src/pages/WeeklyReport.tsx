@@ -19,6 +19,8 @@ import {
   drawHBarChart,
   drawWeekDots,
   drawFooter,
+  setPdfText,
+  setPdfDraw,
   sevenDayLabels,
   sevenDayDates,
   seriesFor,
