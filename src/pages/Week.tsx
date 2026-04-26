@@ -60,6 +60,30 @@ const Week = () => {
       }
       setWeeklyCurrent(cur);
       setWeeklyPrev(prev);
+
+      // Top activities last 7 days, sorted by avg mood_delta then count
+      const since7 = isoDaysAgo(6);
+      const { data: actsData } = await supabase
+        .from("activity_logs")
+        .select("activity_slug,label,icon,color,mood_delta")
+        .eq("user_id", user.id)
+        .gte("date", since7);
+      if (actsData) {
+        const map = new Map<string, { label: string; icon: string; color: string; count: number; sumDelta: number }>();
+        for (const r of actsData as any[]) {
+          const key = r.activity_slug;
+          const cur = map.get(key) ?? { label: r.label, icon: r.icon, color: r.color, count: 0, sumDelta: 0 };
+          cur.count += 1;
+          cur.sumDelta += Number(r.mood_delta ?? 0);
+          map.set(key, cur);
+        }
+        const arr = Array.from(map.values())
+          .map((v) => ({ label: v.label, icon: v.icon, color: v.color, count: v.count, avgDelta: v.sumDelta / v.count }))
+          .sort((a, b) => (b.avgDelta - a.avgDelta) || (b.count - a.count))
+          .slice(0, 3);
+        setTopActivities(arr);
+      }
+
       setFetching(false);
     };
     load();
