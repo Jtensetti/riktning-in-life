@@ -5,6 +5,7 @@
 // Aldrig skuldbeläggande copy — alltid "vi ser X, här är ett mjukt steg".
 
 import type { Checkin } from "./metrics";
+import { GLOBAL_DEFAULTS, type PersonalThresholds } from "./baseline";
 
 export type PriorityKey = "sleep" | "movement" | "anxiety" | "mood" | "meaning" | "stillness" | "stable";
 
