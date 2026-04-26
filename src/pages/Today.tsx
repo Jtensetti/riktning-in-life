@@ -328,28 +328,50 @@ const Today = () => {
       {recent.length > 0 && (
         <section className="mb-4">
           <h3 className="text-xl mb-3">Senaste aktivitet</h3>
-          <ul className="relative pl-5 space-y-3">
+          <ul className="relative pl-5 space-y-2">
             <span className="absolute left-1.5 top-2 bottom-2 w-px border-l-2 border-dashed border-[#D7D0C9]" aria-hidden />
             {recent.map(s => {
               const ex = s.exercises;
               if (!ex) return null;
+              const dot = colorBg(ex.color);
+              const dateStr = new Date(s.created_at).toLocaleDateString("sv-SE", { day: "numeric", month: "short" });
+              const deltas: { letter: string; delta: number; tone: "good" | "warn" }[] = [];
+              const pushDelta = (letter: string, before: number | null, after: number | null, goodWhenLower: boolean) => {
+                if (before == null || after == null) return;
+                const d = after - before;
+                if (d === 0) return;
+                const improved = goodWhenLower ? d < 0 : d > 0;
+                deltas.push({ letter, delta: d, tone: improved ? "good" : "warn" });
+              };
+              pushDelta("M", s.mood_before, s.mood_after, true);
+              pushDelta("Å", s.anxiety_before, s.anxiety_after, true);
+              pushDelta("E", s.energy_before, s.energy_after, false);
+
               return (
                 <li key={s.id} className="relative">
-                  <span className="absolute -left-[18px] top-3 w-2.5 h-2.5 rounded-full bg-orange-start" aria-hidden />
+                  <span className={`absolute -left-[18px] top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full ${dot}`} aria-hidden />
                   <button
                     onClick={() => navigate("/ovningar")}
-                    className="w-full text-left rounded-2xl bg-surface border border-border-soft p-3 flex items-center gap-3 shadow-card"
+                    className="w-full text-left rounded-2xl bg-surface border border-border-soft py-2.5 px-3 flex items-center gap-2 shadow-card"
                   >
-                    <div className={`w-[72px] h-[56px] rounded-xl shrink-0 overflow-hidden ${colorBg(ex.color)}`}>
-                      <Illustration name={colorIll(ex.color)} className="w-full h-full object-cover" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-extrabold truncate">{ex.title}</h4>
-                      <p className="text-[11px] font-semibold text-text-secondary">
-                        {new Date(s.created_at).toLocaleDateString("sv-SE", { day: "numeric", month: "short" })} · {ex.category} · {ex.duration_minutes} min
-                      </p>
-                    </div>
-                    <ChevronRight size={18} className="text-text-secondary shrink-0" />
+                    <span className="text-[11px] font-extrabold text-text-secondary tabular-nums shrink-0 w-12">{dateStr}</span>
+                    <span className="text-sm font-extrabold truncate flex-1 min-w-0">{ex.title}</span>
+                    {deltas.length > 0 && (
+                      <span className="flex items-center gap-1 shrink-0">
+                        {deltas.map(d => (
+                          <span
+                            key={d.letter}
+                            className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full tabular-nums ${
+                              d.tone === "good" ? "bg-green-recovery/15 text-green-recovery" : "bg-red-bg text-red-risk"
+                            }`}
+                            title={`${d.letter}: ${d.delta > 0 ? "+" : ""}${d.delta}`}
+                          >
+                            {d.letter}{d.delta > 0 ? "+" : ""}{d.delta}
+                          </span>
+                        ))}
+                      </span>
+                    )}
+                    <ChevronRight size={16} className="text-text-secondary shrink-0" />
                   </button>
                 </li>
               );
