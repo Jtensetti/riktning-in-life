@@ -242,6 +242,7 @@ const Today = () => {
   const [time, setTime] = useState<TimeContext>(() => getTimeContext());
   const { weather, status: weatherStatus, requestLocation } = useWeather(true);
   const [permissionDismissed, setPermissionDismissed] = useState(() => isWeatherPermissionDismissed());
+  const [permissionExiting, setPermissionExiting] = useState(false);
   const [streakCounts, setStreakCounts] = useState<StreakCounts>({ checkin: 0, activity: 0, session: 0 });
   const [pickerOpen, setPickerOpen] = useState(false);
   const [streakReloadKey, setStreakReloadKey] = useState(0);
