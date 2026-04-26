@@ -1,5 +1,4 @@
 import { useNavigate } from "react-router-dom";
-import { ChevronRight } from "lucide-react";
 import { ColorCard, type CardTone } from "./ColorCard";
 import { iconForActivity } from "@/lib/icons";
 import { type Pick, slotLabel } from "@/lib/recommend";
@@ -62,34 +61,15 @@ export const ForYouCarousel = ({ picks }: Props) => {
               onClick={() => navigate(`/ovningar/${p.exercise.id}`)}
               ariaLabel={`${slotLabel(p.slot)}: ${p.exercise.title}`}
               className="shrink-0 w-[78%] snap-start"
-            >
-              <div className="flex items-center gap-2 flex-wrap mb-3">
-                <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-1 rounded-full ${
-                  onYellow ? "bg-foreground/10" : "bg-white/20"
-                }`}>
-                  {slotLabel(p.slot)}
-                </span>
-                {strong && (
-                  <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-1 rounded-full ${
-                    onYellow ? "bg-foreground text-background" : "bg-white text-foreground"
-                  }`}>
-                    Stark match
-                  </span>
-                )}
-              </div>
-              <h4 className="text-[20px] leading-[24px] font-extrabold mb-1 pr-12">{p.exercise.title}</h4>
-              <p className="text-sm opacity-90 leading-snug mb-3">{p.reasonLong}</p>
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-extrabold opacity-80">
-                  {p.exercise.duration_minutes} min · {p.reasonShort}
-                </span>
-                <span className={`shrink-0 grid place-items-center w-9 h-9 rounded-full ${
-                  onYellow ? "bg-foreground text-background" : "bg-white/25"
-                }`}>
-                  <ChevronRight size={18} />
-                </span>
-              </div>
-            </ColorCard>
+              eyebrow={[
+                { label: slotLabel(p.slot), variant: "soft" },
+                ...(strong ? [{ label: "Stark match", variant: "strong" as const }] : []),
+              ]}
+              title={p.exercise.title}
+              reason={p.reasonLong}
+              metaLeft={`${p.exercise.duration_minutes} min · ${p.reasonShort}`}
+              showChevron
+            />
           );
         })}
       </div>
