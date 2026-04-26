@@ -342,55 +342,130 @@ const Week = () => {
           <p className="text-xs text-text-secondary">Senaste 7 dagar — varje dag berättar något</p>
         </div>
 
-        <ChartCard
-          title="Aktiv tid"
-          subtitle="Senaste 7 dagar"
-          tone="green"
-          index={0}
-          ariaSummary={`Totalt ${timeline.reduce((s, d) => s + d.totalMinutes, 0)} minuter aktiv tid den här veckan.`}
-          action={
-            <span className="text-[11px] font-extrabold text-text-secondary tabular-nums">
-              {timeline.reduce((s, d) => s + d.totalMinutes, 0)} min totalt
-            </span>
-          }
-          className="mb-3"
-        >
-          <ActivityBars
-            data={timeline.map((d) => ({
-              iso: d.iso,
-              minutes: d.totalMinutes,
-              color: d.acts[0]?.color ?? d.sess[0]?.exercises?.color ?? "green",
-            }))}
-            height={120}
-          />
-        </ChartCard>
+        {/* Filter-pills: styr både diagram och per-dag-listan */}
+        <div role="tablist" aria-label="Filtrera återhämtningshistorik" className="flex flex-wrap gap-1.5 mb-3">
+          {([
+            { key: "all", label: "Allt" },
+            { key: "checkins", label: "Check-ins" },
+            { key: "exercises", label: "Övningar" },
+            { key: "activeTime", label: "Aktiv tid" },
+          ] as const).map((f) => {
+            const active = historyFilter === f.key;
+            return (
+              <button
+                key={f.key}
+                role="tab"
+                aria-selected={active}
+                onClick={() => setHistoryFilter(f.key)}
+                className={`px-3 py-1.5 rounded-full text-[12px] font-extrabold press-soft transition-colors ${
+                  active
+                    ? "bg-foreground text-background"
+                    : "bg-surface-alt text-text-secondary hover:text-foreground"
+                }`}
+              >
+                {f.label}
+              </button>
+            );
+          })}
+        </div>
 
-        <ChartCard
-          title="Vad gjorde dagen av?"
-          subtitle="Minuter fördelat på sömn, rörelse, mående, återhämtning"
-          tone="orange"
-          index={1}
-          className="mb-3"
-        >
-          <StackedRecovery
-            data={timeline.map<RecoveryDay>((d) => {
-              const sleep = d.checkin?.sleep_hours ? Math.round(Number(d.checkin.sleep_hours) * 60) : 0;
-              const movement = d.acts
-                .filter((a) => a.color === "pink" || a.color === "green")
-                .reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
-              const mood = d.acts
-                .filter((a) => a.color === "orange" || a.color === "yellow")
-                .reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
-              const recovery =
-                d.sess.reduce((s, x) => s + (x.exercises?.duration_minutes ?? 0), 0) +
-                d.acts
-                  .filter((a) => a.color === "blue" || a.color === "purple")
-                  .reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
-              return { iso: d.iso, sleep, movement, mood, recovery };
-            })}
-            height={150}
-          />
-        </ChartCard>
+        {/* Beräkna filtrerade serier en gång */}
+        {(() => {
+          const minutesFor = (d: typeof timeline[number]): number => {
+            if (historyFilter === "checkins") return d.checkin?.sleep_hours ? Math.round(Number(d.checkin.sleep_hours) * 60) : 0;
+            if (historyFilter === "exercises") return d.sess.reduce((s, x) => s + (x.exercises?.duration_minutes ?? 0), 0);
+            if (historyFilter === "activeTime") return d.acts.reduce((s, a) => s + (a.duration_minutes ?? 0), 0)
+              + d.sess.reduce((s, x) => s + (x.exercises?.duration_minutes ?? 0), 0);
+            return d.totalMinutes;
+          };
+          const totalMin = timeline.reduce((s, d) => s + minutesFor(d), 0);
+
+          const subtitleByFilter: Record<typeof historyFilter, string> = {
+            all: "Senaste 7 dagar",
+            checkins: "Sömn-minuter från dina check-ins",
+            exercises: "Minuter från genomförda övningar",
+            activeTime: "Aktiviteter + övningar tillsammans",
+          };
+
+          const totalLabelByFilter: Record<typeof historyFilter, string> = {
+            all: `${totalMin} min totalt`,
+            checkins: `${Math.round(totalMin / 60)} h sömn totalt`,
+            exercises: `${totalMin} min övning`,
+            activeTime: `${totalMin} min aktiv tid`,
+          };
+
+          const toneByFilter: Record<typeof historyFilter, "green" | "purple" | "blue" | "orange"> = {
+            all: "green",
+            checkins: "purple",
+            exercises: "blue",
+            activeTime: "orange",
+          };
+
+          const colorByFilter: Record<typeof historyFilter, string> = {
+            all: "green",
+            checkins: "purple",
+            exercises: "blue",
+            activeTime: "orange",
+          };
+
+          return (
+            <>
+              <ChartCard
+                title="Aktiv tid"
+                subtitle={subtitleByFilter[historyFilter]}
+                tone={toneByFilter[historyFilter]}
+                index={0}
+                ariaSummary={`${totalLabelByFilter[historyFilter]} den här veckan.`}
+                action={
+                  <span className="text-[11px] font-extrabold text-text-secondary tabular-nums">
+                    {totalLabelByFilter[historyFilter]}
+                  </span>
+                }
+                className="mb-3"
+              >
+                <ActivityBars
+                  data={timeline.map((d) => ({
+                    iso: d.iso,
+                    minutes: minutesFor(d),
+                    color: historyFilter === "all"
+                      ? (d.acts[0]?.color ?? d.sess[0]?.exercises?.color ?? "green")
+                      : colorByFilter[historyFilter],
+                  }))}
+                  height={120}
+                />
+              </ChartCard>
+
+              {historyFilter === "all" && (
+                <ChartCard
+                  title="Vad gjorde dagen av?"
+                  subtitle="Minuter fördelat på sömn, rörelse, mående, återhämtning"
+                  tone="orange"
+                  index={1}
+                  className="mb-3"
+                >
+                  <StackedRecovery
+                    data={timeline.map<RecoveryDay>((d) => {
+                      const sleep = d.checkin?.sleep_hours ? Math.round(Number(d.checkin.sleep_hours) * 60) : 0;
+                      const movement = d.acts
+                        .filter((a) => a.color === "pink" || a.color === "green")
+                        .reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
+                      const mood = d.acts
+                        .filter((a) => a.color === "orange" || a.color === "yellow")
+                        .reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
+                      const recovery =
+                        d.sess.reduce((s, x) => s + (x.exercises?.duration_minutes ?? 0), 0) +
+                        d.acts
+                          .filter((a) => a.color === "blue" || a.color === "purple")
+                          .reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
+                      return { iso: d.iso, sleep, movement, mood, recovery };
+                    })}
+                    height={150}
+                  />
+                </ChartCard>
+              )}
+            </>
+          );
+        })()}
 
         {/* Per-dag rader */}
         <div className="space-y-2">
