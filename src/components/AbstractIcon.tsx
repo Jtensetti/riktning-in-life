@@ -121,6 +121,7 @@ export const AbstractIcon = ({ name, size = 28, color = "currentColor", accent, 
       );
 
     case "heart-pulse":
+    case "heart-care":
       return (
         <svg {...common}>
           <path
