@@ -599,6 +599,7 @@ const Today = () => {
       <section className="card-cream p-5 mb-7 animate-pop-in">
         <div className="flex items-start gap-3 mb-4">
           <div className="flex-1 min-w-0">
+            <p className="text-[11px] font-extrabold uppercase tracking-wider text-text-secondary mb-1">{phrases.whisper}</p>
             <h2 className="text-2xl mb-1">{state.title}</h2>
             <p className="text-sm text-text-secondary">{state.sub}</p>
           </div>
@@ -616,7 +617,7 @@ const Today = () => {
           onClick={() => navigate("/checkin")}
           className="w-full h-12 rounded-full bg-foreground hover:bg-foreground/90 text-background font-extrabold text-[17px] press-soft"
         >
-          {checkin ? "Uppdatera dagen" : "Logga dagen"}
+          {checkin ? phrases.ctaUpdate : phrases.ctaLog}
         </Button>
       </section>
 
