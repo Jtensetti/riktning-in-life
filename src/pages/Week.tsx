@@ -397,29 +397,26 @@ const Week = () => {
       />
 
       <h1 className="text-[32px] leading-[38px] mb-1">Insikter</h1>
-      <p className="text-sm text-text-secondary mb-5">Riktning, actions, återhämtning — på en skärm.</p>
+      <p className="text-sm text-text-secondary mb-6">Vad veckan visar — på en skärm.</p>
 
-      <button
-        onClick={() => navigate("/rapport/vecka")}
-        className="w-full card-soft p-4 mb-6 flex items-center gap-3 text-left press-soft animate-fade-in-up"
-      >
-        <div className="w-11 h-11 rounded-2xl bg-blue-calm/15 grid place-items-center shrink-0">
-          <AbstractIcon name="bookmark-soft" size={20} color="hsl(var(--blue-calm))" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="text-[15px] font-extrabold">Klinisk veckorapport</div>
-          <div className="text-xs text-text-secondary">Senaste 7 dagar som PDF — sömn, rörelse, journal, medicin.</div>
-        </div>
-        <ChevronRight size={18} className="text-text-secondary shrink-0" />
-      </button>
+      {/* Mönster — lyft fram det mest mänskliga längst upp */}
+      {insights.length > 0 && (
+        <section className="mb-6 animate-pop-in">
+          <p className="text-[11px] font-extrabold uppercase tracking-wider text-orange-deep mb-2">Vi ser ett mönster</p>
+          <div className="card-quiet">
+            <p className="text-[20px] leading-[26px] font-extrabold mb-2">{insights[0]}</p>
+            {insights.length > 1 && (
+              <p className="text-sm text-text-secondary leading-snug">{insights[1]}</p>
+            )}
+          </div>
+        </section>
+      )}
 
       {!baselineComplete && (
-        <div className="card-cream p-4 mb-6 flex items-center gap-3 animate-pop-in">
-          <Illustration name="baseline" className="w-24 h-auto rounded-xl shrink-0" />
-          <div>
-            <p className="text-sm font-extrabold mb-1">Baslinje byggs</p>
-            <p className="text-xs text-text-secondary">Dag {total} av 14. Vi visar mönster och jämförelser när baslinjen är klar.</p>
-          </div>
+        <div className="card-quiet mb-6 animate-fade-in-up">
+          <p className="text-[11px] font-extrabold uppercase tracking-wider text-blue-calm mb-1">Bygger baslinje</p>
+          <p className="text-base font-extrabold leading-tight">Dag {total} av 14</p>
+          <p className="text-xs text-text-secondary leading-snug mt-1">Vi visar mönster och jämförelser när baslinjen är klar.</p>
         </div>
       )}
 
