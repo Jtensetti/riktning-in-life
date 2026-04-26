@@ -264,10 +264,14 @@ const Today = () => {
       navigate("/auth");
       return;
     }
-    if (!isOnboarded()) {
+    // Vänta in att serverns inställningar synkats innan vi beslutar om
+    // omdirigering — annars kan en återinloggning på en ny enhet sparka
+    // användaren till /onboarding trots att de redan onboardats tidigare.
+    if (!settings.hydrated) return;
+    if (!settings.onboarded) {
       navigate("/onboarding", { replace: true });
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, settings.hydrated, settings.onboarded]);
 
   useEffect(() => {
     if (!user) return;
