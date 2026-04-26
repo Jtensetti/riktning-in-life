@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { toneHsl, chartTokens, prefersReducedMotion, type ChartTone } from "@/lib/chartColors";
+import { AnimatedChart, buildChartSignature } from "./AnimatedChart";
 
 export type MetricBarPoint = {
   /** Visningsetikett (kort, t.ex. veckodag eller kategori). */
