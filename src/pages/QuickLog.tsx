@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { AbstractIcon, type IconName } from "@/components/AbstractIcon";
 import { HeroBanner } from "@/components/HeroBanner";
+import { ColorCard } from "@/components/ColorCard";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Check, ChevronRight, Clock, History, Plus, Minus, Trash2 } from "lucide-react";
@@ -23,10 +24,10 @@ type Template = {
 };
 
 const TEMPLATES: Template[] = [
-  { key: "sleep", title: "Sömn", blurb: "Hur sov du i natt?", tone: "purple", icon: "moon-soft" },
-  { key: "movement", title: "Rörelse", blurb: "Vad gjorde din kropp?", tone: "pink", icon: "bike" },
+  { key: "sleep", title: "Sömn", blurb: "Hur sov du i natt?", tone: "purple", icon: "bed-soft" },
+  { key: "movement", title: "Rörelse", blurb: "Vad gjorde din kropp?", tone: "pink", icon: "walk-figure" },
   { key: "mood", title: "Mående", blurb: "Hur känns det just nu?", tone: "orange", icon: "blob-smile" },
-  { key: "medication", title: "Medicin", blurb: "Tagit dagens dos?", tone: "blue", icon: "heart-pulse" },
+  { key: "medication", title: "Medicin", blurb: "Tagit dagens dos?", tone: "blue", icon: "pill" },
 ];
 
 const toneBg = (t: Tone): string => {
@@ -244,25 +245,24 @@ const QuickLog = () => {
         {TEMPLATES.map((t, i) => {
           const done = todayCoverage.find(c => c.key === t.key)?.done;
           return (
-            <button
+            <ColorCard
               key={t.key}
+              tone={t.tone}
+              icon={t.icon}
+              iconPosition="bottom-right"
+              size="sm"
+              index={i}
               onClick={() => setOpenTpl(t.key)}
-              className={`relative rounded-3xl ${toneBg(t.tone)} p-4 text-left shadow-soft press-soft animate-pop-in min-h-[124px] flex flex-col justify-between overflow-hidden`}
-              style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
-            >
-              {done && (
-                <span className="absolute top-2 right-2 grid place-items-center w-6 h-6 rounded-full bg-white/30">
+              ariaLabel={`Logga ${t.title}`}
+              badge={done ? (
+                <span className="grid place-items-center w-6 h-6 rounded-full bg-white/30">
                   <Check size={14} strokeWidth={3} />
                 </span>
-              )}
-              <div className="w-11 h-11 rounded-full bg-white/25 grid place-items-center">
-                <AbstractIcon name={t.icon} size={24} color="currentColor" />
-              </div>
-              <div>
-                <p className="text-[17px] font-extrabold leading-tight">{t.title}</p>
-                <p className="text-[11px] opacity-90 font-bold">{t.blurb}</p>
-              </div>
-            </button>
+              ) : undefined}
+            >
+              <p className="text-[17px] font-extrabold leading-tight">{t.title}</p>
+              <p className="text-[11px] opacity-90 font-bold">{t.blurb}</p>
+            </ColorCard>
           );
         })}
       </section>
@@ -434,7 +434,7 @@ const SleepForm = ({ onSaved, userId }: { onSaved: () => void; userId: string | 
         </div>
       </div>
 
-      <Button onClick={save} disabled={busy} className="w-full h-14 rounded-2xl bg-foreground hover:bg-foreground/90 text-background text-base font-extrabold press-soft">
+      <Button onClick={save} disabled={busy} variant="pill-strong" size="pill-lg" className="w-full">
         Spara sömn
       </Button>
     </div>
@@ -529,7 +529,7 @@ const MovementForm = ({ onSaved, userId }: { onSaved: () => void; userId: string
         </div>
       </div>
 
-      <Button onClick={save} disabled={busy} className="w-full h-14 rounded-2xl bg-foreground hover:bg-foreground/90 text-background text-base font-extrabold press-soft">
+      <Button onClick={save} disabled={busy} variant="pill-strong" size="pill-lg" className="w-full">
         Spara rörelse
       </Button>
     </div>
@@ -586,7 +586,7 @@ const MoodForm = ({ onSaved, userId }: { onSaved: () => void; userId: string | u
       <Slider label="Tyngd / nedstämdhet" value={heaviness} set={setHeaviness} color="orange" />
       <Slider label="Oro / ångest" value={anxiety} set={setAnxiety} color="blue" />
       <Slider label="Energi" value={energy} set={setEnergy} color="pink" />
-      <Button onClick={save} disabled={busy} className="w-full h-14 rounded-2xl bg-foreground hover:bg-foreground/90 text-background text-base font-extrabold press-soft">
+      <Button onClick={save} disabled={busy} variant="pill-strong" size="pill-lg" className="w-full">
         Spara mående
       </Button>
     </div>
@@ -628,7 +628,7 @@ const MedicationForm = ({
         </div>
         <Button
           onClick={() => navigate("/vard")}
-          className="w-full h-14 rounded-2xl bg-foreground hover:bg-foreground/90 text-background text-base font-extrabold press-soft"
+          className="w-full"
         >
           Gå till Vård <ChevronRight size={18} />
         </Button>
@@ -682,7 +682,7 @@ const MedicationForm = ({
         </div>
       </div>
 
-      <Button onClick={save} disabled={busy || !pickedId} className="w-full h-14 rounded-2xl bg-foreground hover:bg-foreground/90 text-background text-base font-extrabold press-soft">
+      <Button onClick={save} disabled={busy || !pickedId} variant="pill-strong" size="pill-lg" className="w-full">
         Spara medicin
       </Button>
     </div>

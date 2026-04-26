@@ -1,100 +1,60 @@
-## Helhetsutvärdering — Riktning idag
 
-**Vad appen är bra på redan**
-- Varm, icke-prestationsdriven copy ("Det här räcker idag") — en tydlig kontrast mot Strava/Headspace där "performance" annars dominerar.
-- Smart kontext: tid på dygnet + väder + checkin styr rekommendationer.
-- Säkerhetslogik (krisplan, safety_status) är genomtänkt och unik.
-- Aktivitetskatalog + favoriter + mood_delta är en stark grund för personalisering.
-- Klinisk export → läkare är ett konkret värde få konkurrenter har.
+## Mål
+Mer konsekvent abstrakt ikon-system (Headspace-aktigt: platt, fyllt, vänligt) och starkare visuell rytm i färgade kort/knappar — utan att rucka på den platta, varma grundtonen.
 
-**Vad som hindrar appen från att kännas som Headspace × Strava**
-1. **Inget momentum/streak-känsla.** Strava lever på "du gjorde det igen". Headspace på "Day 7 of your journey". Idag belönas inte återkomst alls. Risk: appen känns som ett verktyg snarare än en följeslagare.
-2. **Loggning kräver fortfarande full check-in (7+ slidrar).** En enskild aktivitet kan inte loggas på 5 sek från Idag-skärmen — det borde gå.
-3. **"Övningar" och "Aktiviteter" är två separata världar** (övningar = guidade sessions; aktiviteter = vardagsloggning). Användaren förstår inte alltid skillnaden.
-4. **Insikter visas bara på Vecka.** De når inte fram i flödet ("Du sover bättre när du promenerar före 11" hör hemma där beslut tas).
-5. **Ingen "Vägar"/program-känsla.** Sequences finns i datamodellen men är knappt synligt — det är där Headspaces "Basics", "Sleep", "Focus" lever.
-6. **Inget delat eller socialt** — inte ens minimalt (t.ex. dela en "good week"-bild med en närstående). Strava-effekten saknas helt.
-7. **Exercise-detaljvyn är binär** (gjord/ej gjord). Saknar ljud/röst-guidning för andning, vilket är Headspace kärna.
+## Del 1 — Utöka & städa ikon-setet (`AbstractIcon.tsx`)
 
----
+### Stilregler (gäller alla nya ikoner)
+- 32×32 viewBox, **fylld form** som primär (currentColor), valfri `accent` för 1 kontrast-detalj.
+- Inga linjer-only ikoner för "objekt" — linje används bara för **rörelse/riktning** (pilar, vind, andning).
+- Mjuka hörn (radie ≥ 2), aldrig vassa spetsar.
+- Ansikten (när relevant): två slutna ögon-bågar + ev. mun, samma uttryck som `blob-smile`.
 
-## Föreslagna förbättringar — prioriterade i tre lager
+### Nya ikoner (≈14 st, täcker dagens luckor)
+**Hälsa & kropp:** `pill` (medicin), `glass-water`, `apple-bite`, `lungs-breathe`, `bed-soft` (alternativ till moon för sömn-logg)
+**Aktivitet:** `walk-figure`, `stretch-figure`, `yoga-pose`, `weights`, `nature-tree`
+**Vardag/social:** `chat-bubble`, `people-two`, `work-bag`, `coffee-cup`
+**Kontroll/UI:** `plus-soft`, `check-soft`, `clock-soft`, `calendar-soft`, `lock-soft`, `info-soft`, `warning-soft`, `mic-soft`, `mute-soft`, `search-soft`, `filter-soft`
 
-### LAGER 1 — Momentum & vana (bygger återkomst)
+### Refaktor av befintliga
+- **Dela upp `heart-pulse`:** byt namn till `heart-care` (Vård/krisplan) och skapa separat `pill` för medicin, `walk-figure` för rörelse-rader.
+- **Ersätt default-`spark` på "tomma" platser** med kontextpassande ikoner (Journal-tom → `pencil-soft` med blad, Övningar → ny `compass-soft`).
+- Säkerställ att alla ikoner har samma optiska vikt vid 22–24 px (justera stroke/fill-tjocklek).
 
-**1.1 Streak & "kedjor", men på Riktnings sätt**
-- Inte "X dagar i rad" (skapar ångest om man missar). Istället **"X av senaste 7 dagar"** — en mjuk ring som fylls. Kan inte gå sönder, bara fyllas på.
-- Visas som liten ring runt "Idag"-ikonen i BottomNav + stor på Today-hero.
-- Tre nivåer av kedjor: *check-in*, *aktivitet loggad*, *övning gjord*. Användaren ser vilken som är starkast just nu.
-- Copy: "Du har varit här 5 av 7 dagar. Det räcker." (aldrig "du missade 2 dagar").
+### Mappnings-helper
+Lägg till `iconForActivity(slug | category) → IconName` så vi inte längre castar `(a.icon as IconName)` på 7 ställen — central källa till sanning.
 
-**1.2 Snabbloggning från Idag**
-- Ny floating action: **"+"-knapp** på Today som öppnar `ActivityPicker` direkt — utan att gå via Checkin.
-- Favoritaktiviteter visas som **3 stora "tap-to-log" pills** högt upp på Today ("Promenad · 30m", "Kaffe i solen · 15m", "Trädgård · 60m"). Ett klick → loggad, mood-delta-fråga som mini-toast efteråt.
-- Resultat: vardagsloggning går från 60 sek till 3 sek.
+## Del 2 — Headspace-rytm i färgade kort
 
-**1.3 Kvällsnotis-knapp ("Stäng dagen")**
-- En enda knapp på Today efter kl 20 som öppnar en **mikro-checkin** (3 slidrar: tyngd, oro, sömn-prognos). Resten av check-in-formuläret flyttas till "valfritt mer".
-- Sänker tröskeln drastiskt utan att förlora data.
+Skapa en återanvändbar **`ColorCard`**-komponent (variant av nuvarande inline-mönster i QuickLog/Week) med:
+- **Bakgrundsblob** i en mörkare nyans av kortfärgen (absolut positionerad, opacity 0.25, runt 60% size, nere höger) — exakt det Headspace gör.
+- **Lyfter ikonen** något (top-right eller bottom-right hörn, 32–48 px) med ev. accent-form bakom.
+- Behåll platt fyllning, ingen gradient.
 
-### LAGER 2 — Vägar & guidning (Headspace-DNA)
+Refaktorera så att dessa använder `ColorCard`:
+- `QuickLog.tsx` — fyra mall-knappar (sömn/rörelse/mående/medicin)
+- `Week.tsx` — priority-kort
+- `Today.tsx` — recommended-kort i carousel (om de är färgade)
 
-**2.1 "Vägar" som första-klass-feature**
-- Ny tab/sektion: **Vägar** (eller integrera i Övningar som översta block).
-- Färdiga 7- och 14-dagarsprogram: *"Tillbaka till sömn"*, *"Kom ut i ljuset"*, *"Mjuk start efter en tung period"*, *"Bygg rörelse-vana"*.
-- Varje dag i en väg = 1 övning + 1 mikro-uppgift (t.ex. "Logga vad du åt till frukost"). Progressring visar dag 3/7.
-- Datamodellen finns redan (`exercise_sequences`) — behöver utökas med `progression_steps` (ordnad lista med dag → exercise + prompt) och en `sequence_enrollments`-tabell.
+## Del 3 — Knappstil (matcha Headspace)
 
-**2.2 Guidad andning med röst/ljud**
-- Andningsövningar idag är text. Lägg till en **visuell pulserande cirkel** (in 4s / håll 4s / ut 6s) + valfri svensk röst (Web Speech API, gratis, utan API-nyckel).
-- Detta är Headspaces #1-stickiness-faktor. Låg teknisk kostnad, hög upplevd kvalitet.
+- Lägg till variant `pill-strong` på `Button`: `rounded-full`, `h-12`, `px-8`, fet vikt, full färg — för primära CTA i drawers ("Spara sömn", "Tillåt plats", "Join in"-stil).
+- Behåll nuvarande `rounded-2xl`-knappar för formulär-sparningar där de redan sitter — men byt drawer-bottom-CTA till pill för Headspace-ton.
+- Lägg pressed-state med skuggsänkning (inte bara scale) för mer "tryckkänsla".
 
-**2.3 "Mekanism-förklaring" som mikrolärande efter övning**
-- Idag: övning klar → tillbaka till listan. Förslag: efter en övning visas ett **30-sekunders kort** som förklarar *varför den hjälper* (kopplas till `mechanism`-fältet som redan finns på `exercises`). Kort, tecknat, vänligt.
-- Bygger förtroende och pedagogiskt djup.
+## Del 4 — Mikrojusteringar
 
-### LAGER 3 — Insikter, socialt & polish
+- Cream-kort på vit bakgrund: lägg `border-border-soft` 1 px i ljust läge så kanten inte försvinner mot off-white.
+- Ge `HeroBanner` valbar `pattern` (subtila cirklar i bakgrunden, opacity 0.1) för Today/Vård — matchar Headspace "Meditate"-bannerns lekfullhet.
 
-**3.1 Insikter där besluten fattas**
-- Flytta in 1–2 insikter från Vecka direkt på Today, under For You-carousellen: *"När du går ut före kl 11 är din kväll lugnare. Solen är uppe nu."*
-- Reglerna finns redan i `generateInsights` — behöver bara extraheras till en "actionable insight"-variant som kan kopplas till en konkret knapp.
+## Vad jag INTE rör
+- Färgpalett (orange/blå/lila/rosa/gul/grön) — den är redan rätt.
+- Typografi (Nunito Sans) — perfekt match.
+- Bottennav-mönstret.
+- Inga gradienter införs. Inga 3D-effekter.
 
-**3.2 "Dela med någon nära" (social-light, helt frivilligt)**
-- En knapp i Vecka: **"Skicka veckans bild till någon"** → genererar en snygg sammanfattningsbild (canvas, ingen backend) med "Riktning denna vecka: ↑ funktion, stabil sömn" — ingen data, bara mjuka former och ord.
-- Användaren kan dela via systemets share-sheet (`navigator.share`).
-- Bygger ansvarighet utan tävlan — Stravas anda men anpassad för psykisk hälsa.
-
-**3.3 Plats- och tidskontextuella förslag på Today**
-- Använd redan-insamlat väder + tid + favoritaktiviteter: *"Solen är ute i 2 timmar till. 'Trädgård' brukar lyfta dig — 30 min nu?"*
-- En ny `contextualNudge`-modul i `src/lib/recommend.ts` som kombinerar väder, klockslag, favoriter och senaste mood_delta.
-
-**3.4 Visuell & haptisk polish**
-- Mjukt haptiskt feedback (`navigator.vibrate(10)`) vid loggning på mobil.
-- "Pop-in"-celebration när en kedja fylls (konfetti är fel — istället en stilla blob-animation som expanderar).
-- Onboarding: lägg till **"Välj 3 favoritaktiviteter"** redan första dagen — då är snabbloggningen meningsfull från sekund 1.
-
----
-
-## Vad jag rekommenderar att vi bygger NU (denna iteration)
-
-För att få maximal effekt av en sprint föreslår jag att vi börjar med **Lager 1 i sin helhet** — momentum + snabbloggning är det som förvandlar appen från "verktyg" till "följeslagare":
-
-1. **Streak/kedja-system** (frontend-only, beräknas från befintlig data — ingen migration)
-2. **Snabbloggnings-pills på Today** för favoritaktiviteter (läser `activity_favorites` + `activity_catalog`)
-3. **FAB "+"-knapp på Today** som öppnar `ActivityPicker` direkt
-4. **Kvällsläge på Today** efter kl 20: byter ut For You-carousellen mot "Stäng dagen mjukt" + mikro-checkin-genväg
-
-Konkret påverkade filer:
-- `src/lib/streaks.ts` (ny — ren beräkning)
-- `src/components/StreakRing.tsx` (ny)
-- `src/components/QuickLogPills.tsx` (ny)
-- `src/pages/Today.tsx` (utbyggnad)
-- `src/components/BottomNav.tsx` (mini-ring runt Idag)
-- Mindre justering i `src/components/ActivityPicker.tsx` för "snabbläge" (hoppa över stor formulär, default 30 min, mood-fråga som toast)
-
-**Inget i denna iteration:**
-- Vägar-systemet (Lager 2.1) — separat sprint, kräver ny tabell + designarbete
-- Röstguidad andning (2.2) — egen sprint, vill testa ljuddesign separat
-- Delningsbild (3.2) — egen sprint, behöver visuell komp först
-
-Vill du att jag kör Lager 1 nu, eller ska vi prioritera om — t.ex. börja med Vägar (Lager 2.1) eftersom det är mest unikt? Säg till så justerar jag.
+## Leverans
+- ~14 nya ikoner + 1 omdöpning + 1 helper-funktion.
+- 1 ny `ColorCard`-komponent + refaktor på 3 sidor.
+- 1 ny knappvariant + uppdaterade drawer-CTAs.
+- Ingen ny route, inga DB-ändringar, inga nya bilder/3D-assets.

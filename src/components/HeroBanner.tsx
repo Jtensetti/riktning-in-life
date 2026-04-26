@@ -21,6 +21,8 @@ export interface HeroBannerProps {
   topLeft?: React.ReactNode;
   /** Innehåll positionerat absolut i övre högra hörnet (t.ex. väder-chip). */
   topRight?: React.ReactNode;
+  /** Lekfulla bakgrundscirklar à la Headspace. Subtila, opacity 0.12. */
+  pattern?: boolean;
 }
 
 export const HeroBanner = ({
@@ -30,6 +32,7 @@ export const HeroBanner = ({
   iconAccent,
   topLeft,
   topRight,
+  pattern = false,
 }: HeroBannerProps) => {
   return (
     <div
@@ -39,6 +42,13 @@ export const HeroBanner = ({
       }}
     >
       <div className="h-36 relative">
+        {pattern && (
+          <>
+            <span aria-hidden className="absolute -top-6 -left-10 w-32 h-32 rounded-full bg-white/10" />
+            <span aria-hidden className="absolute top-12 right-12 w-16 h-16 rounded-full bg-white/10" />
+            <span aria-hidden className="absolute bottom-6 left-1/3 w-10 h-10 rounded-full bg-white/15" />
+          </>
+        )}
         {topLeft && <div className="absolute top-4 left-4 z-10">{topLeft}</div>}
         {topRight && <div className="absolute top-4 right-4 z-10">{topRight}</div>}
         <div className="absolute left-1/2 -translate-x-1/2 top-6 animate-float">
