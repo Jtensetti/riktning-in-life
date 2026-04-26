@@ -90,8 +90,10 @@ export const ColorCard = ({
   showChevron,
   children,
 }: Props) => {
-  const minH = size === "sm" ? "min-h-[112px]" : size === "lg" ? "min-h-[200px]" : "min-h-[148px]";
-  const iconSize = size === "sm" ? 44 : size === "lg" ? 72 : 56;
+  const minH = size === "sm" ? "min-h-[124px]" : size === "lg" ? "min-h-[220px]" : "min-h-[164px]";
+  // Stickern ska bära ~40% av kortets visuella vikt — större format än tidigare,
+  // tillåts överlappa kortets bakgrundsblob så att illustrationen leder ögat.
+  const iconSize = size === "sm" ? 64 : size === "lg" ? 112 : 88;
   const Tag = onClick ? "button" : "div";
   const onYellow = tone === "yellow";
 
