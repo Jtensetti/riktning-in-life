@@ -164,8 +164,11 @@ export const useWeather = (autoStart: boolean = true) => {
     if (!autoStart) return;
     const cached = readCache();
     if (cached) return;
-    // Only auto-fetch with location if user already granted; otherwise quietly use fallback.
-    load({ askLocation: isWeatherPermissionGranted() });
+    // Only auto-fetch when user has granted location. Otherwise stay quiet
+    // so the in-app permission card actually has a chance to show without
+    // being pre-empted by a fallback (Stockholm) fetch.
+    if (!isWeatherPermissionGranted()) return;
+    load({ askLocation: true });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoStart]);
 
