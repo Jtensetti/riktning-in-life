@@ -36,6 +36,8 @@ export type Database = {
           sleep_quality: number | null
           updated_at: string
           user_id: string
+          weather_kind: string | null
+          weather_temp_c: number | null
         }
         Insert: {
           anxiety?: number | null
@@ -58,6 +60,8 @@ export type Database = {
           sleep_quality?: number | null
           updated_at?: string
           user_id: string
+          weather_kind?: string | null
+          weather_temp_c?: number | null
         }
         Update: {
           anxiety?: number | null
@@ -80,6 +84,8 @@ export type Database = {
           sleep_quality?: number | null
           updated_at?: string
           user_id?: string
+          weather_kind?: string | null
+          weather_temp_c?: number | null
         }
         Relationships: []
       }
