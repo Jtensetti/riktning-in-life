@@ -232,6 +232,8 @@ const Today = () => {
   const [streakCounts, setStreakCounts] = useState<StreakCounts>({ checkin: 0, activity: 0, session: 0 });
   const [pickerOpen, setPickerOpen] = useState(false);
   const [streakReloadKey, setStreakReloadKey] = useState(0);
+  const [activitiesToday, setActivitiesToday] = useState<number>(0);
+  const [savingEveningGoal, setSavingEveningGoal] = useState(false);
 
   // Refresh time context every minute so partOfDay stays accurate without reload.
   useEffect(() => {
@@ -329,11 +331,13 @@ const Today = () => {
         supabase.from("activity_logs").select("date").eq("user_id", user.id).gte("date", since),
         supabase.from("exercise_sessions").select("created_at").eq("user_id", user.id).gte("created_at", sinceTs),
       ]);
+      const todayStr = new Date().toISOString().split("T")[0];
       setStreakCounts({
         checkin: countDaysInWindow((ci.data ?? []) as any[]),
         activity: countDaysInWindow((al.data ?? []) as any[]),
         session: countDaysInWindow((es.data ?? []) as any[]),
       });
+      setActivitiesToday(((al.data ?? []) as any[]).filter((r) => r.date === todayStr).length);
     })();
   }, [user, streakReloadKey]);
 
@@ -356,6 +360,31 @@ const Today = () => {
       return;
     }
     toast.success(`${a.label} loggad`);
+    setStreakReloadKey((k) => k + 1);
+  };
+
+  const saveEveningGoal = async () => {
+    if (!user || savingEveningGoal) return;
+    setSavingEveningGoal(true);
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.(10);
+    const { error } = await supabase.from("activity_logs").insert({
+      user_id: user.id,
+      date: new Date().toISOString().split("T")[0],
+      activity_slug: "evening-wind-down",
+      label: "Mjuk kvällsstund",
+      category: "Sov bättre",
+      icon: "moon-soft",
+      color: "purple",
+      duration_minutes: 10,
+      mood_delta: 1,
+      note: "Auto-sparat kvällsmål",
+    });
+    setSavingEveningGoal(false);
+    if (error) {
+      toast.error("Kunde inte spara kvällsmålet.");
+      return;
+    }
+    toast.success("Kvällsmål sparat 🌙", { description: "En liten sak räknas. Sov gott." });
     setStreakReloadKey((k) => k + 1);
   };
 
@@ -479,6 +508,21 @@ const Today = () => {
           >
             Logga kvällen
           </Button>
+          {activitiesToday === 0 && (
+            <button
+              onClick={saveEveningGoal}
+              disabled={savingEveningGoal}
+              className={`mt-2 w-full h-12 rounded-full bg-white/15 hover:bg-white/25 text-white font-extrabold press-soft inline-flex items-center justify-center gap-2 transition-colors ${savingEveningGoal ? "opacity-60" : ""}`}
+            >
+              <Moon size={16} />
+              {savingEveningGoal ? "Sparar…" : "Spara kvällsmål (10 min mjuk stund)"}
+            </button>
+          )}
+          {activitiesToday > 0 && (
+            <p className="mt-3 text-xs font-bold opacity-80 text-center">
+              ✓ Du har redan loggat {activitiesToday} {activitiesToday === 1 ? "sak" : "saker"} idag.
+            </p>
+          )}
         </section>
       )}
 
