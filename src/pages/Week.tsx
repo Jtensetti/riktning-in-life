@@ -717,16 +717,19 @@ const Week = () => {
               const delta = a.avgDelta;
               const deltaLabel = delta >= 1.5 ? "Lyfte mycket" : delta >= 0.5 ? "Lyfte" : delta >= -0.5 ? "Neutralt" : "Drog ner";
               return (
-                <div key={i} className={`rounded-3xl p-4 ${colorBg(a.color)} flex items-center gap-3 shadow-card animate-fade-in-up`}
-                  style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}>
-                  <div className="shrink-0 w-11 h-11 rounded-full bg-white/25 grid place-items-center">
-                    <AbstractIcon name={a.icon as IconName} size={22} color="currentColor" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-extrabold text-[15px] truncate">{a.label}</p>
-                    <p className="text-[11px] opacity-90 font-bold">{a.count} ggr · {deltaLabel}</p>
-                  </div>
-                </div>
+                <ColorCard
+                  key={i}
+                  tone={asTone(a.color)}
+                  icon={a.icon as IconName}
+                  iconPosition="bottom-right"
+                  size="sm"
+                  index={i}
+                  ariaLabel={`${a.label}: ${a.count} gånger, ${deltaLabel}`}
+                  className="!min-h-0"
+                >
+                  <p className="font-extrabold text-[15px] truncate">{a.label}</p>
+                  <p className="text-[11px] opacity-90 font-bold">{a.count} ggr · {deltaLabel}</p>
+                </ColorCard>
               );
             })}
           </div>
