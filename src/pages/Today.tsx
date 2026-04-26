@@ -23,6 +23,9 @@ import { ActivityPicker, type ActivityDraft } from "@/components/ActivityPicker"
 import { countDaysInWindow, type StreakCounts } from "@/lib/streaks";
 import { useRecentCheckins, seriesForField } from "@/hooks/useRecentCheckins";
 import { toast } from "sonner";
+import { refreshBaseline, loadBaseline, thresholdsFromBaseline } from "@/lib/baseline";
+import { buildEveningPrediction } from "@/lib/dayInsights";
+import { EveningPredictionCard } from "@/components/EveningPredictionCard";
 
 type Checkin = {
   id: string;
