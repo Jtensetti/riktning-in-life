@@ -10,6 +10,8 @@ import { markOnboarded, saveReminders, type Reminders, defaultReminders } from "
 import { ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 
+const TOTAL_STEPS = 3;
+
 const Onboarding = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -25,7 +27,7 @@ const Onboarding = () => {
     return null;
   }
 
-  const finish = async () => {
+  const finish = async (withReminders: boolean) => {
     if (!user) return;
     setSaving(true);
     if (name.trim()) {
@@ -37,10 +39,14 @@ const Onboarding = () => {
         active: true,
       });
     }
-    saveReminders(reminders);
+    saveReminders(
+      withReminders
+        ? { ...reminders, morning_checkin: true, evening_journal: true, weekly_forms: true }
+        : reminders,
+    );
     markOnboarded();
     setSaving(false);
-    toast.success("Välkommen till Riktning");
+    toast.success("Välkommen");
     navigate("/", { replace: true });
   };
 
@@ -67,7 +73,7 @@ const Onboarding = () => {
 
         {/* Progress */}
         <div className="flex gap-1.5 mb-8">
-          {[0, 1, 2, 3].map(i => (
+          {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
             <span key={i} className={`h-1.5 flex-1 rounded-full ${i <= step ? "bg-orange-start" : "bg-surface-alt"}`} />
           ))}
         </div>
@@ -75,37 +81,27 @@ const Onboarding = () => {
         {step === 0 && (
           <div className="animate-fade-in-up">
             <Illustration name="start" className="w-full h-auto mb-6 rounded-3xl animate-pop-in" />
-            <h1 className="text-[32px] leading-[38px] mb-3">Det här är Riktning</h1>
+            <h1 className="text-[32px] leading-[38px] mb-3">Välkommen till Riktning</h1>
             <p className="text-base text-text-secondary mb-6 leading-relaxed">
-              En lugn app för dig som lever med psykisk ohälsa. Riktning hjälper dig att se rörelse i mående, funktion och återhämtning – och bygga en rapport till din vård.
+              En lugn plats för att se hur du har det över tid. Du loggar lite varje dag — appen hjälper dig att se mönstren.
             </p>
+            <div className="card-cream p-4 mb-4">
+              <p className="text-sm font-extrabold mb-1">Första två veckorna lär jag känna dig</p>
+              <p className="text-xs text-text-secondary">Innan dess visar jag inga upp- eller nedåt-bedömningar. Bara dina dagar.</p>
+            </div>
             <div className="card-cream p-4 mb-6">
-              <p className="text-sm font-extrabold mb-1">Inte diagnostisk</p>
-              <p className="text-xs text-text-secondary">Riktning ersätter inte vård eller behandling. Den hjälper dig att se mönster över tid.</p>
+              <p className="text-sm font-extrabold mb-1">Inte vård</p>
+              <p className="text-xs text-text-secondary">Riktning ersätter inte vård eller behandling. Vid akut fara: ring 112.</p>
             </div>
           </div>
         )}
 
         {step === 1 && (
           <div className="animate-fade-in-up">
-            <Illustration name="baseline" className="w-full h-auto mb-6 rounded-3xl animate-pop-in" />
-            <h1 className="text-[32px] leading-[38px] mb-3">Första 14 dagarna bygger din baslinje</h1>
-            <p className="text-base text-text-secondary mb-6 leading-relaxed">
-              Under de första två veckorna lär appen ditt normalläge. Vi visar inga upp- eller nedåtgående bedömningar förrän baslinjen finns.
-            </p>
-            <div className="card-cream p-4 mb-6">
-              <p className="text-sm font-extrabold mb-1">Spara dagen som den var</p>
-              <p className="text-xs text-text-secondary">En tung dag är inte ett misslyckande. Den är data.</p>
-            </div>
-          </div>
-        )}
-
-        {step === 2 && (
-          <>
             <Illustration name="medication" className="w-full h-auto mb-6 rounded-3xl" />
-            <h1 className="text-[32px] leading-[38px] mb-3">Lägg till läkemedel</h1>
-            <p className="text-sm text-text-secondary mb-6">
-              Valfritt. Du kan alltid lägga till fler senare i Vård.
+            <h1 className="text-[32px] leading-[38px] mb-3">Tar du någon medicin?</h1>
+            <p className="text-base text-text-secondary mb-6 leading-relaxed">
+              Helt valfritt. Du kan lägga till — eller hoppa över — och göra det senare när du vill.
             </p>
             <div className="space-y-4 mb-6">
               <div>
@@ -123,32 +119,41 @@ const Onboarding = () => {
                 </div>
               </div>
             </div>
-          </>
+          </div>
         )}
 
-        {step === 3 && (
-          <>
+        {step === 2 && (
+          <div className="animate-fade-in-up">
             <Illustration name="checkin" className="w-full h-auto mb-6 rounded-3xl" />
-            <h1 className="text-[32px] leading-[38px] mb-3">Påminnelser</h1>
-            <p className="text-sm text-text-secondary mb-6">
-              Valfritt. Du får ingen push i denna version – det här hjälper oss att visa rätt prompt på rätt plats.
+            <h1 className="text-[32px] leading-[38px] mb-3">Vill du ha små påminnelser?</h1>
+            <p className="text-base text-text-secondary mb-6 leading-relaxed">
+              En enkel pingning om dagen — och en kort fråga i veckan. Du kan ändra detta när som helst.
             </p>
             <div className="space-y-3 mb-6">
-              <ToggleRow label="Morgon-checkin" hint="En liten påminnelse att logga dagen" checked={reminders.morning_checkin} onChange={v => setReminders(r => ({ ...r, morning_checkin: v }))} />
-              <ToggleRow label="Kvällsjournal" hint="Spara dagen i tre rader" checked={reminders.evening_journal} onChange={v => setReminders(r => ({ ...r, evening_journal: v }))} />
-              <ToggleRow label="Veckoformulär" hint="PHQ-9, GAD-7, WHO-5" checked={reminders.weekly_forms} onChange={v => setReminders(r => ({ ...r, weekly_forms: v }))} />
+              <ToggleRow
+                label="Påminn mig en gång om dagen"
+                hint="Mjukt — bara så du inte glömmer"
+                checked={reminders.morning_checkin}
+                onChange={v => setReminders(r => ({ ...r, morning_checkin: v, evening_journal: v }))}
+              />
+              <ToggleRow
+                label="En kort fråga i veckan"
+                hint="Korta veckoformulär från vården"
+                checked={reminders.weekly_forms}
+                onChange={v => setReminders(r => ({ ...r, weekly_forms: v }))}
+              />
             </div>
-          </>
+          </div>
         )}
 
         <div className="mt-auto" />
 
         <Button
-          onClick={step < 3 ? next : finish}
+          onClick={step < TOTAL_STEPS - 1 ? next : () => finish(false)}
           disabled={saving}
           className="w-full h-14 rounded-full bg-orange-start hover:bg-orange-deep text-white font-extrabold text-[17px] shadow-soft press-soft"
         >
-          {saving ? "Sparar..." : step < 3 ? "Fortsätt" : "Kom igång"}
+          {saving ? "Sparar..." : step < TOTAL_STEPS - 1 ? "Fortsätt" : "Kom igång"}
         </Button>
       </main>
     </div>
