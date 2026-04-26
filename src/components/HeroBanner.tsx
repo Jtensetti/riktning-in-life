@@ -6,17 +6,10 @@ import { floatDurationFor, type HeroMood } from "@/lib/heroVisuals";
  * tabs and sub-pages. `HeroBanner` is only kept around for `CrisisPlan`
  * which intentionally keeps a distinct emergency framing. New code should
  * not import this component.
- */
- * Standardiserad hero/header-gradient med flytande abstrakt ikon.
- * Använd överst på sidor inuti <AppShell> så får alla sektioner samma
- * padding, radius och timing.
  *
- * Mått (låsta):
- * - höjd: 144px (h-36)
- * - radius: 36px nedre hörn
- * - blob top-6, centrerad, 72px
- * - vågseparator: 60px
- * - animationstiming: float — styrs av `mood` (calm=6s, neutral=4s, lively=3s)
+ * Standardiserad hero/header-gradient med flytande abstrakt ikon.
+ * Mått: höjd 144px, radius 36px nedre hörn, vågseparator 60px,
+ * animationstiming styrs av `mood`.
  */
 export interface HeroBannerProps {
   /** HSL-värde, t.ex. "var(--orange-start)" eller "var(--blue-calm)" */
