@@ -21,6 +21,7 @@ import LearnArticle from "./pages/LearnArticle";
 import Sequences from "./pages/Sequences";
 import CrisisPlan from "./pages/CrisisPlan";
 import QuickLog from "./pages/QuickLog";
+import Health from "./pages/Health";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -68,6 +69,7 @@ const App = () => {
           <Route path="/rutiner" element={<Sequences />} />
           <Route path="/krisplan" element={<CrisisPlan />} />
           <Route path="/snabblogg" element={<QuickLog />} />
+          <Route path="/health" element={<Health />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
