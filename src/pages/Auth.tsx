@@ -21,9 +21,11 @@ const Auth = () => {
     });
     setSending(false);
     if (error) {
+      haptic("error");
       toast.error("Det gick inte att skicka länken. Försök igen.");
       return;
     }
+    haptic("success");
     setSent(true);
   };
 
