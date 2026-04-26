@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import { ColorCard, type CardTone } from "./ColorCard";
-import { iconForActivity } from "@/lib/icons";
 import { type Pick, slotLabel } from "@/lib/recommend";
 
 /** Normalisera godtycklig övnings-färg till en giltig CardTone. */
@@ -15,16 +14,6 @@ const asTone = (color: string): CardTone => {
       return color;
     default:
       return "orange";
-  }
-};
-
-/** Accent åt slot-tonen — används bara på gula kort där text-on-yellow behöver
- *  en mörk ikonfärg för kontrast. */
-const slotAccent = (slot: Pick["slot"]): string => {
-  switch (slot) {
-    case "calm": return "hsl(var(--blue-calm))";
-    case "lift": return "hsl(var(--orange-start))";
-    case "land": return "hsl(var(--pink-move))";
   }
 };
 
@@ -47,27 +36,24 @@ export const ForYouCarousel = ({ picks }: Props) => {
       <div className="overflow-x-auto scrollbar-hide snap-x snap-mandatory flex gap-3 px-6 pb-3 -mb-3">
         {picks.map((p, i) => {
           const tone = asTone(p.exercise.color);
-          const onYellow = tone === "yellow";
           const strong = p.fitScore >= 80;
-          const icon = iconForActivity(undefined, p.exercise.category);
           return (
             <ColorCard
               key={p.exercise.id}
               tone={tone}
-              icon={icon}
-              iconAccent={onYellow ? slotAccent(p.slot) : "hsl(var(--surface))"}
               size="lg"
               index={i}
               onClick={() => navigate(`/ovningar/${p.exercise.id}`)}
-              ariaLabel={`${slotLabel(p.slot)}: ${p.exercise.title}`}
+              ariaLabel={`${slotLabel(p.slot)}: ${p.exercise.title}, ${p.exercise.duration_minutes} minuter`}
               className="shrink-0 w-[78%] snap-start"
               eyebrow={[
                 { label: slotLabel(p.slot), variant: "soft" },
                 ...(strong ? [{ label: "Stark match", variant: "strong" as const }] : []),
               ]}
+              lead={{ value: p.exercise.duration_minutes, unit: "min" }}
               title={p.exercise.title}
               reason={p.reasonLong}
-              metaLeft={`${p.exercise.duration_minutes} min · ${p.reasonShort}`}
+              metaLeft={p.reasonShort}
               showChevron
             />
           );
@@ -76,3 +62,4 @@ export const ForYouCarousel = ({ picks }: Props) => {
     </section>
   );
 };
+
