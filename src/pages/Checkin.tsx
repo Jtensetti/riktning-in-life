@@ -189,10 +189,17 @@ const Checkin = () => {
     }
     setSaving(true);
     const legacy = deriveLegacy();
+    // Foga in den adaptiva djupfrågans svar i note som en taggrad — ingen
+    // schemändring, men sökbart för framtida mönsterdetektion.
+    const baseNote = (form.note ?? "").replace(/\n?#deep:[a-z_]+=.*$/m, "").trimEnd();
+    const noteWithDeep = deepAnswer.trim() && deepField
+      ? `${baseNote}${baseNote ? "\n" : ""}#deep:${deepField}=${deepAnswer.trim()}`
+      : baseNote;
     const { error } = await supabase.from("daily_checkins").upsert({
       user_id: user.id,
       date: todayISO(),
       ...form,
+      note: noteWithDeep || null,
       medication_taken: form.medication_taken || null,
       movement_today: legacy.movement_today || null,
       meaningful_activity: legacy.meaningful_activity || null,
