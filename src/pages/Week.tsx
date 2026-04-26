@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { Illustration } from "@/components/Illustrations";
 import { AbstractIcon, type IconName } from "@/components/AbstractIcon";
+import { iconForActivity } from "@/lib/icons";
 import { ColorCard, type CardTone } from "@/components/ColorCard";
 import { HeroBanner } from "@/components/HeroBanner";
 import { ArrowDown, ArrowUp, ChevronRight, Minus, Sparkles } from "lucide-react";
@@ -633,7 +634,7 @@ const Week = () => {
                         key={a.id}
                         className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-extrabold ${colorBg(a.color)} shadow-card`}
                       >
-                        <AbstractIcon name={a.icon as IconName} size={12} color="currentColor" />
+                        <AbstractIcon name={iconForActivity(a.icon)} size={12} color="currentColor" />
                         <span className="truncate max-w-[140px]">{a.label}</span>
                         {a.duration_minutes != null && <span className="opacity-80">· {a.duration_minutes}m</span>}
                       </span>
@@ -720,7 +721,7 @@ const Week = () => {
                 <ColorCard
                   key={i}
                   tone={asTone(a.color)}
-                  icon={a.icon as IconName}
+                  icon={iconForActivity(a.icon)}
                   iconPosition="bottom-right"
                   size="sm"
                   index={i}
