@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { Illustration } from "@/components/Illustrations";
 import { AbstractIcon, type IconName } from "@/components/AbstractIcon";
+import { iconForActivity } from "@/lib/icons";
 import { ColorCard, type CardTone } from "@/components/ColorCard";
 import { HeroBanner } from "@/components/HeroBanner";
 import { ArrowDown, ArrowUp, ChevronRight, Minus, Sparkles } from "lucide-react";
