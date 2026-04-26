@@ -438,9 +438,14 @@ const Week = () => {
                 <dt className="font-extrabold text-foreground/80 shrink-0">Riktning</dt>
                 <dd>= 100 − dagens belastning. Högre = lättare dag.</dd>
               </div>
-              <div className="flex items-baseline gap-2">
-                <dt className="font-extrabold text-foreground/80 shrink-0">—</dt>
-                <dd>Streck betyder att check-in saknas för dagen.</dd>
+              <div className="flex items-center gap-2">
+                <dt className="shrink-0" aria-hidden>
+                  <span
+                    className="inline-block w-3 h-3 rounded-full bg-surface align-middle"
+                    style={{ border: "1.5px dashed hsl(var(--text-secondary))", opacity: 0.7 }}
+                  />
+                </dt>
+                <dd>Streckad ring = check-in saknas för dagen.</dd>
               </div>
             </dl>
           </ChartCard>
