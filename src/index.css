@@ -126,6 +126,16 @@
     background: hsl(var(--cream-card));
     box-shadow: var(--shadow-card);
   }
+  /* Stort, färgrikt hjältekort. En färg per kort, tjock typografi, ingen ikon-tile. */
+  .card-hero {
+    @apply rounded-[28px] p-7 text-left;
+    box-shadow: var(--shadow-elev);
+  }
+  /* Lugn typografi-ruta utan ikon. För insikter, mjuka påminnelser, status. */
+  .card-quiet {
+    @apply rounded-3xl p-5 text-left;
+    background: hsl(var(--cream-card));
+  }
   .pill {
     @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-bold;
   }
