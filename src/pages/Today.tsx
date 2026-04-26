@@ -538,6 +538,15 @@ const Today = () => {
     return f.kind && f.confidence >= FORECAST_VISIBLE_THRESHOLD ? f : null;
   })();
 
+  // Bygg forecast-signal till rekommendationsmotorn (tvingar t.ex. korta andnings-passar
+  // i calm-sloten vid morgon-oro). null → ingen forcering.
+  const forecastSignal: ForecastSignal | undefined = forecast?.kind
+    ? { kind: forecast.kind, partOfDay: time.partOfDay }
+    : undefined;
+  const picks: Pick[] = showSafety
+    ? []
+    : recommendForToday(library, checkin, time, weather, recentForRec, effectHistory, forecastSignal);
+
   // Levande hero — tid + väder + säsong + dagens energi avgör ton, ikon och tempo.
   const hero = heroVisualsFor({
     time,
