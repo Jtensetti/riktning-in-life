@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { Illustration } from "@/components/Illustrations";
 import { AbstractIcon, type IconName } from "@/components/AbstractIcon";
+import { ColorCard, type CardTone } from "@/components/ColorCard";
 import { HeroBanner } from "@/components/HeroBanner";
 import { ArrowDown, ArrowUp, ChevronRight, Minus, Sparkles } from "lucide-react";
 import {
@@ -59,6 +60,21 @@ const colorHsl = (color: string): string => {
     case "pink": return "hsl(var(--pink-move))";
     case "green": return "hsl(var(--green-recovery))";
     default: return "hsl(var(--orange-start))";
+  }
+};
+
+/** Normalisera godtycklig färg-sträng till en giltig CardTone (ColorCard). */
+const asTone = (color: string): CardTone => {
+  switch (color) {
+    case "orange":
+    case "blue":
+    case "yellow":
+    case "purple":
+    case "pink":
+    case "green":
+      return color;
+    default:
+      return "orange";
   }
 };
 
@@ -404,33 +420,35 @@ const Week = () => {
           </div>
 
           <div className="overflow-x-auto scrollbar-hide snap-x snap-mandatory flex gap-3 px-6 pb-3 -mb-3">
-            {suggestedActions.map(({ priority, exercise }, i) => (
-              <button
-                key={priority.key}
-                onClick={() => navigate(`/ovningar/${exercise.id}`)}
-                className={`shrink-0 w-[78%] snap-start rounded-3xl ${colorBg(priority.color)} p-5 text-left shadow-soft press-soft animate-pop-in flex flex-col gap-3 min-h-[200px] relative overflow-hidden`}
-                style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-1 rounded-full ${priority.color === "yellow" ? "bg-foreground/10" : "bg-white/20"}`}>
+            {suggestedActions.map(({ priority, exercise }, i) => {
+              const tone = asTone(priority.color);
+              const onYellow = tone === "yellow";
+              return (
+                <ColorCard
+                  key={priority.key}
+                  tone={tone}
+                  icon="spark"
+                  iconAccent={onYellow ? colorHsl("orange") : "hsl(var(--surface))"}
+                  size="lg"
+                  index={i}
+                  onClick={() => navigate(`/ovningar/${exercise.id}`)}
+                  ariaLabel={`${priority.title}: ${exercise.title}`}
+                  className="shrink-0 w-[78%] snap-start"
+                >
+                  <span className={`inline-block text-[10px] font-extrabold uppercase tracking-wider px-2 py-1 rounded-full mb-3 ${onYellow ? "bg-foreground/10" : "bg-white/20"}`}>
                     {priority.title}
                   </span>
-                </div>
-                <div className="absolute right-3 top-3 opacity-90 pointer-events-none">
-                  <AbstractIcon name="spark" size={48} color={priority.color === "yellow" ? colorHsl(priority.color) : "currentColor"} />
-                </div>
-                <div className="mt-auto">
                   <h4 className="text-[20px] leading-[24px] font-extrabold mb-1 pr-12">{exercise.title}</h4>
                   <p className="text-sm opacity-90 leading-snug mb-3">{priority.nudge}</p>
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-extrabold opacity-80">{exercise.duration_minutes} min · {exercise.category}</span>
-                    <span className={`shrink-0 grid place-items-center w-9 h-9 rounded-full ${priority.color === "yellow" ? "bg-foreground text-background" : "bg-white/25"}`}>
+                    <span className={`shrink-0 grid place-items-center w-9 h-9 rounded-full ${onYellow ? "bg-foreground text-background" : "bg-white/25"}`}>
                       <ChevronRight size={18} />
                     </span>
                   </div>
-                </div>
-              </button>
-            ))}
+                </ColorCard>
+              );
+            })}
           </div>
         </section>
       )}
@@ -699,16 +717,19 @@ const Week = () => {
               const delta = a.avgDelta;
               const deltaLabel = delta >= 1.5 ? "Lyfte mycket" : delta >= 0.5 ? "Lyfte" : delta >= -0.5 ? "Neutralt" : "Drog ner";
               return (
-                <div key={i} className={`rounded-3xl p-4 ${colorBg(a.color)} flex items-center gap-3 shadow-card animate-fade-in-up`}
-                  style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}>
-                  <div className="shrink-0 w-11 h-11 rounded-full bg-white/25 grid place-items-center">
-                    <AbstractIcon name={a.icon as IconName} size={22} color="currentColor" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-extrabold text-[15px] truncate">{a.label}</p>
-                    <p className="text-[11px] opacity-90 font-bold">{a.count} ggr · {deltaLabel}</p>
-                  </div>
-                </div>
+                <ColorCard
+                  key={i}
+                  tone={asTone(a.color)}
+                  icon={a.icon as IconName}
+                  iconPosition="bottom-right"
+                  size="sm"
+                  index={i}
+                  ariaLabel={`${a.label}: ${a.count} gånger, ${deltaLabel}`}
+                  className="!min-h-0"
+                >
+                  <p className="font-extrabold text-[15px] truncate">{a.label}</p>
+                  <p className="text-[11px] opacity-90 font-bold">{a.count} ggr · {deltaLabel}</p>
+                </ColorCard>
               );
             })}
           </div>
