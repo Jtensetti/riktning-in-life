@@ -58,10 +58,12 @@ export const MetricBars = ({
   );
 
   const computedMax = yMax ?? Math.max(1, ...data.map((d) => d.value));
+  const sig = buildChartSignature(data, defaultTone);
 
   return (
-    <div style={{ height }} role="img" aria-label={valueLabel}>
-      <ResponsiveContainer width="100%" height="100%">
+    <AnimatedChart signature={sig}>
+      <div style={{ height }} role="img" aria-label={valueLabel}>
+        <ResponsiveContainer width="100%" height="100%">
         <BarChart data={rows} margin={{ top: 6, right: 0, bottom: 0, left: showYAxis ? -8 : 0 }} barCategoryGap="22%">
           <XAxis
             dataKey="label"
