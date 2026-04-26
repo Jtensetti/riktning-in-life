@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Check } from "lucide-react";
-import { SunBlob, BreathCircle, MoonBlob, MoveBlob, JournalBlob, CareDoc, FocusBlob } from "@/components/Illustrations";
+import { Illustration, categoryIll } from "@/components/Illustrations";
 import { toast } from "sonner";
 
 type Exercise = {
@@ -32,18 +32,6 @@ const colorBg = (c: string) => {
   }
 };
 const colorText = (c: string) => (c === "yellow" ? "text-foreground" : "text-white");
-
-const IllForColor = ({ c, className }: { c: string; className?: string }) => {
-  switch (c) {
-    case "blue": return <BreathCircle className={className} />;
-    case "purple": return <MoonBlob className={className} />;
-    case "pink": return <MoveBlob className={className} />;
-    case "yellow": return <JournalBlob className={className} />;
-    case "green": return <CareDoc className={className} />;
-    case "orange": return <SunBlob className={className} />;
-    default: return <FocusBlob className={className} />;
-  }
-};
 
 const ExerciseDetail = () => {
   const { id } = useParams();
@@ -89,20 +77,22 @@ const ExerciseDetail = () => {
 
   if (!ex) return <div className="min-h-screen bg-background flex items-center justify-center text-text-secondary">Hämtar...</div>;
 
+  const ill = categoryIll(ex.category);
+
   return (
     <div className="min-h-screen bg-background pb-24">
-      <div className={`${colorBg(ex.color)} ${colorText(ex.color)} px-6 pt-8 pb-12 rounded-b-[40px] relative overflow-hidden`}>
+      <div className={`${colorBg(ex.color)} ${colorText(ex.color)} px-6 pt-8 pb-10 rounded-b-[40px]`}>
         <button
           onClick={() => navigate("/ovningar")}
-          className="flex items-center gap-1 text-sm font-bold mb-6 opacity-90"
+          className="flex items-center gap-1 text-sm font-bold mb-4 opacity-90"
         >
           <ArrowLeft size={18} /> Tillbaka
         </button>
-        <div className="absolute -right-4 -top-2 opacity-90">
-          <IllForColor c={ex.color} className="w-40 h-40" />
+        <div className="rounded-2xl overflow-hidden mb-4 bg-white/10">
+          <Illustration name={ill} className="w-full h-auto" />
         </div>
         <p className="text-xs font-extrabold uppercase tracking-wider opacity-80 mb-1">{ex.category}</p>
-        <h1 className="text-[28px] leading-[34px] pr-32 mb-2">{ex.title}</h1>
+        <h1 className="text-[28px] leading-[34px] mb-2">{ex.title}</h1>
         <p className="text-sm opacity-90">{ex.type} · {ex.duration_minutes} min</p>
       </div>
 
@@ -149,9 +139,9 @@ const ExerciseDetail = () => {
 
         {phase === "doing" && (
           <>
-            <div className="card-cream p-6 text-center mb-6">
-              <div className="flex justify-center mb-4">
-                <IllForColor c={ex.color} className="w-32 h-32" />
+            <div className="card-cream p-4 text-center mb-6">
+              <div className="rounded-2xl overflow-hidden mb-4">
+                <Illustration name={ill} className="w-full h-auto" />
               </div>
               <h3 className="text-xl mb-2">Ta din tid</h3>
               <p className="text-sm text-text-secondary mb-4">

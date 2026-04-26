@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
-import { SunBlob, BreathCircle, MoonBlob, FocusBlob } from "@/components/Illustrations";
+import { Illustration, colorIll } from "@/components/Illustrations";
 import { ChevronRight, LogOut } from "lucide-react";
 import { toast } from "sonner";
 
@@ -56,24 +56,16 @@ const recoveryLabel = (c: Checkin | null) => {
 const riskLabel = (c: Checkin | null) => {
   if (!c) return "Ingen signal";
   switch (c.safety_status) {
-    case "acute":
-      return "Akut";
-    case "active_thoughts":
-      return "Följ upp";
-    case "passive_thoughts":
-      return "Följ upp";
-    default:
-      return "Ingen signal";
+    case "acute": return "Akut";
+    case "active_thoughts": return "Följ upp";
+    case "passive_thoughts": return "Följ upp";
+    default: return "Ingen signal";
   }
 };
 
-const formatDate = () => {
-  return new Date().toLocaleDateString("sv-SE", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
-};
+const formatDate = () => new Date().toLocaleDateString("sv-SE", {
+  weekday: "long", day: "numeric", month: "long",
+});
 
 const recommend = (c: Checkin | null) => {
   if (!c) return { title: "8 min morgonstart", reason: "En mjuk start på dagen", color: "bg-orange-start" };
@@ -82,6 +74,11 @@ const recommend = (c: Checkin | null) => {
   if ((c.sleep_hours ?? 7) < 5) return { title: "Kvällslandning", reason: "För kort sömn", color: "bg-purple-sleep" };
   return { title: "15 min dagsljuspromenad", reason: "Stabilt – håll riktningen", color: "bg-pink-move" };
 };
+
+const colorOf = (bg: string) => bg.replace("bg-", "").includes("blue") ? "blue"
+  : bg.includes("purple") ? "purple"
+  : bg.includes("pink") ? "pink"
+  : "orange";
 
 const Today = () => {
   const { user, loading } = useAuth();
@@ -95,17 +92,16 @@ const Today = () => {
 
   useEffect(() => {
     if (!user) return;
-    const fetchCheckin = async () => {
-      const { data } = await supabase
-        .from("daily_checkins")
-        .select("id,date,mood_heaviness,anxiety,energy,function_score,sleep_hours,safety_status")
-        .eq("user_id", user.id)
-        .eq("date", todayISO())
-        .maybeSingle();
-      setCheckin(data as Checkin | null);
-      setFetching(false);
-    };
-    fetchCheckin();
+    supabase
+      .from("daily_checkins")
+      .select("id,date,mood_heaviness,anxiety,energy,function_score,sleep_hours,safety_status")
+      .eq("user_id", user.id)
+      .eq("date", todayISO())
+      .maybeSingle()
+      .then(({ data }) => {
+        setCheckin(data as Checkin | null);
+        setFetching(false);
+      });
   }, [user]);
 
   if (loading || fetching) {
@@ -141,6 +137,9 @@ const Today = () => {
 
       {showSafety && (
         <div className="rounded-3xl border-2 border-red-risk bg-red-bg p-5 mb-7">
+          <div className="mb-3 -mx-1">
+            <Illustration name="safety" className="w-full h-auto rounded-2xl" />
+          </div>
           <h3 className="text-lg font-extrabold text-red-risk mb-2">Allvarlig signal</h3>
           <p className="text-sm text-foreground/80 mb-3">
             Det här ska inte hanteras som vanlig statistik. Kontakta vården, psykiatrisk akutmottagning, 1177 eller 112 vid akut fara.
@@ -154,14 +153,14 @@ const Today = () => {
         </div>
       )}
 
-      {/* State card */}
-      <section className="card-cream p-6 mb-7 relative overflow-hidden">
-        <div className="absolute -right-4 -top-4 opacity-90">
-          <SunBlob className="w-28 h-28" />
+      {/* State card with illustration */}
+      <section className="card-cream p-5 mb-7">
+        <div className="-mx-1 mb-4">
+          <Illustration name="checkin" className="w-full h-auto rounded-2xl" />
         </div>
-        <h2 className="text-2xl pr-24 mb-1">{state.title}</h2>
-        <p className="text-sm text-text-secondary pr-20 mb-5">{state.sub}</p>
-        <div className="grid grid-cols-2 gap-2">
+        <h2 className="text-2xl mb-1">{state.title}</h2>
+        <p className="text-sm text-text-secondary mb-5">{state.sub}</p>
+        <div className="grid grid-cols-2 gap-2 mb-5">
           <Pill label="Belastning" value={burdenLabel(checkin)} />
           <Pill label="Funktion" value={fnLabel(checkin)} />
           <Pill label="Återhämtning" value={recoveryLabel(checkin)} />
@@ -169,32 +168,29 @@ const Today = () => {
         </div>
         <Button
           onClick={() => navigate("/checkin")}
-          className="w-full mt-5 h-12 rounded-full bg-foreground hover:bg-foreground/90 text-background font-extrabold text-[17px]"
+          className="w-full h-12 rounded-full bg-foreground hover:bg-foreground/90 text-background font-extrabold text-[17px]"
         >
           {checkin ? "Uppdatera dagen" : "Logga dagen"}
         </Button>
       </section>
 
-      {/* Recommended */}
       <h3 className="text-xl mb-3">Rekommenderat just nu</h3>
-      <div className={`rounded-3xl ${rec.color} text-white p-5 mb-4 shadow-soft relative overflow-hidden`}>
-        <div className="absolute -right-2 -bottom-2 opacity-90">
-          {rec.color.includes("blue") ? <BreathCircle className="w-28 h-28" /> :
-           rec.color.includes("purple") ? <MoonBlob className="w-28 h-28" /> :
-           rec.color.includes("pink") ? <FocusBlob className="w-28 h-28" /> :
-           <SunBlob className="w-28 h-28" />}
+      <div className={`rounded-3xl ${rec.color} text-white p-1 mb-4 shadow-soft overflow-hidden`}>
+        <div className="rounded-[20px] overflow-hidden mb-1">
+          <Illustration name={colorIll(colorOf(rec.color))} className="w-full h-auto" />
         </div>
-        <h4 className="text-2xl pr-20 mb-1">{rec.title}</h4>
-        <p className="text-sm opacity-90 pr-20 mb-4">{rec.reason}</p>
-        <Button
-          onClick={() => navigate("/ovningar")}
-          className="bg-white/20 hover:bg-white/30 text-white rounded-full font-extrabold backdrop-blur"
-        >
-          Starta <ChevronRight size={18} />
-        </Button>
+        <div className="px-4 pb-4 pt-1">
+          <h4 className="text-2xl mb-1">{rec.title}</h4>
+          <p className="text-sm opacity-90 mb-4">{rec.reason}</p>
+          <Button
+            onClick={() => navigate("/ovningar")}
+            className="bg-white/20 hover:bg-white/30 text-white rounded-full font-extrabold backdrop-blur"
+          >
+            Starta <ChevronRight size={18} />
+          </Button>
+        </div>
       </div>
 
-      {/* Quick chips */}
       <div className="flex gap-2 flex-wrap mb-4">
         <Chip onClick={() => navigate("/ovningar")}>Andning 4 min</Chip>
         <Chip onClick={() => navigate("/journal")}>Skriv tre rader</Chip>
