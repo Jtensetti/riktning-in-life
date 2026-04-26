@@ -10,7 +10,7 @@ import { HeroBanner } from "@/components/HeroBanner";
 import { WeatherChip } from "@/components/WeatherChip";
 import { WeatherPermissionCard } from "@/components/WeatherPermissionCard";
 import { ChevronRight, Settings as SettingsIcon } from "lucide-react";
-import { isOnboarded } from "@/lib/settings";
+import { useUserSettings } from "@/hooks/useUserSettings";
 import { getTimeContext, type TimeContext } from "@/lib/timeContext";
 import { useWeather, isOutdoorFriendly, weatherLabel, hasAskedWeatherPermission, isWeatherPermissionGranted, isWeatherPermissionDismissed, dismissWeatherPermission, type Weather } from "@/lib/weather";
 import { ForYouCarousel } from "@/components/ForYouCarousel";
@@ -231,6 +231,7 @@ const heroToneFor = (p: TimeContext["partOfDay"]): string => {
 
 const Today = () => {
   const { user, loading } = useAuth();
+  const settings = useUserSettings();
   const navigate = useNavigate();
   const [checkin, setCheckin] = useState<Checkin | null>(null);
   const [recent, setRecent] = useState<RecentSession[]>([]);
@@ -263,10 +264,14 @@ const Today = () => {
       navigate("/auth");
       return;
     }
-    if (!isOnboarded()) {
+    // Vänta in att serverns inställningar synkats innan vi beslutar om
+    // omdirigering — annars kan en återinloggning på en ny enhet sparka
+    // användaren till /onboarding trots att de redan onboardats tidigare.
+    if (!settings.hydrated) return;
+    if (!settings.onboarded) {
       navigate("/onboarding", { replace: true });
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, settings.hydrated, settings.onboarded]);
 
   useEffect(() => {
     if (!user) return;
