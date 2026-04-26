@@ -430,7 +430,8 @@ const Today = () => {
   const showSafety = checkin?.safety_status === "active_thoughts" || checkin?.safety_status === "acute";
   const rec = showSafety ? null : recommend(checkin, time, weather);
 
-  // Smart "För dig just nu"-rekommendationer
+  // Smart "För dig just nu"-rekommendationer (picks beräknas efter forecast nedan så att
+  // vi kan tvinga lugna passar vid morgon-oro).
   const recentForRec = recent
     .filter((s) => s.exercises)
     .map((s) => ({
@@ -438,7 +439,35 @@ const Today = () => {
       created_at: s.created_at,
       exercise_id: s.exercise_id ?? undefined,
     }));
-  const picks: Pick[] = showSafety ? [] : recommendForToday(library, checkin, time, weather, recentForRec);
+
+  // Personlig effekt-historik per övning: humörlyft + orosänkning, normaliserat till skalsteg.
+  // Liknar logik i buildLiftSummary men aggregerar per exercise_id för snabbt uppslag.
+  const effectHistory: EffectHistory = (() => {
+    const byId: Record<string, { sum: number; count: number }> = {};
+    const byCat: Record<string, { sum: number; count: number }> = {};
+    for (const s of recent) {
+      if (!s.exercise_id || !s.exercises) continue;
+      const moodDelta = s.mood_before != null && s.mood_after != null
+        ? (s.mood_after - s.mood_before) / 3
+        : 0;
+      const anxRelief = s.anxiety_before != null && s.anxiety_after != null
+        ? (s.anxiety_before - s.anxiety_after) / 3
+        : 0;
+      if (s.mood_before == null && s.anxiety_before == null) continue;
+      const combined = moodDelta + anxRelief;
+      const ex = (byId[s.exercise_id] ??= { sum: 0, count: 0 });
+      ex.sum += combined;
+      ex.count += 1;
+      const cat = (byCat[s.exercises.category] ??= { sum: 0, count: 0 });
+      cat.sum += combined;
+      cat.count += 1;
+    }
+    const toStat = (m: Record<string, { sum: number; count: number }>) =>
+      Object.fromEntries(
+        Object.entries(m).map(([k, v]) => [k, { avgDelta: Math.round((v.sum / v.count) * 10) / 10, count: v.count }]),
+      );
+    return { byExerciseId: toStat(byId), byCategory: toStat(byCat) };
+  })();
 
   // 7-day insights
   const moodTrend = computeTrend(trendData, c => c.mood_heaviness, true);
