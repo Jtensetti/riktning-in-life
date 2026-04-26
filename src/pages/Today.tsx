@@ -28,6 +28,7 @@ import { buildEveningPrediction } from "@/lib/dayInsights";
 import { EveningPredictionCard } from "@/components/EveningPredictionCard";
 import { buildForecast, FORECAST_VISIBLE_THRESHOLD } from "@/lib/forecast";
 import { TomorrowForecastCard } from "@/components/TomorrowForecastCard";
+import { ForecastEvidenceStrip } from "@/components/ForecastEvidenceStrip";
 import { heroVisualsFor } from "@/lib/heroVisuals";
 import { readAndUpdateLastSeen, greetingFor as greetingForLastSeen, type LastSeen } from "@/lib/lastSeen";
 import { getToneFor, phrasebookFor } from "@/lib/tone";
