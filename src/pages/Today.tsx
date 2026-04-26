@@ -19,6 +19,45 @@ type Checkin = {
   safety_status: string | null;
 };
 
+type TrendCheckin = {
+  date: string;
+  mood_heaviness: number | null;
+  function_score: number | null;
+  sleep_hours: number | null;
+};
+
+type Trend = { dir: "up" | "down" | "flat"; deltaLabel: string; tone: "good" | "warn" | "neutral" };
+
+const isoDaysAgo = (n: number) => {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().split("T")[0];
+};
+
+const avg = (xs: (number | null)[]) => {
+  const v = xs.filter((x): x is number => x != null);
+  return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null;
+};
+
+// goodWhenLower=true means lower values are better (e.g. mood_heaviness)
+const computeTrend = (cs: TrendCheckin[], pick: (c: TrendCheckin) => number | null, goodWhenLower: boolean): { value: number | null; sub: string; trend: Trend } => {
+  const d7 = isoDaysAgo(6);
+  const d14 = isoDaysAgo(13);
+  const cur = cs.filter(c => c.date >= d7).map(pick);
+  const prev = cs.filter(c => c.date >= d14 && c.date < d7).map(pick);
+  const a = avg(cur);
+  const b = avg(prev);
+  if (a == null) return { value: null, sub: "Inget loggat ännu", trend: { dir: "flat", deltaLabel: "—", tone: "neutral" } };
+  if (b == null) return { value: a, sub: "Bygger baslinje", trend: { dir: "flat", deltaLabel: "Ny", tone: "neutral" } };
+  const delta = a - b;
+  const pct = b !== 0 ? Math.round((delta / b) * 100) : 0;
+  const dir: "up" | "down" | "flat" = Math.abs(pct) < 3 ? "flat" : delta > 0 ? "up" : "down";
+  const improved = goodWhenLower ? delta < 0 : delta > 0;
+  const tone: Trend["tone"] = dir === "flat" ? "neutral" : improved ? "good" : "warn";
+  const deltaLabel = dir === "flat" ? "Stabil" : `${delta > 0 ? "+" : ""}${pct}%`;
+  return { value: a, sub: `Snitt 7 dagar`, trend: { dir, deltaLabel, tone } };
+};
+
 type RecentSession = {
   id: string;
   created_at: string;
@@ -103,6 +142,7 @@ const Today = () => {
   const navigate = useNavigate();
   const [checkin, setCheckin] = useState<Checkin | null>(null);
   const [recent, setRecent] = useState<RecentSession[]>([]);
+  const [trendData, setTrendData] = useState<TrendCheckin[]>([]);
   const [fetching, setFetching] = useState(true);
 
   useEffect(() => {
@@ -119,7 +159,7 @@ const Today = () => {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const [c, r] = await Promise.all([
+      const [c, r, t] = await Promise.all([
         supabase
           .from("daily_checkins")
           .select("id,date,mood_heaviness,anxiety,energy,function_score,sleep_hours,safety_status")
@@ -132,9 +172,16 @@ const Today = () => {
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
           .limit(3),
+        supabase
+          .from("daily_checkins")
+          .select("date,mood_heaviness,function_score,sleep_hours")
+          .eq("user_id", user.id)
+          .gte("date", isoDaysAgo(13))
+          .order("date", { ascending: true }),
       ]);
       setCheckin(c.data as Checkin | null);
       setRecent((r.data ?? []) as unknown as RecentSession[]);
+      setTrendData((t.data ?? []) as TrendCheckin[]);
       setFetching(false);
     };
     load();
@@ -150,8 +197,13 @@ const Today = () => {
 
   const state = stateLabel(checkin);
   const showSafety = checkin?.safety_status === "active_thoughts" || checkin?.safety_status === "acute";
-  // Spec: do not show cheerful recommendations during a safety state
   const rec = showSafety ? null : recommend(checkin);
+
+  // 7-day insights
+  const moodTrend = computeTrend(trendData, c => c.mood_heaviness, true);
+  const sleepTrend = computeTrend(trendData, c => c.sleep_hours == null ? null : Number(c.sleep_hours), false);
+  const funcTrend = computeTrend(trendData, c => c.function_score, false);
+  const hasInsights = trendData.length >= 2;
 
   return (
     <AppShell>
@@ -235,6 +287,38 @@ const Today = () => {
         </>
       )}
 
+      {hasInsights && !showSafety && (
+        <section className="mb-7">
+          <h3 className="text-xl mb-1">Nya insikter</h3>
+          <p className="text-sm text-text-secondary mb-3">Riktning senaste 7 dagarna</p>
+          <div className="grid grid-cols-3 gap-3">
+            <InsightCard
+              label="Humör"
+              value={moodTrend.value}
+              suffix="/10"
+              invert
+              trend={moodTrend.trend}
+              colorClass="bg-orange-start"
+            />
+            <InsightCard
+              label="Sömn"
+              value={sleepTrend.value}
+              suffix=" h"
+              decimals={1}
+              trend={sleepTrend.trend}
+              colorClass="bg-purple-sleep"
+            />
+            <InsightCard
+              label="Funktion"
+              value={funcTrend.value}
+              suffix="/10"
+              trend={funcTrend.trend}
+              colorClass="bg-green-recovery"
+            />
+          </div>
+        </section>
+      )}
+
       {recent.length > 0 && (
         <section className="mb-4">
           <h3 className="text-xl mb-3">Senaste aktivitet</h3>
@@ -286,5 +370,49 @@ const Chip = ({ children, onClick }: { children: React.ReactNode; onClick: () =>
     {children}
   </button>
 );
+
+const InsightCard = ({
+  label,
+  value,
+  suffix,
+  decimals = 0,
+  invert,
+  trend,
+  colorClass,
+}: {
+  label: string;
+  value: number | null;
+  suffix: string;
+  decimals?: number;
+  invert?: boolean;
+  trend: Trend;
+  colorClass: string;
+}) => {
+  const display = value == null ? "—" : value.toFixed(decimals);
+  // Visual: invert means lower=better, so on insight cards we still show the raw average
+  const toneClass =
+    trend.tone === "good"
+      ? "bg-green-recovery/15 text-green-recovery"
+      : trend.tone === "warn"
+        ? "bg-red-bg text-red-risk"
+        : "bg-surface-alt text-text-secondary";
+  const arrow = trend.dir === "up" ? "↑" : trend.dir === "down" ? "↓" : "→";
+  return (
+    <div className={`rounded-3xl ${colorClass} text-white p-4 shadow-soft flex flex-col justify-between min-h-[128px]`}>
+      <div className="text-[12px] font-extrabold uppercase tracking-wide opacity-90">{label}</div>
+      <div className="mt-2">
+        <div className="text-[28px] leading-none font-extrabold">
+          {display}
+          <span className="text-sm opacity-80 font-bold">{suffix}</span>
+        </div>
+        <div className={`mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-extrabold ${toneClass}`}>
+          <span aria-hidden>{arrow}</span>
+          <span>{trend.deltaLabel}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 
 export default Today;
