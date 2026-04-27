@@ -245,6 +245,8 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
       semantic_kind: selected.semantic_kind ?? null,
       intensity: selected.semantic_kind === "rorelse" ? intensity : null,
       with_who: selected.semantic_kind === "socialt" ? withWho : null,
+      sleep_quality: selected.semantic_kind === "somn" ? sleepQuality : null,
+      location: selected.semantic_kind === "aterhamtning" ? location : null,
     });
     onOpenChange(false);
   };
