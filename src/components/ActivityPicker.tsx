@@ -38,7 +38,7 @@ export type ActivityDraft = {
   color: string;
   duration_minutes: number;
   mood_delta: number; // -2..+2
-  semantic_kind: SemanticKind | null;
+  semantic_kind?: SemanticKind | null;
   intensity?: Intensity | null;
   with_who?: WithWho | null;
 };
