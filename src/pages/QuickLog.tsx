@@ -68,6 +68,7 @@ type MoodEdit = { id: string; heaviness: number; anxiety: number; energy: number
 const QuickLog = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [openTpl, setOpenTpl] = useState<TemplateKey | null>(null);
   const [tab, setTab] = useState<"today" | "history">("today");
   const [entries, setEntries] = useState<DayEntry[]>([]);
@@ -79,6 +80,18 @@ const QuickLog = () => {
   const [moodEditSaved, setMoodEditSaved] = useState<MoodEdit | null>(null);
 
   useEffect(() => { if (!loading && !user) navigate("/auth"); }, [user, loading, navigate]);
+
+  // Open a template directly from ?open=<key> (used by desktop SideNav chips).
+  useEffect(() => {
+    const key = searchParams.get("open") as TemplateKey | null;
+    if (key && TEMPLATES.some(t => t.key === key)) {
+      setOpenTpl(key);
+      // Strip the param so re-renders / back-nav don't re-open the drawer.
+      const next = new URLSearchParams(searchParams);
+      next.delete("open");
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   // Load last 14 days of entries from all 4 sources
   useEffect(() => {
