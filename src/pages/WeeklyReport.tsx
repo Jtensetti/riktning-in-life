@@ -307,14 +307,14 @@ const WeeklyReport = () => {
           label: "Sömn",
           value: summary.sleepHours == null ? "—" : `${summary.sleepHours.toFixed(1)} h`,
           sub: `${summary.lowSleepNights} natt${summary.lowSleepNights === 1 ? "" : "er"} under 6 h · kvalitet ${summary.sleepQuality == null ? "—" : summary.sleepQuality.toFixed(1) + "/10"}`,
-          trend: fmtTrend(summary.sleepHours, summary.sleepHoursPrev, " h"),
+          trend: fmtTrend(summary.sleepHours, summary.sleepHoursPrev, " h", "sleep_hours"),
           color: PDF_COLORS.purple,
         },
         {
           label: "Rörelse",
           value: `${movementDays} / 7 dgr`,
           sub: `${summary.movementYes} full · ${summary.movementLittle} lite · ${summary.totalActMinutes} min loggat`,
-          trend: fmtTrendInt(movementDays, movementDaysPrev, " dgr"),
+          trend: fmtTrendInt(movementDays, movementDaysPrev, " dgr", "energy"),
           color: PDF_COLORS.green,
         },
         {
@@ -329,7 +329,7 @@ const WeeklyReport = () => {
           sub: `${medsTotal} aktiv${medsTotal === 1 ? "" : "a"} · ${summary.sideEffects.length === 0 ? "inga biverkningar" : `${summary.sideEffects.length} biverkning${summary.sideEffects.length === 1 ? "" : "ar"}`}`,
           trend:
             summary.adherence != null && summary.adherencePrev != null
-              ? fmtTrendInt(summary.adherence, summary.adherencePrev, " %")
+              ? fmtTrendInt(summary.adherence, summary.adherencePrev, " %", "medications_taken")
               : undefined,
           color: PDF_COLORS.amber,
         },
