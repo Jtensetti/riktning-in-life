@@ -154,7 +154,7 @@ const Exercises = () => {
         )}
       </h2>
 
-      <div className="space-y-4">
+      <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-4">
         {filtered.map((ex, i) => (
           <button
             key={ex.id}
