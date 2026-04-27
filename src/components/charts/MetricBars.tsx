@@ -65,7 +65,7 @@ export const MetricBars = ({
 
   return (
     <AnimatedChart signature={sig}>
-      <div style={{ height }} role="img" aria-label={valueLabel}>
+      <div style={{ height: resolvedHeight }} role="img" aria-label={valueLabel}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={rows}

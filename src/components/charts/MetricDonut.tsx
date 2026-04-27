@@ -49,7 +49,7 @@ export const MetricDonut = ({
 
   return (
     <AnimatedChart signature={sig} className="relative">
-      <div className="relative" style={{ width: size, height: size }} role="img" aria-label="Fördelning">
+      <div className="relative" style={{ width: resolvedSize, height: resolvedSize }} role="img" aria-label="Fördelning">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <ThemedTooltip

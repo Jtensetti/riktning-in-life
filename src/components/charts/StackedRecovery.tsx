@@ -63,7 +63,7 @@ export const StackedRecovery = ({ data, height }: Props) => {
   return (
     <AnimatedChart signature={sig}>
       <div role="img" aria-label={ariaLabel}>
-        <div style={{ height }}>
+        <div style={{ height: resolvedHeight }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={chartMargins.bars} barCategoryGap={chartBarLayout.categoryGap}>
               <ThemedXAxis />

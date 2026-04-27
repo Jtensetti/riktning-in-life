@@ -54,7 +54,7 @@ export const ActivityBars = ({ data, height, emptyMin = 4, label = "Aktivitet" }
 
   return (
     <AnimatedChart signature={sig}>
-      <div style={{ height }} role="img" aria-label={`${label} per dag senaste veckan`}>
+      <div style={{ height: resolvedHeight }} role="img" aria-label={`${label} per dag senaste veckan`}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={chartMargins.bars} barCategoryGap={chartBarLayout.categoryGap}>
             <ThemedXAxis />
