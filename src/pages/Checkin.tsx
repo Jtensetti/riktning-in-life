@@ -218,6 +218,13 @@ const Checkin = () => {
     }
     toast.success("Tack — det här hjälper dig se mönster.");
 
+    // Signalera till desktop-topbar (och övriga lyssnare) att dagens check-in är klar
+    // så "Gör check-in"-pillen försvinner direkt utan att behöva en ny DB-roundtrip.
+    try {
+      sessionStorage.setItem("riktning:lastCheckinDate", todayISO());
+      window.dispatchEvent(new Event("riktning:checkin-done"));
+    } catch { /* sessionStorage kan vara blockerad i privat läge */ }
+
     // Auto-refresh baseline med färsk data så att tröskelvärden alltid är aktuella.
     // Body är fire-and-forget — vi blockerar inte navigeringen.
     void (async () => {
