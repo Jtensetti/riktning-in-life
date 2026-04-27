@@ -59,7 +59,7 @@ export const TrendLine = ({ dates, series, showAxis = true, height }: Props) => 
 
   return (
     <AnimatedChart signature={sig}>
-      <div style={{ height }} role="img" aria-label={`Trend för ${series.map((s) => s.label).join(", ")}`}>
+      <div style={{ height: resolvedHeight }} role="img" aria-label={`Trend för ${series.map((s) => s.label).join(", ")}`}>
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={chartMargins.area}>
             <defs>
