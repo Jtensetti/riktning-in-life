@@ -377,7 +377,6 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
                       } ${o.tone}`}
                       style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
                     >
-                      <span className="text-2xl leading-none">{o.emoji}</span>
                       <span className="flex-1 text-left font-extrabold text-[14px]">{o.text}</span>
                       {active && <span className="text-[10px] font-extrabold uppercase tracking-wider opacity-70">Vald</span>}
                     </button>
