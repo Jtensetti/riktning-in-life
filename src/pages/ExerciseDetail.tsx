@@ -5,11 +5,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Check, ChevronRight } from "lucide-react";
+import { ArrowLeft, ArrowDown, ArrowUp, Check, ChevronRight, Minus } from "lucide-react";
 import { Illustration, categoryIll } from "@/components/Illustrations";
 import { AbstractIcon } from "@/components/AbstractIcon";
 import { iconForExerciseCategory } from "@/lib/icons";
 import { MechanismCard, type Evidence } from "@/components/MechanismCard";
+import { formatDelta, deltaChipClass } from "@/lib/valence";
 import { toast } from "sonner";
 
 type Exercise = {
