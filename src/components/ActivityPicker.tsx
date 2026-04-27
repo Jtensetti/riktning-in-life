@@ -139,6 +139,8 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
   const [mood, setMood] = useState(1);
   const [intensity, setIntensity] = useState<Intensity | null>(null);
   const [withWho, setWithWho] = useState<WithWho | null>(null);
+  const [sleepQuality, setSleepQuality] = useState<SleepQuality | null>(null);
+  const [location, setLocation] = useState<Location | null>(null);
   const [customLabel, setCustomLabel] = useState("");
   const recentSlugs = useRecentActivities(4);
 
