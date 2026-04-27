@@ -153,7 +153,7 @@ const Analysis = () => {
                 title={l.label}
                 meta={`${l.count} ggr · snittlyft ${l.avgDelta >= 0 ? "+" : ""}${l.avgDelta}`}
                 trailing={
-                  <span className="inline-flex items-center gap-1 rounded-full bg-green-recovery/15 text-green-recovery px-2 py-1 text-[12px] font-extrabold">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-green-recovery/15 text-green-recovery px-2 py-1 text-meta normal-case tracking-normal">
                     {l.effectLabel}
                   </span>
                 }
@@ -167,7 +167,7 @@ const Analysis = () => {
                 title={d.label}
                 meta={`${d.count} ggr · snittlyft ${d.avgDelta >= 0 ? "+" : ""}${d.avgDelta}`}
                 trailing={
-                  <span className="inline-flex items-center gap-1 rounded-full bg-red-bg text-red-risk/90 px-2 py-1 text-[12px] font-extrabold">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-red-bg text-red-risk/90 px-2 py-1 text-meta normal-case tracking-normal">
                     Drar
                   </span>
                 }
