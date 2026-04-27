@@ -8,7 +8,7 @@ import { ScreenHeader } from "@/components/ui-kit/ScreenHeader";
 import { ColorCard } from "@/components/ColorCard";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { Check, ChevronRight, Clock, History, Plus, Minus, Trash2 } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Clock, History, Plus, Minus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 // === Types ===
