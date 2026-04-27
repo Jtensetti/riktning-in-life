@@ -3,11 +3,11 @@ import { LineChart, Line, ResponsiveContainer } from "recharts";
 import { toneHsl, type ChartTone } from "@/lib/chartColors";
 import {
   chartAnimation,
-  chartHeights,
   chartLineActiveDot,
   chartLineDot,
   chartMargins,
 } from "@/lib/chartTheme";
+import { useChartHeight } from "@/lib/useChartHeight";
 import { AnimatedChart, buildChartSignature } from "./AnimatedChart";
 import { ThemedGrid, ThemedTooltip, ThemedXAxis, ThemedYAxis } from "./ChartPrimitives";
 
@@ -46,7 +46,7 @@ interface Props {
 export const MetricLine = ({
   data,
   tone = "green",
-  height = chartHeights.expanded,
+  height,
   yMin = 0,
   yMax = 100,
   yTicks = [0, 25, 50, 75, 100],
@@ -55,13 +55,15 @@ export const MetricLine = ({
   showYAxis = true,
   labelFormatter,
 }: Props) => {
+  const heights = useChartHeight();
+  const resolvedHeight = height ?? heights.expanded;
   const stroke = toneHsl(tone);
   const gradId = useMemo(() => `metric-line-${tone}-${Math.random().toString(36).slice(2, 7)}`, [tone]);
   const sig = buildChartSignature(data, tone);
 
   return (
     <AnimatedChart signature={sig}>
-      <div style={{ height }} role="img" aria-label={valueLabel}>
+      <div style={{ height: resolvedHeight }} role="img" aria-label={valueLabel}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={showYAxis ? chartMargins.lineWithY : chartMargins.line}>
             <defs>
