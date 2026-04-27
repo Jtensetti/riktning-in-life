@@ -85,16 +85,17 @@ const WeeklyReport = () => {
     activities: { date: string; label: string; category: string; duration_minutes: number | null; mood_delta: number | null }[];
   } | null>(null);
   const [loadingData, setLoadingData] = useState(true);
-  const [questions, setQuestions] = useState<string[]>(() => {
-    try {
-      const raw = localStorage.getItem(QUESTIONS_KEY);
-      return raw ? (JSON.parse(raw) as string[]) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [questions, setQuestions] = useState<string[]>(readCachedQuestions);
   const [draft, setDraft] = useState("");
   const [includeJournal, setIncludeJournal] = useState(true);
+
+  // Lyssna på serverhydrering — på en ny enhet vill vi att frågorna dyker upp
+  // så fort hydrateUserSettings har skrivit ner cachen.
+  useEffect(() => {
+    const onHydrated = () => setQuestions(readCachedQuestions());
+    window.addEventListener(SETTINGS_HYDRATED_EVENT, onHydrated);
+    return () => window.removeEventListener(SETTINGS_HYDRATED_EVENT, onHydrated);
+  }, []);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
