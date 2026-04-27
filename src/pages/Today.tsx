@@ -390,6 +390,8 @@ const Today = () => {
       semantic_kind: a.semantic_kind ?? null,
       intensity: a.intensity ?? null,
       with_who: a.with_who ?? null,
+      sleep_quality: a.sleep_quality ?? null,
+      location: a.location ?? null,
     } as any);
     if (error) {
       toast.error("Kunde inte logga. Försök igen.");
