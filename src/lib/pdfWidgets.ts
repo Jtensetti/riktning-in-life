@@ -12,6 +12,29 @@
 
 import type jsPDF from "jspdf";
 
+/* ---------- A4-format & marginaler (single source of truth) ----------
+ * Alla kliniska rapporter exporteras som A4 i punkter (jsPDF "pt" är
+ * PostScript-points: 72 pt = 1 tum). A4 = 595.28 × 841.89 pt.
+ *
+ * Marginalen är låst till 40 pt (≈14 mm) — bekvämt för utskrift utan att
+ * äta in på den vita ytan som charts behöver för att andas. Den exporteras
+ * som konstant så call-sites alltid använder exakt samma värden och PDF:erna
+ * blir layout-identiska oavsett vilken sida de genereras från.
+ *
+ * Vi skalar *aldrig* ned text för att få in långa rubriker — vi radbryter
+ * istället (se drawReportHeader). Det skyddar typografisk hierarki och
+ * läsbarhet i print.
+ */
+export const PDF_PAGE = {
+  format: "a4" as const,
+  unit: "pt" as const,
+  /** Sidmarginal i punkter (≈14 mm). */
+  margin: 40,
+  /** A4-mått i punkter — informativt; använd doc.internal.pageSize för exakthet. */
+  widthPt: 595.28,
+  heightPt: 841.89,
+} as const;
+
 /* ---------- Färgpalett (RGB, översatt från --tokens i index.css) ---------- */
 export const PDF_COLORS = {
   // Neutralt
