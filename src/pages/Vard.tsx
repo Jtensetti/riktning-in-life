@@ -34,6 +34,7 @@ import {
   sevenDayLabels,
   sevenDayDates,
   seriesFor,
+  PDF_PAGE,
 } from "@/lib/pdfWidgets";
 
 type View = "home" | "form" | "meds" | "med_log" | "report";
@@ -782,10 +783,10 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
 
   const downloadPdf = () => {
     if (!report || !structured) return;
-    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const doc = new jsPDF({ unit: PDF_PAGE.unit, format: PDF_PAGE.format });
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
-    const margin = 40;
+    const margin = PDF_PAGE.margin;
     const maxW = pageW - margin * 2;
     const today = new Date().toISOString().split("T")[0];
     const periodStart = new Date(Date.now() - days * 86400000).toISOString().split("T")[0];
