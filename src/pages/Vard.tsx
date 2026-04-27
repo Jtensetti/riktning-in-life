@@ -109,7 +109,7 @@ const Vard = () => {
 
       <section className="mb-7">
         <h2 className="text-lg font-extrabold mb-3">Veckoskattningar</h2>
-        <div className="space-y-3">
+        <div className="space-y-4">
           {(["phq9", "gad7", "who5"] as FormType[]).map((t, i) => {
             const f = FORMS[t];
             const last = latest(t);
@@ -349,7 +349,7 @@ const MedicationsView = ({ meds, onBack, onChanged, onLogFor }: { meds: Med[]; o
       </header>
 
       {adding && (
-        <div className="card-cream p-4 mb-5 space-y-3">
+        <div className="card-cream p-4 mb-5 space-y-4">
           <div>
             <label className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-1.5 block">Namn</label>
             <Input value={name} onChange={e => setName(e.target.value)} placeholder="t.ex. Sertralin" className="h-11 rounded-2xl bg-surface" />
@@ -374,7 +374,7 @@ const MedicationsView = ({ meds, onBack, onChanged, onLogFor }: { meds: Med[]; o
           <p className="text-sm text-text-secondary">Inga läkemedel tillagda.</p>
         </div>
       ) : (
-        <ul className="space-y-3">
+        <ul className="space-y-4">
           {meds.map(m => (
             <li key={m.id} className="card-soft p-4">
               <div className="flex items-start gap-3">

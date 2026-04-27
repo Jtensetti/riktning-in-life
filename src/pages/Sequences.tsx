@@ -82,7 +82,7 @@ const Sequences = () => {
         }
       />
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {items.map((s, i) => (
           <div
             key={s.id}

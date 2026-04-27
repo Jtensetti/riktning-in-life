@@ -43,7 +43,7 @@ const More = () => {
         </button>
       </section>
 
-      <section className="mb-8 space-y-3">
+      <section className="mb-8 space-y-4">
         <Row
           label="Inställningar"
           sub="Konto, påminnelser, plats och data"

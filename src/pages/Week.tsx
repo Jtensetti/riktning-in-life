@@ -527,7 +527,7 @@ const Week = () => {
         {/* Spår B: bästa & tyngsta dag — förklarar varför linjen ser ut som den gör */}
         <DayHighlightCards data={dayHighlights} />
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           {priorities.map((p, i) => (
             <PriorityCard key={p.key} p={p} rank={i} />
           ))}

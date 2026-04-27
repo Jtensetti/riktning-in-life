@@ -155,7 +155,7 @@ const Health = () => {
           </div>
         </section>
 
-        <ul className="space-y-3">
+        <ul className="space-y-4">
           {[checks.sessionCheck, checks.fetchCheck].map((c, i) => (
             <li
               key={i}
