@@ -15,7 +15,20 @@ export type CatalogItem = {
   color: string;
   default_minutes: number;
   tags_json: string[];
+  semantic_kind: SemanticKind | null;
 };
+
+export type SemanticKind =
+  | "rorelse"
+  | "aterhamtning"
+  | "socialt"
+  | "fokus"
+  | "vardag"
+  | "somn"
+  | "journal";
+
+export type Intensity = "latt" | "medel" | "hard";
+export type WithWho = "ensam" | "partner" | "barn" | "van" | "kollega" | "annan";
 
 export type ActivityDraft = {
   slug: string;
@@ -25,6 +38,9 @@ export type ActivityDraft = {
   color: string;
   duration_minutes: number;
   mood_delta: number; // -2..+2
+  semantic_kind: SemanticKind | null;
+  intensity?: Intensity | null;
+  with_who?: WithWho | null;
 };
 
 const colorBg = (color: string): string => {
