@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { BarChart, Bar, ResponsiveContainer, Cell } from "recharts";
 import { toneHsl, chartTokens, type ChartTone } from "@/lib/chartColors";
-import { chartAnimation, chartBarLayout, chartHeights, chartMargins } from "@/lib/chartTheme";
+import { chartAnimation, chartBarLayout, chartMargins } from "@/lib/chartTheme";
+import { useChartHeight } from "@/lib/useChartHeight";
 import { AnimatedChart, buildChartSignature } from "./AnimatedChart";
 import { ThemedTooltip, ThemedXAxis, ThemedYAxis } from "./ChartPrimitives";
 
@@ -39,13 +40,15 @@ interface Props {
 export const MetricBars = ({
   data,
   defaultTone = "orange",
-  height = chartHeights.compact,
+  height,
   emptyMin = 4,
   valueFormatter = (v) => `${v}`,
   valueLabel = "Värde",
   showYAxis = false,
   yMax,
 }: Props) => {
+  const heights = useChartHeight();
+  const resolvedHeight = height ?? heights.compact;
   const rows = useMemo(
     () =>
       data.map((d, i) => ({
