@@ -456,6 +456,18 @@ const Week = () => {
         subtitle="Vad veckan visar — på en skärm."
       />
 
+      <button
+        onClick={() => navigate("/analys")}
+        className="w-full mb-6 ui-card-list flex items-center gap-3 press-soft text-left animate-pop-in"
+      >
+        <div className="flex-1 min-w-0">
+          <p className="text-meta text-text-secondary mb-0.5">Snabb sammanfattning</p>
+          <p className="text-card-title leading-tight">Öppna analysvyn</p>
+          <p className="text-body text-text-secondary mt-1">Vad rör sig åt rätt håll just nu?</p>
+        </div>
+        <ChevronRight size={20} className="text-text-secondary shrink-0" />
+      </button>
+
       {/* AI-veckosammanfattning — varm sammanfattning baserad på riktig data. Göms tyst om AI inte svarar. */}
       <WeeklyAIInsight />
 
