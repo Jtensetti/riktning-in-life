@@ -30,8 +30,32 @@ import {
   sevenDayDates,
   seriesFor,
 } from "@/lib/pdfWidgets";
+import { patchUserSettings, SETTINGS_HYDRATED_EVENT } from "@/lib/userSettingsSync";
 
-const QUESTIONS_KEY = "riktning_doctor_questions";
+// Frågor till läkaren synkas via user_settings.weekly_questions så att
+// listan följer användaren mellan mobil och desktop. Lokal cache läses
+// synkront för snabb första render.
+const QUESTIONS_KEY = "riktning_weekly_questions";
+const LEGACY_QUESTIONS_KEY = "riktning_doctor_questions";
+
+const readCachedQuestions = (): string[] => {
+  try {
+    const raw = localStorage.getItem(QUESTIONS_KEY);
+    if (raw) return JSON.parse(raw) as string[];
+    // Engångsmigrering från det gamla nyckelnamnet (lokal-bara) så att
+    // användare som hann skapa frågor innan synken inte tappar dem.
+    const legacy = localStorage.getItem(LEGACY_QUESTIONS_KEY);
+    if (legacy) {
+      const parsed = JSON.parse(legacy) as string[];
+      localStorage.setItem(QUESTIONS_KEY, JSON.stringify(parsed));
+      localStorage.removeItem(LEGACY_QUESTIONS_KEY);
+      return parsed;
+    }
+    return [];
+  } catch {
+    return [];
+  }
+};
 
 const isoDaysAgo = (n: number) => {
   const d = new Date();
