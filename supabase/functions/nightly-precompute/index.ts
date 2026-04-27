@@ -31,7 +31,7 @@ const avg = (xs: (number | null)[]): number | null => {
 let cachedToken: string | null = null;
 
 const loadExpectedToken = async (
-  admin: ReturnType<typeof createClient>,
+  admin: ReturnType<typeof createClient<never, never, never>>,
 ): Promise<string | null> => {
   if (cachedToken) return cachedToken;
   const { data, error } = await admin
