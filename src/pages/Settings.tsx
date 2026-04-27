@@ -11,12 +11,14 @@ import { Switch } from "@/components/ui/switch";
 import { ChevronLeft, ChevronRight, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { loadReminders, saveReminders, resetOnboarded, type Reminders } from "@/lib/settings";
+import { loadFlags, saveFlags, type UserFlags } from "@/lib/flags";
 import { useWeather, weatherLabel, isWeatherPermissionGranted, setWeatherPermissionGranted } from "@/lib/weather";
 
 const Settings = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [reminders, setReminders] = useState<Reminders>(loadReminders());
+  const [flags, setFlagsState] = useState<UserFlags>(loadFlags());
   const [confirmText, setConfirmText] = useState("");
   const [showDelete, setShowDelete] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -26,6 +28,11 @@ const Settings = () => {
   const updateReminders = (r: Reminders) => {
     setReminders(r);
     saveReminders(r);
+  };
+
+  const updateFlags = (next: UserFlags) => {
+    setFlagsState(next);
+    void saveFlags(next);
   };
 
   const exportAll = async () => {
@@ -219,6 +226,20 @@ const Settings = () => {
             )}
           </div>
         </div>
+      </section>
+
+      <section className="mb-7">
+        <h2 className="text-lg font-extrabold mb-3">Automatik</h2>
+        <div className="space-y-3">
+          <ToggleRow
+            label="Skapa journal automatiskt från övningar och aktiviteter"
+            checked={flags.auto_journal}
+            onChange={(v) => updateFlags({ ...flags, auto_journal: v })}
+          />
+        </div>
+        <p className="text-xs text-text-secondary mt-2 px-1">
+          Korta noteringar med före/efter-värden sparas i din journal när du loggar något.
+        </p>
       </section>
 
 

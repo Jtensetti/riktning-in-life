@@ -35,6 +35,8 @@ import { getToneFor, phrasebookFor } from "@/lib/tone";
 import { decideTodayLayout, type ModuleId, type TodayContext } from "@/lib/todayLayout";
 import { quickStartsFor } from "@/lib/quickStarts";
 import { BASELINE_MIN_DAYS } from "@/lib/baseline";
+import { useAppTick } from "@/hooks/useAppTick";
+import { useLiveData } from "@/hooks/useLiveData";
 
 type Checkin = {
   id: string;
@@ -240,7 +242,8 @@ const Today = () => {
   const [featuredArticle, setFeaturedArticle] = useState<{ slug: string; title: string; excerpt: string; color: string; read_minutes: number } | null>(null);
   const [todayRoutine, setTodayRoutine] = useState<{ slug: string; title: string; description: string; color: string; ids: string[] } | null>(null);
   const [fetching, setFetching] = useState(true);
-  const [time, setTime] = useState<TimeContext>(() => getTimeContext());
+  const tick = useAppTick();
+  const time: TimeContext = tick.ctx;
   const { weather, status: weatherStatus, requestLocation } = useWeather(true);
   const [permissionDismissed, setPermissionDismissed] = useState(() => isWeatherPermissionDismissed());
   const [permissionExiting, setPermissionExiting] = useState(false);
@@ -252,11 +255,20 @@ const Today = () => {
   // Kontinuitet: kommer ihåg när användaren senast var här. Skrivs vid mount.
   const [lastSeen] = useState<LastSeen>(() => readAndUpdateLastSeen());
 
-  // Refresh time context every minute so partOfDay stays accurate without reload.
+  // Realtime: när loggar förändras (t.ex. på en annan enhet) — bumpa reload.
+  const live = useLiveData();
   useEffect(() => {
-    const id = setInterval(() => setTime(getTimeContext()), 60_000);
-    return () => clearInterval(id);
-  }, []);
+    if (live.version === 0) return;
+    setStreakReloadKey((k) => k + 1);
+  }, [live.version]);
+
+  // Återbesök i appen → debounced refetch så data är färsk när man kommer tillbaka.
+  useEffect(() => {
+    if (!tick.justBecameVisible) return;
+    const t = setTimeout(() => setStreakReloadKey((k) => k + 1), 500);
+    return () => clearTimeout(t);
+  }, [tick.justBecameVisible]);
+
 
   useEffect(() => {
     if (loading) return;
@@ -380,6 +392,27 @@ const Today = () => {
       toast.error("Kunde inte logga. Försök igen.");
       return;
     }
+    // Auto-journal — best effort, blockerar inte UI.
+    try {
+      const { loadFlags } = await import("@/lib/flags");
+      const { buildActivityJournalDraft } = await import("@/lib/autoJournal");
+      if (loadFlags().auto_journal) {
+        const draft = buildActivityJournalDraft({
+          label: a.label,
+          category: a.category,
+          durationMinutes: a.duration_minutes,
+          moodDelta: a.mood_delta,
+        });
+        await supabase.from("journal_entries").insert({
+          user_id: user.id,
+          template_type: draft.template_type,
+          title: draft.title,
+          free_text: draft.free_text,
+          include_in_report: draft.include_in_report,
+          suggested_for_report: draft.suggested_for_report,
+        });
+      }
+    } catch { /* tyst */ }
     toast.success(`${a.label} loggad`);
     setStreakReloadKey((k) => k + 1);
   };

@@ -115,6 +115,25 @@ const ExerciseDetail = () => {
       toast.error("Det gick inte att spara.");
       return;
     }
+    // Auto-journal: skapa en kort journalpost om användaren inte stängt av det.
+    try {
+      const { loadFlags } = await import("@/lib/flags");
+      const { buildExerciseJournalDraft } = await import("@/lib/autoJournal");
+      if (loadFlags().auto_journal) {
+        const draft = buildExerciseJournalDraft({
+          exerciseTitle: ex.title,
+          before, after,
+        });
+        await supabase.from("journal_entries").insert({
+          user_id: user.id,
+          template_type: draft.template_type,
+          title: draft.title,
+          free_text: draft.free_text,
+          include_in_report: draft.include_in_report,
+          suggested_for_report: draft.suggested_for_report,
+        });
+      }
+    } catch { /* tyst — auto-journal får aldrig blockera huvudflödet */ }
     toast.success("Bra jobbat. Sparat.");
     if (sequence && nextEx) {
       setPhase("done");
