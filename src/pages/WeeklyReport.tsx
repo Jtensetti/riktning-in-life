@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { WeeklyAIInsight } from "@/components/WeeklyAIInsight";
 import { burdenScore, functionScore, recoveryScore, stabilityScore, splitWeeks, type Checkin, type WeeklyFormScore } from "@/lib/metrics";
+import { formatDelta, improvementSign } from "@/lib/valence";
 import {
   PDF_COLORS,
   drawReportHeader,
@@ -278,18 +279,20 @@ const WeeklyReport = () => {
     }
 
     // ----- Sammanfattningsblock: sömn / rörelse / journal / medicin -----
-    const fmtTrend = (cur: number | null, prev: number | null, unit: string, decimals = 1) => {
+    // Trender via valens-modulen så pilriktning + tecken är konsekvent
+    // med övriga appen (grön = förbättring oavsett om värdet stiger eller sjunker).
+    const fmtTrend = (cur: number | null, prev: number | null, unit: string, metric: string) => {
       if (cur == null || prev == null) return undefined;
-      const diff = cur - prev;
-      const dir: "up" | "down" | "flat" = Math.abs(diff) < 0.05 ? "flat" : diff > 0 ? "up" : "down";
-      const sign = diff > 0 ? "+" : "";
-      return { dir, text: `${sign}${diff.toFixed(decimals)}${unit} vs forra veckan` };
+      const d = formatDelta(metric, prev, cur);
+      const dir: "up" | "down" | "flat" = d.delta === 0 ? "flat" : d.tone === "good" ? "up" : "down";
+      // OBS: dir följer förbättring (good=up) — inte råa siffran. Det matchar
+      // hur PDF-läsaren vill tolka pilen ("åt rätt håll").
+      return { dir, text: `${d.text}${unit} vs forra veckan` };
     };
-    const fmtTrendInt = (cur: number, prev: number, unit: string) => {
-      const diff = cur - prev;
-      const dir: "up" | "down" | "flat" = diff === 0 ? "flat" : diff > 0 ? "up" : "down";
-      const sign = diff > 0 ? "+" : "";
-      return { dir, text: `${sign}${diff}${unit} vs forra veckan` };
+    const fmtTrendInt = (cur: number, prev: number, unit: string, metric: string) => {
+      const d = formatDelta(metric, prev, cur);
+      const dir: "up" | "down" | "flat" = d.delta === 0 ? "flat" : d.tone === "good" ? "up" : "down";
+      return { dir, text: `${d.text}${unit} vs forra veckan` };
     };
     const movementDays = summary.movementYes + summary.movementLittle;
     const movementDaysPrev = summary.movementYesPrev + summary.movementLittlePrev;
