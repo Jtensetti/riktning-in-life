@@ -1,14 +1,13 @@
 import { TrendingDown, TrendingUp } from "lucide-react";
 import type { Pattern } from "@/lib/patterns";
+import { deltaChipClass } from "@/lib/valence";
 
 /**
  * "Mönster vi sett" — visar upp till 3 starka, evidens-baserade mönster
  * från användarens egna data. Inga AI-formuleringar, inga gissningar.
  *
- * Designval:
- *  - Inget kort visas om listan är tom (vi gör inget brus av tomhet).
- *  - Positiva mönster (lyftare) visas med grön accent, negativa med varm sand.
- *  - Antal observationer skrivs ut explicit så användaren kan väga signalen själv.
+ * Färgkodning kommer nu från valens-modulen (deltaChipClass) så att samma
+ * "grön = bra, röd = drar ner"-betydelse gäller överallt i appen.
  */
 export const PatternsSection = ({ patterns }: { patterns: Pattern[] }) => {
   if (patterns.length === 0) return null;
@@ -27,6 +26,8 @@ export const PatternsSection = ({ patterns }: { patterns: Pattern[] }) => {
         {patterns.map((p, i) => {
           const positive = p.direction === "positive";
           const Icon = positive ? TrendingUp : TrendingDown;
+          // Pille-färg via valens — alltid grön för positive, mjuk röd för negative.
+          const chipClass = deltaChipClass(positive ? "good" : "bad");
           return (
             <article
               key={`${p.kind}-${i}`}
@@ -47,9 +48,16 @@ export const PatternsSection = ({ patterns }: { patterns: Pattern[] }) => {
                   <Icon size={22} />
                 </span>
                 <div className="flex-1 min-w-0">
-                  <h4 className="text-[17px] leading-[22px] font-extrabold mb-1.5">
-                    {p.headline}
-                  </h4>
+                  <div className="flex items-start gap-2 mb-1.5">
+                    <h4 className="text-[17px] leading-[22px] font-extrabold flex-1">
+                      {p.headline}
+                    </h4>
+                    <span
+                      className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-extrabold ${chipClass}`}
+                    >
+                      {positive ? "Bra" : "Drar"}
+                    </span>
+                  </div>
                   <p
                     className={`text-sm leading-snug ${
                       positive ? "opacity-90" : "text-text-secondary"

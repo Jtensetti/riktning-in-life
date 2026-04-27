@@ -8,6 +8,7 @@
 
 import type { TimeContext } from "./timeContext";
 import { isOutdoorFriendly, type Weather } from "./weather";
+import { improvementSign } from "./valence";
 
 export type Exercise = {
   id: string;
@@ -48,14 +49,19 @@ export type RecentSession = {
 
 /**
  * Personlig effekt-historik: hur en specifik övning eller kategori brukar
- * påverka dig. Värden i grova skalsteg (positivt = lyfter, negativt = drar ner).
+ * påverka dig. Värden i grova skalsteg.
+ *
+ * `metric` (valfri, default "mood") talar om vilken dimension `avgDelta`
+ * mäter — så valens-modulen kan avgöra om en negativ siffra är en *bra*
+ * sak (t.ex. `metric: "anxiety"` där avgDelta = -1.5 betyder "sänker oro").
  * Optional — fungerar som mjuk bias och bryter ingen befintlig logik.
  */
+export type EffectStat = { avgDelta: number; count: number; metric?: string };
 export type EffectHistory = {
   /** key = exercise.id eller exercise.title — vi försöker båda. */
-  byExerciseId?: Record<string, { avgDelta: number; count: number }>;
-  byExerciseTitle?: Record<string, { avgDelta: number; count: number }>;
-  byCategory?: Record<string, { avgDelta: number; count: number }>;
+  byExerciseId?: Record<string, EffectStat>;
+  byExerciseTitle?: Record<string, EffectStat>;
+  byCategory?: Record<string, EffectStat>;
 };
 
 /** Forecast-signal för riktad rekommendation (t.ex. tvinga calm vid morgon-oro). */
@@ -199,7 +205,9 @@ const scoreExercise = (
   // 6) Säkerhetsnät: om allt scoreas ner ska land-kategorin (mycket korta) ändå alltid få en chans.
   if (ex.duration_minutes <= 3 && score < 25) score = 25;
 
-  // 7) PERSONLIG EFFEKT-BIAS — boosta övningar som visat sig lyfta dig, dra av de som inte gjort det.
+  // 7) PERSONLIG EFFEKT-BIAS — boosta övningar som lyfter dig, dra av de som
+  //    drar ner. Tolkas via valens-modulen så ett stat på "anxiety" där
+  //    avgDelta = -1.5 räknas som ett *bra* lyft (sänker oron).
   //    Kräver ≥3 observationer för att alls räknas (annars är signalen brus).
   if (history) {
     const stat =
@@ -207,9 +215,12 @@ const scoreExercise = (
       history.byExerciseTitle?.[ex.title] ??
       history.byCategory?.[ex.category];
     if (stat && stat.count >= 3) {
-      if (stat.avgDelta >= 1) score += 15;
-      else if (stat.avgDelta <= -0.5) score -= 20;
-      else if (stat.avgDelta >= 0.4) score += 7;
+      const metric = stat.metric ?? "mood"; // default: positivt mood-delta = lyft
+      const sign = improvementSign(metric, stat.avgDelta);
+      const magnitude = Math.abs(stat.avgDelta);
+      if (sign === 1 && magnitude >= 1) score += 15;
+      else if (sign === 1 && magnitude >= 0.4) score += 7;
+      else if (sign === -1 && magnitude >= 0.5) score -= 20;
     }
   }
 

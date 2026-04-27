@@ -10,6 +10,7 @@
 
 import type { Checkin } from "./metrics";
 import type { PersonalThresholds } from "./baseline";
+import { improvementSign } from "./valence";
 
 export type PatternKind =
   | "sleep_next_day_anxiety"
@@ -25,8 +26,12 @@ export type Pattern = {
   headline: string;
   /** Förklaring med konkreta siffror från användarens egna data. */
   evidence: string;
-  /** "Du brukar må X bättre/sämre" — riktning. positive = lyfter, negative = drar ner. */
+  /** "Du brukar må X bättre/sämre" — riktning. positive = lyfter, negative = drar ner.
+   *  Härleds nu via valens-modulen så grön/röd alltid betyder samma sak. */
   direction: "positive" | "negative";
+  /** Vilket mått (i valens-tabellen) mönstret refererar till. UI använder
+   *  detta för att färga delta-pillen konsekvent via deltaChipClass. */
+  metric: string;
   /** Antal datapunkter mönstret bygger på (jämförelsegrupp). */
   sample: number;
   /** Hur stark effekten är — högre värde = vi visar den högre upp. */
@@ -95,14 +100,17 @@ const detectSleepAnxiety = (
   if (lowNext.length < MIN_SAMPLE || okNext.length < MIN_SAMPLE) return null;
   const diff = avg(lowNext) - avg(okNext);
   if (Math.abs(diff) < 1) return null;
+  // Vi mäter oro nästa dag (lower-better). diff > 0 = mer oro efter kort sömn.
+  const sign = improvementSign("anxiety", diff);
   return {
     kind: "sleep_next_day_anxiety",
     headline:
-      diff > 0
+      sign === -1
         ? "Korta nätter följs ofta av högre oro dagen efter"
         : "Korta nätter verkar inte trigga oro hos dig",
     evidence: `Efter nätter under ${thresholds.shortSleep.toFixed(1)} h ligger oron i snitt ${avg(lowNext).toFixed(1)}/10 — mot ${avg(okNext).toFixed(1)}/10 efter längre nätter.`,
-    direction: diff > 0 ? "negative" : "positive",
+    direction: sign === 1 ? "positive" : "negative",
+    metric: "anxiety",
     sample: lowNext.length + okNext.length,
     strength: Math.abs(diff),
   };
@@ -139,6 +147,7 @@ const detectWeekdayDip = (rows: Checkin[]): Pattern | null => {
     headline: `${WEEKDAYS_SV[worst.i].charAt(0).toUpperCase() + WEEKDAYS_SV[worst.i].slice(1)}ar har varit tyngre hos dig`,
     evidence: `Snittbelastning ${worst.m.toFixed(1)}/10 — mot ${overall.toFixed(1)}/10 övriga veckodagar (${burdenByDay[worst.i].length} ${WEEKDAYS_SV[worst.i]}ar mätta).`,
     direction: "negative",
+    metric: "burden",
     sample: burdenByDay[worst.i].length,
     strength: diff,
   };
@@ -166,6 +175,7 @@ const detectStillness = (
     headline: "Stilla dagar tenderar att kännas tyngre",
     evidence: `När du varit stilla ≥ ${thresholds.highBedSofa} min ligger tyngden i snitt ${avg(high).toFixed(1)}/10 — mot ${avg(low).toFixed(1)}/10 övriga dagar.`,
     direction: "negative",
+    metric: "mood_heaviness",
     sample: high.length + low.length,
     strength: diff,
   };
@@ -201,6 +211,7 @@ const detectMedMiss = (rows: Checkin[], medLogs: MedLogLite[]): Pattern | null =
     headline: "Dagar utan medicin tenderar att följas av tyngre dag",
     evidence: `Efter missad dos: tyngd ${avg(missNext).toFixed(1)}/10 i snitt — mot ${avg(takenNext).toFixed(1)}/10 efter taget.`,
     direction: "negative",
+    metric: "mood_heaviness",
     sample: missNext.length + takenNext.length,
     strength: diff,
   };
@@ -272,6 +283,7 @@ const detectDelayedLift = (
           ? `I snitt ${m.toFixed(1)} skalsteg lättare nästa morgon (över ${b.deltas.length} gånger).`
           : `I snitt ${Math.abs(m).toFixed(1)} skalsteg tyngre nästa morgon (över ${b.deltas.length} gånger).`,
       direction: m > 0 ? "positive" : "negative",
+      metric: "burden",
       sample: b.deltas.length,
       strength: Math.abs(m),
     });
