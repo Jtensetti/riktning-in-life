@@ -948,7 +948,7 @@ const Today = () => {
                   <AbstractIcon name="blob-smile" size={18} color={blobColor} />
                 </span>
                 <button
-                  onClick={() => navigate("/ovningar")}
+                  onClick={() => navigate(`/ovningar/${ex.id}`)}
                   className="w-full text-left rounded-2xl bg-surface border border-border-soft py-2.5 px-3 flex items-center gap-2 shadow-card press-soft"
                   title={fullTitle || undefined}
                 >

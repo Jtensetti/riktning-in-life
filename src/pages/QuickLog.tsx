@@ -335,6 +335,14 @@ const QuickLog = () => {
         screen="log"
         title="Snabblogg"
         subtitle="Tryck på en knapp och svara kort. Det går snabbt."
+        topLeft={
+          <button
+            onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/"))}
+            className="inline-flex items-center gap-1 text-sm font-bold text-foreground/80 press-soft"
+          >
+            <ChevronLeft size={18} /> Tillbaka
+          </button>
+        }
       />
 
       {/* === FOUR TEMPLATE BUTTONS === */}
