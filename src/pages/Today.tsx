@@ -380,6 +380,27 @@ const Today = () => {
       toast.error("Kunde inte logga. Försök igen.");
       return;
     }
+    // Auto-journal — best effort, blockerar inte UI.
+    try {
+      const { loadFlags } = await import("@/lib/flags");
+      const { buildActivityJournalDraft } = await import("@/lib/autoJournal");
+      if (loadFlags().auto_journal) {
+        const draft = buildActivityJournalDraft({
+          label: a.label,
+          category: a.category,
+          durationMinutes: a.duration_minutes,
+          moodDelta: a.mood_delta,
+        });
+        await supabase.from("journal_entries").insert({
+          user_id: user.id,
+          template_type: draft.template_type,
+          title: draft.title,
+          free_text: draft.free_text,
+          include_in_report: draft.include_in_report,
+          suggested_for_report: draft.suggested_for_report,
+        });
+      }
+    } catch { /* tyst */ }
     toast.success(`${a.label} loggad`);
     setStreakReloadKey((k) => k + 1);
   };
