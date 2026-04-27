@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { Input } from "@/components/ui/input";
-import { Search, ChevronRight } from "lucide-react";
+import { Search, ChevronRight, ChevronLeft } from "lucide-react";
+import { ScreenHeader } from "@/components/ui-kit/ScreenHeader";
 import { AbstractIcon } from "@/components/AbstractIcon";
 import { iconForExerciseCategory } from "@/lib/icons";
 import { getTimeContext } from "@/lib/timeContext";
@@ -90,8 +91,19 @@ const Exercises = () => {
 
   return (
     <AppShell>
-      <h1 className="text-[32px] leading-[38px] mb-1">Övningar</h1>
-      <p className="text-sm text-text-secondary mb-6">Små handlingar. Välj en som passar nu.</p>
+      <ScreenHeader
+        screen="explore"
+        title="Övningar"
+        subtitle="Små handlingar. Välj en som passar nu."
+        topLeft={
+          <button
+            onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/"))}
+            className="inline-flex items-center gap-1 text-sm font-bold text-foreground/80 press-soft"
+          >
+            <ChevronLeft size={18} /> Tillbaka
+          </button>
+        }
+      />
 
       {/* Rounder, friendlier search */}
       <div className="relative mb-6">

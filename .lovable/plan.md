@@ -1,39 +1,50 @@
-## 1. Fix: "Mående +1" visas rött
+## Navigation audit — vad fungerar och vad skaver
 
-**Buggen:** I `Senaste aktivitet`-listan på Idag-sidan markeras Mående med "lägre = bättre"-logik, samma som Ångest. Det betyder att Mående +1 (förbättring) får varningston (röd) istället för positiv ton (grön).
+Jag gick igenom alla `navigate(...)` och `<NavLink>`-anrop i appen. Strukturen är i grunden bra: 5 tabbar (Idag, Utforska, Logga, Insikter, Vård), tydliga djupsidor (krisplan, övning, rutin, artikel), och en "Mer"-flik bakom kugghjulet. Det finns dock sex specifika ställen där destinationen känns fel eller saknas.
 
-**Fix:** En rad i `src/pages/Today.tsx` (rad 935):
-- Ändra `pushDelta("Mående", s.mood_before, s.mood_after, true)` → `false` (högre mående = bättre, precis som Energi).
+### Issue 1 — "Senaste aktivitet" landar alltid på `/ovningar`-listan
+**Var:** `Today.tsx` rad 951
+**Problem:** Du loggar 15 min dagsljuspromenad, trycker på loggen, och hamnar på en *lista över alla övningar* — inte på den övning du nyss gjorde.
+**Fix:** Navigera till `/ovningar/${ex.id}` när vi har ett exercise-id (vilket vi alltid har — `s.exercises` är källan).
 
-Resultat: Mående +1 blir grön, Mående -1 blir röd. Ångest och Energi rörs inte.
+### Issue 2 — `/snabblogg` har ingen tillbaka-knapp
+**Var:** `QuickLog.tsx` rad 334
+**Problem:** Sidan nås från Today (quick-starts som "Logga sömn", "Snabblogga mående") och från Insikter (tomma-state CTA). Väl där finns ingen väg tillbaka utom att trycka tabbar nere.
+**Fix:** Lägg till `topLeft`-tillbakaknapp i `ScreenHeader` som går `navigate(-1)` (eller `/` som fallback).
 
-## 2. Aktivitetsberoende kontextfält i loggning
+### Issue 3 — `/ovningar` har ingen tillbaka-knapp eller header-stil
+**Var:** `Exercises.tsx` rad 92–94
+**Problem:** Sidan är inte en tab, men nås från ~6 ställen (Today rec, Today routine, Explore "Se alla", LearnArticle, etc.). Använder `<h1>` direkt istället för `ScreenHeader`, och har ingen back.
+**Fix:** Byt till `ScreenHeader screen="explore" title="Övningar"` med `topLeft={<button onClick={() => navigate(-1)}>← Tillbaka</button>}`.
 
-Idag visar `ActivityPicker` redan två villkorliga fält efter `semantic_kind`:
-- `rorelse` → Intensitet (Lätt/Medel/Hård)
-- `socialt` → Med vem (Ensam/Partner/Barn/Vän/Kollega/Annan)
+### Issue 4 — `/journal` saknar tillbaka-knapp i listvyn
+**Var:** `Journal.tsx` rad 207
+**Problem:** Nås via Today quick-starts ("Skriv tre rader", "Imorgon-lista"). I editor-läget finns en tillbaka, men listvyn saknar.
+**Fix:** Lägg `topLeft` i `ScreenHeader` på listvyn → `navigate(-1)`.
 
-Förslag: lägg till **bara två till**, där det ger tydligt kliniskt värde utan att skapa rörighet. Allt valfritt, samma visuella mönster (chip-rad, "valfri"-etikett).
+### Issue 5 — `Mer` "Tillbaka" är `navigate(-1)`, men nås bara från Idag
+**Var:** `More.tsx` rad 19
+**Problem:** Funkar oftast, men om man landar i appen via push-länk eller delad URL direkt på `/mer` blir bakåt en historikbugg (kan ta dig ut ur appen).
+**Fix:** Byt till `navigate("/", { replace: false })` med `-1` som fallback. Liten kanttill men mer förutsägbart.
 
-**a) `somn` → Sömnkvalitet (valfri)**
-Chips: `Dålig` · `Okej` · `Bra`
-*Varför:* Sömn loggas redan separat i check-in, men när användaren snabbloggar t.ex. "Tupplur" eller "Sov om" är upplevd kvalitet det enda som verkligen tillför något till mönsteranalysen.
+### Issue 6 — `ExerciseDetail` "back" går alltid till `/ovningar` (eller rutinen)
+**Var:** `ExerciseDetail.tsx` rad 148
+**Problem:** Om du startade en övning från Today's "Rekommenderat just nu" eller från en artikel, kastas du till listsidan istället för dit du kom från. `useSmartBack`-hooken finns redan men används inte här.
+**Fix:** Använd `useSmartBack({ defaultTo: "/" })` så sequence-kontext respekteras och övriga ingångar går tillbaka i historik. Eller enklare: använd `navigate(-1)` som default när ingen sequence finns.
 
-**b) `aterhamtning` → Plats (valfri)**
-Chips: `Inne` · `Ute`
-*Varför:* "Ute"-återhämtning (promenad utan träningssyfte, sitta i parken) korrelerar tydligt annorlunda mot mående än inne. Två val, inga fler — en boolean-känsla, inte en formulär.
-
-**Vi gör inte (för att undvika kaos):**
-- `fokus`, `vardag`, `journal` får inga extra fält. Dessa är redan självförklarande och extra metadata skulle bara fördröja loggningen.
-- Inga humörsspecifika frågor, inga fritextfält, inga "varför"-rutor.
-
-### Datamodell
-- Återanvänd befintliga kolumner där möjligt. `intensity` används idag bara av rörelse — vi kan återanvända den för sömnkvalitet (`latt`=dålig, `medel`=okej, `hard`=bra) **eller** lägga till ett nytt nullable `quality`-fält. Rekommendation: nytt fält `sleep_quality` + `location` (text, nullable) i `activity_logs`, för att hålla semantiken ren. Migration skriver bara nya nullable-kolumner — påverkar ingen befintlig data.
+### Det som *fungerar bra* (vi rör inte)
+- Bottom nav: 5 tabbar, FAB är kontextuell (öppnar check-in om dagen inte är loggad, annars picker). Logiskt.
+- Vård är en tab och behöver ingen tillbakaknapp. Sub-views (Formulär, Mediciner, Rapport) har lokal "Tillbaka" via state.
+- Krisplan, Settings, LearnArticle, SequenceDetail har alla rimliga tillbaka-knappar.
+- Checkin → "Tillbaka" till `/` är rätt (det är en wizard, ej en djuplänk).
+- Auth/Onboarding använder `replace: true` korrekt.
 
 ### Filer som ändras
-- `src/pages/Today.tsx` — en rad (bugfix punkt 1)
-- `src/components/ActivityPicker.tsx` — två nya villkorliga block efter rad 517, plus state + insert-payload
-- `supabase/migrations/...sql` — `ALTER TABLE activity_logs ADD COLUMN sleep_quality text, ADD COLUMN location text;`
-- `src/integrations/supabase/types.ts` — regenereras automatiskt
+- `src/pages/Today.tsx` — 1 rad (issue 1)
+- `src/pages/QuickLog.tsx` — lägg till topLeft (issue 2)
+- `src/pages/Exercises.tsx` — byt h1 mot ScreenHeader med topLeft (issue 3)
+- `src/pages/Journal.tsx` — lägg till topLeft (issue 4)
+- `src/pages/More.tsx` — ändra back-target (issue 5)
+- `src/pages/ExerciseDetail.tsx` — använd useSmartBack eller `navigate(-1)` (issue 6)
 
-Om du tycker att även (a) eller (b) är överflödigt — säg till så hoppar vi det och kör bara bugfixen.
+Inga schemaändringar, inga nya beroenden. Endast 6 små edits.

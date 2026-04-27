@@ -208,6 +208,14 @@ const Journal = () => {
         screen="journal"
         title="Journal"
         subtitle="Spara dagen som den var."
+        topLeft={
+          <button
+            onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/"))}
+            className="inline-flex items-center gap-1 text-sm font-bold text-foreground/80 press-soft"
+          >
+            <ChevronLeft size={18} /> Tillbaka
+          </button>
+        }
       />
 
       <h2 className="text-lg font-extrabold mb-3">Mallar</h2>

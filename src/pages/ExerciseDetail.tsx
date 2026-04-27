@@ -145,7 +145,11 @@ const ExerciseDetail = () => {
   if (!ex) return <div className="min-h-screen bg-background flex items-center justify-center text-text-secondary">Hämtar...</div>;
 
   const ill = categoryIll(ex.category);
-  const back = () => sequence ? navigate(`/rutiner/${sequence.slug}`) : navigate("/ovningar");
+  const back = () => {
+    if (sequence) { navigate(`/rutiner/${sequence.slug}`); return; }
+    if (window.history.length > 1) { navigate(-1); return; }
+    navigate("/ovningar");
+  };
 
   return (
     <div className="min-h-screen bg-background pb-24">
