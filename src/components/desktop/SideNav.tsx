@@ -4,8 +4,7 @@ import { Plus } from "lucide-react";
 import { AbstractIcon, type IconName } from "@/components/AbstractIcon";
 import { ActivityPicker, type ActivityDraft } from "@/components/ActivityPicker";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { insertActivityLog } from "@/lib/activityLog";
 
 /**
  * SideNav — desktop-only side navigation (≥lg). Mobile uses BottomNav.
@@ -58,19 +57,7 @@ export const SideNav = () => {
       navigate("/auth");
       return;
     }
-    const { error } = await supabase.from("activity_logs").insert({
-      user_id: user.id,
-      title: draft.title,
-      duration_minutes: draft.duration_minutes,
-      semantic_kind: draft.semantic_kind,
-      sleep_quality: draft.sleep_quality ?? null,
-      location: draft.location ?? null,
-    } as never);
-    if (error) {
-      toast.error("Kunde inte spara");
-      return;
-    }
-    toast.success("Loggat");
+    await insertActivityLog(user.id, draft);
   };
 
   const renderItem = (item: Item) => (
