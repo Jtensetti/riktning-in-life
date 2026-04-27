@@ -1,31 +1,21 @@
-import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { Plus } from "lucide-react";
 import { AbstractIcon, type IconName } from "@/components/AbstractIcon";
-import { ActivityPicker, type ActivityDraft } from "@/components/ActivityPicker";
-import { useAuth } from "@/hooks/useAuth";
-import { insertActivityLog } from "@/lib/activityLog";
 
 /**
  * SideNav — desktop-only side navigation (≥lg). Mobile uses BottomNav.
  *
- * Layout: 240px wide, full height, cream background, thin right border.
- * Three groups, separated by hairlines:
- *  1. Primary tabs (Idag, Utforska, Logga, Insikter, Vård) — same five as
- *     bottom-nav. The Logga row is a colored button (orange) instead of a tab,
- *     opening the same ActivityPicker the FAB does on mobile.
- *  2. Secondary destinations (Journal, Krisplan, Inställningar) — moved out
- *     of "Mer" into top-level visibility, since desktop has the room.
+ * Desktop hierarchy is intentionally different from mobile:
+ *  - Mobile primary action = "Logga aktivitet" (FAB) — fast, thumb-driven.
+ *  - Desktop primary action = "Skriv i journalen" — keyboard, longer sessions.
  *
- * Uses the same screenIdentity color tokens as the bottom-nav so the visual
- * vocabulary matches across breakpoints.
+ * Snabbloggning behålls som en kompakt chip-rad ovanför CTA:n. Chips navigerar
+ * till /snabblogg?open=<key> så att samma drawers som finns där öppnas direkt.
  */
 
 type Item = {
   to: string;
   label: string;
   icon: IconName;
-  /** Active text color (CSS hsl). */
   activeColor: string;
 };
 
@@ -40,28 +30,32 @@ const PRIMARY_AFTER: Item[] = [
 ];
 
 const SECONDARY: Item[] = [
-  { to: "/journal", label: "Journal", icon: "pencil-soft", activeColor: "hsl(var(--yellow-journal))" },
+  { to: "/snabblogg", label: "Snabblogg", icon: "blob-smile", activeColor: "hsl(var(--orange-start))" },
   { to: "/krisplan", label: "Krisplan", icon: "shield-soft", activeColor: "hsl(var(--red-risk))" },
   { to: "/installningar", label: "Inställningar", icon: "book-open", activeColor: "hsl(var(--foreground))" },
+];
+
+type QuickChip = {
+  key: "sleep" | "movement" | "mood" | "medication";
+  label: string;
+  icon: IconName;
+  color: string;
+};
+
+const QUICK_CHIPS: QuickChip[] = [
+  { key: "sleep", label: "Sömn", icon: "bed-soft", color: "hsl(var(--purple-sleep))" },
+  { key: "movement", label: "Kropp", icon: "walk-figure", color: "hsl(var(--pink-move))" },
+  { key: "mood", label: "Mående", icon: "blob-smile", color: "hsl(var(--orange-start))" },
+  { key: "medication", label: "Medicin", icon: "pill", color: "hsl(var(--blue-calm))" },
 ];
 
 const NAV_INACTIVE = "hsl(var(--nav-inactive))";
 
 export const SideNav = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
-  const [pickerOpen, setPickerOpen] = useState(false);
-
-  const handleAdd = async (draft: ActivityDraft) => {
-    if (!user) {
-      navigate("/auth");
-      return;
-    }
-    await insertActivityLog(user.id, draft);
-  };
 
   const renderItem = (item: Item) => (
-    <li key={item.to}>
+    <li key={item.to} className="relative">
       <NavLink
         to={item.to}
         end={item.to === "/"}
@@ -96,42 +90,59 @@ export const SideNav = () => {
   );
 
   return (
-    <>
-      <aside
-        className="hidden lg:flex flex-col shrink-0 border-r border-border-soft bg-background"
-        style={{ width: 240, height: "calc(100vh - 56px)", position: "sticky", top: 56 }}
-      >
-        <nav className="flex-1 overflow-y-auto px-3 py-5">
-          <ul className="space-y-1 relative">
-            {PRIMARY.map(renderItem)}
+    <aside
+      className="hidden lg:flex flex-col shrink-0 border-r border-border-soft bg-background"
+      style={{ width: 240, height: "calc(100vh - 56px)", position: "sticky", top: 56 }}
+    >
+      <nav className="flex-1 overflow-y-auto px-3 py-5">
+        <ul className="space-y-1 relative">
+          {PRIMARY.map(renderItem)}
 
-            {/* Logga — central CTA, not a tab. Same picker as mobile FAB. */}
-            <li className="py-2">
-              <button
-                onClick={() => setPickerOpen(true)}
-                className="w-full flex items-center gap-3 px-3 h-12 rounded-2xl press-soft transition-transform active:scale-[0.98]"
-                style={{
-                  background: "hsl(var(--orange-start))",
-                  color: "white",
-                  boxShadow: "0 4px 14px hsl(19 100% 55% / 0.30)",
-                }}
-              >
-                <Plus size={20} strokeWidth={2.6} />
-                <span className="text-[14px] font-extrabold">Logga aktivitet</span>
-              </button>
-            </li>
+          {/* Snabblogg-chips — sekundär snabblogg på desktop. */}
+          <li className="pt-4 pb-2">
+            <div className="px-1 mb-2 text-[10px] font-extrabold uppercase tracking-wider text-text-secondary">
+              Snabblogg
+            </div>
+            <div className="grid grid-cols-4 gap-1.5 px-1">
+              {QUICK_CHIPS.map(c => (
+                <button
+                  key={c.key}
+                  onClick={() => navigate(`/snabblogg?open=${c.key}`)}
+                  title={c.label}
+                  aria-label={c.label}
+                  className="aspect-square rounded-2xl bg-surface hover:bg-surface-alt grid place-items-center press-soft transition-colors"
+                >
+                  <AbstractIcon name={c.icon} size={20} color={c.color} inline />
+                </button>
+              ))}
+            </div>
+          </li>
 
-            {PRIMARY_AFTER.map(renderItem)}
+          {/* Skriv i journalen — desktopens primära CTA. */}
+          <li className="py-2">
+            <button
+              onClick={() => navigate("/journal")}
+              className="w-full flex items-center gap-3 px-3 h-12 rounded-2xl press-soft transition-transform active:scale-[0.98]"
+              style={{
+                background: "hsl(var(--yellow-journal))",
+                color: "hsl(var(--foreground))",
+                boxShadow: "0 4px 14px hsl(var(--yellow-journal) / 0.45)",
+              }}
+            >
+              <AbstractIcon name="pencil-soft" size={20} color="hsl(var(--orange-start))" inline />
+              <span className="text-[14px] font-extrabold">Skriv i journalen</span>
+            </button>
+          </li>
 
-            <li className="py-3">
-              <hr className="border-border-soft" />
-            </li>
+          {PRIMARY_AFTER.map(renderItem)}
 
-            {SECONDARY.map(renderItem)}
-          </ul>
-        </nav>
-      </aside>
-      <ActivityPicker open={pickerOpen} onOpenChange={setPickerOpen} onAdd={handleAdd} />
-    </>
+          <li className="py-3">
+            <hr className="border-border-soft" />
+          </li>
+
+          {SECONDARY.map(renderItem)}
+        </ul>
+      </nav>
+    </aside>
   );
 };
