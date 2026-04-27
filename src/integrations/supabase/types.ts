@@ -134,6 +134,30 @@ export type Database = {
         }
         Relationships: []
       }
+      cached_insights: {
+        Row: {
+          computed_at: string
+          id: string
+          kind: string
+          payload: Json
+          user_id: string
+        }
+        Insert: {
+          computed_at?: string
+          id?: string
+          kind: string
+          payload?: Json
+          user_id: string
+        }
+        Update: {
+          computed_at?: string
+          id?: string
+          kind?: string
+          payload?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       crisis_plans: {
         Row: {
           avoid_json: Json
@@ -179,6 +203,7 @@ export type Database = {
       daily_checkins: {
         Row: {
           anxiety: number | null
+          context: Json | null
           created_at: string
           date: string
           daytime_bed_sofa_time_minutes: number | null
@@ -203,6 +228,7 @@ export type Database = {
         }
         Insert: {
           anxiety?: number | null
+          context?: Json | null
           created_at?: string
           date?: string
           daytime_bed_sofa_time_minutes?: number | null
@@ -227,6 +253,7 @@ export type Database = {
         }
         Update: {
           anxiety?: number | null
+          context?: Json | null
           created_at?: string
           date?: string
           daytime_bed_sofa_time_minutes?: number | null
@@ -460,6 +487,7 @@ export type Database = {
           id: string
           include_in_report: boolean
           linked_checkin_id: string | null
+          suggested_for_report: boolean
           template_type: string
           title: string | null
           updated_at: string
@@ -473,6 +501,7 @@ export type Database = {
           id?: string
           include_in_report?: boolean
           linked_checkin_id?: string | null
+          suggested_for_report?: boolean
           template_type: string
           title?: string | null
           updated_at?: string
@@ -486,6 +515,7 @@ export type Database = {
           id?: string
           include_in_report?: boolean
           linked_checkin_id?: string | null
+          suggested_for_report?: boolean
           template_type?: string
           title?: string | null
           updated_at?: string
@@ -665,6 +695,7 @@ export type Database = {
           baseline: Json | null
           created_at: string
           doctor_email: string | null
+          flags: Json
           last_seen_at: string | null
           onboarded_at: string | null
           reminders: Json
@@ -677,6 +708,7 @@ export type Database = {
           baseline?: Json | null
           created_at?: string
           doctor_email?: string | null
+          flags?: Json
           last_seen_at?: string | null
           onboarded_at?: string | null
           reminders?: Json
@@ -689,6 +721,7 @@ export type Database = {
           baseline?: Json | null
           created_at?: string
           doctor_email?: string | null
+          flags?: Json
           last_seen_at?: string | null
           onboarded_at?: string | null
           reminders?: Json
