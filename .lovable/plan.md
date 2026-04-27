@@ -1,68 +1,102 @@
-# Polera WYSIWYG-editorn (endast desktop)
+# Större sidebar + riktig desktop-disposition
 
-Mobilvyn lämnas helt orörd — all logik bakom `isMobile` behålls som den är. Endast desktop-grenarna ändras.
+Mobilvyn är fryst. Allt nedan triggas på `lg:`-breakpoint eller högre.
 
-## Mål
-Få editorn att kännas lika självklar som Notion/Linear/Medium: verktyg där man förväntar sig dem, tydliga active-states, flytande bubble-menu vid markering, och de kortkommandon man räknar med.
+## 1. Sidebar — större, mer närvaro
 
-## Ändringar
+Desktop-sidebaren känns som en mobil-meny smetad mot kanten. Den ska se ut som en riktig desktop-navigation.
 
-### 1. Flytta toolbar till TOPPEN av editorn (desktop)
-Konventionen är verktyg ovanför innehållet. `border-t` blir `border-b`, toolbar renderas före `<TipTapEditor>` i desktop-grenen. Mobilens fixed-bottom-toolbar är oförändrad.
+| Aspekt | Idag | Nytt |
+|---|---|---|
+| Bredd | 240px | **272px** (mer luft, fler tecken får plats utan trunkering) |
+| Ikonstorlek | 22px | **26px** |
+| Radhöjd | 44px (h-11) | **48px** (h-12) |
+| Textstorlek | 14px | **15px** |
+| Snabblogg-chips | 4 i rad, ikon 20px | 4 i rad, ikon **24px**, något större tile (rounded-2xl behålls) |
+| CTA "Skriv i journalen" | h-12, ikon 20px | **h-14**, ikon **24px**, text **15px** |
+| Sektionsetiketter | 10px uppercase | **11px** uppercase med 2px mer avstånd |
+| Padding | px-3 py-5 | **px-4 py-6** |
+| Active-indikator | 4px stripe vänster | Behålls — höjd 28px istället för 24px |
+| Topbar | 56px | **64px** (matchar sidebarens nya tonalitet, wordmark 20px) |
 
-### 2. Vänsterställ desktop-toolbaren
-Byt `justify-center` → `justify-start` med lite padding. Knapparna slutar "hoppa" när toolbar växlar läge.
+`SideNav` får också en hover-bakgrund (`hover:bg-surface-alt/60`) på item-raderna så det känns klickbart från större avstånd.
 
-### 3. Visa direktknappar istället för popovers (desktop)
-På desktop finns gott om plats. Default-toolbaren får direktknappar:
+## 2. Desktop-disposition — sidor som idag är inklämda i 448px
 
-```text
-[B] [I] [S]  |  [H1] [H2] [H3]  |  [• lista] [1. lista] [" citat]  |  [🔗 länk] [— hr]  |  [↶ ångra] [↷ gör om]
+Mobilen lämnas helt orörd. På `lg:` byggs varje sida om till en logisk grid.
+
+### Sidor som blir `wide` + två kolumner via `WideLayout`
+
+**Today** — primär hemsida som idag är en lång enkel-kolumn på desktop. Bygg om till:
+- **Vänster (1.4fr)**: Header med dag/datum + dagens hero-banner + "Steg-av-dagen" + EveningPredictionCard + TomorrowForecastCard.
+- **Höger (1fr)**: WeeklyAIInsight + ForYouCarousel (här blir det ett vertikalt staplat kort-grid istället för horisontell carousel) + WeatherChip + senaste loggar.
+
+**Health** — idag enkolumn med stack av kort:
+- **Vänster**: Översiktsmetrics (sömn, rörelse, mående) som **2x2 grid** av kort istället för stack.
+- **Höger**: Trender / mönster / insikter.
+
+**Analysis** — analys-/insiktsida:
+- **Vänster (primary-heavy 1.7/1)**: Huvudchart större och bredare.
+- **Höger**: Filter, period-väljare, kontextkort.
+
+**Explore** — utforska/innehåll:
+- Byt 1-kolumns-stack mot **3-kolumns kortgrid** (`lg:grid-cols-3 gap-6`) istället för WideLayout, eftersom det är en katalog.
+
+**Sequences / Exercises** — kataloger:
+- 1 kolumn → **3 kolumns kortgrid** på desktop, 2 kolumner på md.
+
+**WeeklyReport** — rapport:
+- **Vänster (primary-heavy)**: Rapport-renderingen.
+- **Höger**: Periodval, exportknappar, sammanfattning.
+
+**Settings / CrisisPlan / More / QuickLog / Checkin / LearnArticle / ExerciseDetail / SequenceDetail**:
+- Behåll den centrerade 448–520px läs-kolumnen — det är "calm stream"-sidor där en fokuserad enkolumn är medvetet vald (formulär, lång läsning, krisplan-checklista). **Höj dock max-bredden på desktop från 448 → 560px** för läsbarhet vid längre rader.
+
+### Sidor redan `wide` men utan grid
+
+**Journal**, **Learn**, **Week** är `wide` men lägger ut innehållet fritt. Lägg `WideLayout` på dem så vänster/höger får tydlig roll:
+- **Journal desktop**: vänster = editor + dagens entry, höger = mall-väljare + senaste journal-historik (idag ligger denna under editorn).
+- **Learn desktop**: 3-kolumns artikelgrid (likt Explore) istället för WideLayout.
+- **Week desktop**: vänster = hela vecko-charten större, höger = dagsdetaljer + insikter.
+
+## 3. Charts — desktop-uppgradering
+
+Mobilen är orörd. På `lg:` får charts mer höjd och tydligare läsbarhet.
+
+- **MetricLine / TrendLine / Sparkline / WeekDirectionChart**: höj höjden från ~140–160px → **220–260px** på desktop. Visa Y-axel-etiketter och fler X-axel-tickar (idag är de gömda för utrymmesskäl).
+- **ActivityBars / MetricBars / StackedRecovery**: bredare staplar, gap ökas, värdesetiketter på toppen av staplarna på desktop.
+- **MetricDonut**: större (180px → 240px diameter) och visa centrum-text större.
+- Lägg till **hover-tooltip** med exakta värden på desktop (recharts har det inbyggt — det är bara att aktivera).
+- Charts som idag är "ensam komponent" i en 448px-kolumn på Health/Analysis flyttas in i grids där de delar yta med insikter.
+
+## 4. Tekniska detaljer
+
+**Filer som ändras:**
+- `src/components/desktop/SideNav.tsx` — alla nya storlekar.
+- `src/components/desktop/DesktopTopbar.tsx` — höjd 64px.
+- `src/components/AppShell.tsx` — höj `top: 56` → `64` för SideNav offset, höj `max-w-md` → `lg:max-w-[560px]` för calm stream-sidor.
+- `src/components/desktop/WideLayout.tsx` — oförändrad, används av fler sidor.
+- `src/pages/Today.tsx`, `Health.tsx`, `Analysis.tsx`, `WeeklyReport.tsx`, `Journal.tsx`, `Week.tsx` — desktop-grid via `WideLayout` (lg-only).
+- `src/pages/Explore.tsx`, `Learn.tsx`, `Sequences.tsx`, `Exercises.tsx` — `lg:grid-cols-3` katalog-grid.
+- `src/components/charts/*` — höjdvariabler får desktop-overrides; tooltip aktiveras.
+
+**Mönster för all sidlogik (mobil orörd):**
+```tsx
+// Mobil = stack (oförändrad), desktop = grid
+<div className="space-y-5 lg:space-y-0">
+  <WideLayout left={<…>} right={<…>} />
+</div>
 ```
 
-Popoverna för "Infoga", "Listor" och "Textstil" tas bort på desktop (mobilen behåller dem för plats).
+eller för kataloger:
+```tsx
+<div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">…</div>
+```
 
-### 4. Active-states på alla knappar
-Varje toolbar-knapp läser `editor.isActive('bold')`, `editor.isActive('heading', { level: 2 })` osv och får `bg-surface-alt` + tydligare ikonfärg när aktiv. Detta är den viktigaste WYSIWYG-signalen — användaren ser var markören står.
-
-För att toolbaren ska re-rendra vid varje selektion exporteras `editor`-instansen via en ny `getActiveStates()` på `TipTapEditorHandle`, eller (renare) toolbaren tar emot `editor`-objektet direkt i desktop-läget.
-
-### 5. Bubble-menu vid markering (desktop)
-Lägg till `@tiptap/extension-bubble-menu`. När text markeras visas en flytande mini-toolbar ovanför markeringen med: **B / I / S / länk / H2 / citat**. Detta är desktop-konventionen och ersätter den fula växlingen i den fasta toolbaren.
-
-Den fasta topptoolbaren behåller alltid sina default-knappar (växlar inte längre läge på desktop) — så layouten blir stabil.
-
-### 6. Redo-knapp + Cmd+K-genväg
-- Lägg till "Gör om" (`redo`) bredvid "Ångra". `Cmd/Ctrl+Shift+Z` finns redan inbyggt i TipTap.
-- Globalt `Cmd/Ctrl+K` öppnar `LinkInsertSheet` (popover på desktop) — branschstandard.
-
-### 7. Länkredigering
-När markören står i en länk visar bubble-menun istället: **[öppna ↗] [redigera] [ta bort]**. Implementeras genom att läsa `editor.isActive('link')` och få attributen via `editor.getAttributes('link').href`. "Ta bort"-knappen anropar `unsetLink()`.
-
-### 8. Fixa `setLink` att respektera `text`-argumentet
-`TipTapEditor.setLink(url, text?)`: om `text` skickas och ingen markering finns, infoga `<a href="url">text</a>` via `insertContent`. Idag tappas argumentet helt.
-
-### 9. Småjusteringar
-- Placeholder-opacity 60 → 80 för läsbarhet.
-- Ta bort `onHideKeyboard`-prop på desktop-grenen (dead code).
-- Strikethrough flyttas till bubble-menu only (sällan använd vid skrivande, finns när man behöver redigera).
-- Editorns ytterdiv: `rounded-2xl` behålls, men toolbar i toppen får `rounded-t-2xl` och innehållet sömlös övergång.
-
-## Tekniska detaljer
-
-**Filer att redigera:**
-- `src/components/editor/RichTextEditor.tsx` — desktop-grenen byggs om: toolbar i toppen, bubble-menu monteras, Cmd+K-handler.
-- `src/components/editor/RichTextToolbar.tsx` — ny `DesktopDefaultToolbar` med direktknappar + active-state-stöd. Mobilens `DefaultToolbar`/`SelectionToolbar` behålls oförändrade.
-- `src/components/editor/TipTapEditor.tsx` — exponera `editor`-instansen via ref (för `isActive`-läsning), fixa `setLink(url, text)`, registrera `BubbleMenu`-extension.
-- `src/components/editor/BubbleMenu.tsx` — **ny** liten komponent som renderar bubble-menu-innehåll (text-läge vs länk-läge).
-
-**Beroenden att lägga till:**
-- `@tiptap/extension-bubble-menu`
-
-**Inga DB-ändringar, inga RLS-ändringar, inga edge functions.**
-**Mobilkomponenter och mobilflöden är inte i scope.**
+**Inga DB-, RLS- eller routing-ändringar.**
 
 ## Out of scope
-- Bilduppladdning (medvetet uteslutet tidigare).
-- Kodblock, tabeller, slash-meny — kan komma som steg 2 om du vill.
-- Mobilvyn — orörd.
+- Mobilvyn — orörd överallt.
+- Onboarding, Auth — fullskärms-flöden, inte i scope.
+- Nya features eller nytt innehåll — endast layout, storlekar och chart-polish.
+- Tablet-breakpoint (md) — om det behövs separat behandling tas det i en senare iteration.

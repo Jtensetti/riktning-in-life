@@ -48,12 +48,13 @@ export const AppShell = ({ children, wide = false }: AppShellProps) => {
           className={[
             "px-6 pt-5 safe-bottom animate-fade-in-up mx-auto",
             // Mobile (default): tight 448px column, exactly as before.
-            // Desktop calm stream: same 448px column centered in the wider area.
             "max-w-md",
+            // Desktop calm stream: open the column to ~560px for readability.
+            "lg:max-w-[560px]",
             // Desktop layout: take the remaining flex space + add room.
             "lg:flex-1 lg:min-w-0 lg:pt-10 lg:px-10",
-            // Wide pages override the max-w-md cap on desktop only.
-            wide ? "lg:!max-w-[1100px]" : "",
+            // Wide pages override the calm-stream cap on desktop only.
+            wide ? "lg:!max-w-[1180px]" : "",
           ].join(" ")}
         >
           {children}

@@ -59,26 +59,26 @@ export const SideNav = () => {
       <NavLink
         to={item.to}
         end={item.to === "/"}
-        className="group flex items-center gap-3 px-3 h-11 rounded-2xl press-soft transition-colors"
+        className="group flex items-center gap-3 px-3 h-12 rounded-2xl press-soft transition-colors hover:bg-surface-alt/60"
       >
         {({ isActive }) => (
           <>
             <span
               className="absolute left-0 w-1 rounded-r-full transition-all"
               style={{
-                height: isActive ? 24 : 0,
+                height: isActive ? 28 : 0,
                 background: item.activeColor,
               }}
               aria-hidden
             />
             <AbstractIcon
               name={item.icon}
-              size={22}
+              size={26}
               color={isActive ? item.activeColor : NAV_INACTIVE}
               inline
             />
             <span
-              className="text-[14px] font-extrabold transition-colors"
+              className="text-[15px] font-extrabold transition-colors"
               style={{ color: isActive ? item.activeColor : "hsl(var(--foreground))" }}
             >
               {item.label}
@@ -92,18 +92,18 @@ export const SideNav = () => {
   return (
     <aside
       className="hidden lg:flex flex-col shrink-0 border-r border-border-soft bg-background"
-      style={{ width: 240, height: "calc(100vh - 56px)", position: "sticky", top: 56 }}
+      style={{ width: 272, height: "calc(100vh - 64px)", position: "sticky", top: 64 }}
     >
-      <nav className="flex-1 overflow-y-auto px-3 py-5">
+      <nav className="flex-1 overflow-y-auto px-4 py-6">
         <ul className="space-y-1 relative">
           {PRIMARY.map(renderItem)}
 
           {/* Snabblogg-chips — sekundär snabblogg på desktop. */}
-          <li className="pt-4 pb-2">
-            <div className="px-1 mb-2 text-[10px] font-extrabold uppercase tracking-wider text-text-secondary">
+          <li className="pt-5 pb-2">
+            <div className="px-1 mb-2.5 text-[11px] font-extrabold uppercase tracking-[0.08em] text-text-secondary">
               Snabblogg
             </div>
-            <div className="grid grid-cols-4 gap-1.5 px-1">
+            <div className="grid grid-cols-4 gap-2 px-1">
               {QUICK_CHIPS.map(c => (
                 <button
                   key={c.key}
@@ -112,7 +112,7 @@ export const SideNav = () => {
                   aria-label={c.label}
                   className="aspect-square rounded-2xl bg-surface hover:bg-surface-alt grid place-items-center press-soft transition-colors"
                 >
-                  <AbstractIcon name={c.icon} size={20} color={c.color} inline />
+                  <AbstractIcon name={c.icon} size={24} color={c.color} inline />
                 </button>
               ))}
             </div>
@@ -122,15 +122,15 @@ export const SideNav = () => {
           <li className="py-2">
             <button
               onClick={() => navigate("/journal")}
-              className="w-full flex items-center gap-3 px-3 h-12 rounded-2xl press-soft transition-transform active:scale-[0.98]"
+              className="w-full flex items-center gap-3 px-4 h-14 rounded-2xl press-soft transition-transform active:scale-[0.98]"
               style={{
                 background: "hsl(var(--yellow-journal))",
                 color: "hsl(var(--foreground))",
                 boxShadow: "0 4px 14px hsl(var(--yellow-journal) / 0.45)",
               }}
             >
-              <AbstractIcon name="pencil-soft" size={20} color="hsl(var(--orange-start))" inline />
-              <span className="text-[14px] font-extrabold">Skriv i journalen</span>
+              <AbstractIcon name="pencil-soft" size={24} color="hsl(var(--orange-start))" inline />
+              <span className="text-[15px] font-extrabold">Skriv i journalen</span>
             </button>
           </li>
 
