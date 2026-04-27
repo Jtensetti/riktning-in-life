@@ -642,95 +642,115 @@ const Week = () => {
           <p className="text-xs text-text-secondary">Varje dag berättar något</p>
         </div>
 
-        {/* Filter-pills: styr både diagram och per-dag-listan */}
-        <div role="tablist" aria-label="Filtrera återhämtningshistorik" className="flex flex-wrap gap-1.5 mb-3">
-          {([
+        {/* Filter-pills: styr både diagram och per-dag-listan.
+            Semantiska kategorier visas bara om minst en logg i 7-dagars-fönstret har den typen,
+            så vi inte erbjuder tomma filter. */}
+        {(() => {
+          const presentKinds = new Set<SemanticKind>();
+          for (const a of activities) {
+            if (a.semantic_kind) presentKinds.add(a.semantic_kind);
+          }
+          const baseFilters: { key: HistoryFilter; label: string }[] = [
             { key: "all", label: "Allt" },
             { key: "checkins", label: "Check-ins" },
             { key: "exercises", label: "Övningar" },
-            { key: "activeTime", label: "Rörelse + återhämtning" },
-          ] as const).map((f) => {
-            const active = historyFilter === f.key;
-            return (
-              <button
-                key={f.key}
-                role="tab"
-                aria-selected={active}
-                onClick={() => setHistoryFilter(f.key)}
-                className={`px-3 py-1.5 rounded-full text-[12px] font-extrabold press-soft transition-colors ${
-                  active
-                    ? "bg-foreground text-background"
-                    : "bg-surface-alt text-text-secondary hover:text-foreground"
-                }`}
-              >
-                {f.label}
-              </button>
-            );
-          })}
-        </div>
+          ];
+          const kindFilters: { key: HistoryFilter; label: string }[] = (
+            ["rorelse", "aterhamtning", "socialt", "fokus", "vardag", "somn", "journal"] as SemanticKind[]
+          )
+            .filter((k) => presentKinds.has(k))
+            .map((k) => ({ key: k, label: KIND_META[k].label }));
+          const allFilters = [...baseFilters, ...kindFilters];
+          return (
+            <div role="tablist" aria-label="Filtrera återhämtningshistorik" className="flex flex-wrap gap-1.5 mb-3">
+              {allFilters.map((f) => {
+                const active = historyFilter === f.key;
+                return (
+                  <button
+                    key={f.key}
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => setHistoryFilter(f.key)}
+                    className={`px-3 py-1.5 rounded-full text-[12px] font-extrabold press-soft transition-colors ${
+                      active
+                        ? "bg-foreground text-background"
+                        : "bg-surface-alt text-text-secondary hover:text-foreground"
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })()}
 
         {/* Beräkna filtrerade serier en gång */}
         {(() => {
+          const isKind = (f: HistoryFilter): f is SemanticKind =>
+            f !== "all" && f !== "checkins" && f !== "exercises";
+
           const minutesFor = (d: typeof timeline[number]): number => {
             if (historyFilter === "checkins") return d.checkin?.sleep_hours ? Math.round(Number(d.checkin.sleep_hours) * 60) : 0;
             if (historyFilter === "exercises") return d.sess.reduce((s, x) => s + (x.exercises?.duration_minutes ?? 0), 0);
-            if (historyFilter === "activeTime") return d.acts.reduce((s, a) => s + (a.duration_minutes ?? 0), 0)
-              + d.sess.reduce((s, x) => s + (x.exercises?.duration_minutes ?? 0), 0);
+            if (isKind(historyFilter)) {
+              return d.acts
+                .filter((a) => a.semantic_kind === historyFilter)
+                .reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
+            }
             return d.totalMinutes;
           };
           const totalMin = timeline.reduce((s, d) => s + minutesFor(d), 0);
 
-          const subtitleByFilter: Record<typeof historyFilter, string> = {
-            all: "Senaste 7 dagar",
-            checkins: "Sömn-minuter från dina check-ins",
-            exercises: "Minuter från genomförda övningar",
-            activeTime: "Aktiviteter + övningar tillsammans",
-          };
+          const meta = isKind(historyFilter) ? KIND_META[historyFilter] : null;
 
-          const totalLabelByFilter: Record<typeof historyFilter, string> = {
-            all: `${totalMin} min totalt`,
-            checkins: `${Math.round(totalMin / 60)} h sömn totalt`,
-            exercises: `${totalMin} min övning`,
-            activeTime: `${totalMin} min rörelse + återhämtning`,
-          };
+          const title = meta ? meta.label
+            : historyFilter === "checkins" ? "Sömn"
+            : historyFilter === "exercises" ? "Övningar"
+            : "Rörelse + återhämtning";
 
-          const toneByFilter: Record<typeof historyFilter, "green" | "purple" | "blue" | "orange"> = {
-            all: "green",
-            checkins: "purple",
-            exercises: "blue",
-            activeTime: "orange",
-          };
+          const subtitle = meta ? meta.subtitle
+            : historyFilter === "all" ? "Senaste 7 dagar"
+            : historyFilter === "checkins" ? "Sömn-minuter från dina check-ins"
+            : "Minuter från genomförda övningar";
 
-          const colorByFilter: Record<typeof historyFilter, string> = {
-            all: "green",
-            checkins: "purple",
-            exercises: "blue",
-            activeTime: "orange",
-          };
+          const totalLabel = meta ? `${totalMin} ${meta.totalSuffix}`
+            : historyFilter === "all" ? `${totalMin} min totalt`
+            : historyFilter === "checkins" ? `${Math.round(totalMin / 60)} h sömn totalt`
+            : `${totalMin} min övning`;
+
+          const tone: "green" | "purple" | "blue" | "orange" | "pink" | "yellow" = meta ? meta.tone
+            : historyFilter === "checkins" ? "purple"
+            : historyFilter === "exercises" ? "blue"
+            : "green";
+
+          const fixedColor = meta ? meta.tone
+            : historyFilter === "checkins" ? "purple"
+            : historyFilter === "exercises" ? "blue"
+            : null;
 
           return (
             <>
               <ChartCard
-                title="Rörelse + återhämtning"
-                subtitle={subtitleByFilter[historyFilter]}
-                tone={toneByFilter[historyFilter]}
+                title={title}
+                subtitle={subtitle}
+                tone={tone === "pink" || tone === "yellow" ? "orange" : tone}
                 index={0}
-                ariaSummary={`${totalLabelByFilter[historyFilter]} den här veckan.`}
+                ariaSummary={`${totalLabel} den här veckan.`}
                 action={
                   <span className="text-[11px] font-extrabold text-text-secondary tabular-nums">
-                    {totalLabelByFilter[historyFilter]}
+                    {totalLabel}
                   </span>
                 }
                 className="mb-3"
               >
                 <Suspense fallback={<ChartFallback height={120} />}>
                   <ActivityBars
+                    label={title}
                     data={timeline.map((d) => ({
                       iso: d.iso,
                       minutes: minutesFor(d),
-                      color: historyFilter === "all"
-                        ? (d.acts[0]?.color ?? d.sess[0]?.exercises?.color ?? "green")
-                        : colorByFilter[historyFilter],
+                      color: fixedColor ?? (d.acts[0]?.color ?? d.sess[0]?.exercises?.color ?? "green"),
                     }))}
                     height={120}
                   />
