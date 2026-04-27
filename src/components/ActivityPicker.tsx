@@ -133,6 +133,8 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
   const [selected, setSelected] = useState<CatalogItem | null>(null);
   const [duration, setDuration] = useState(30);
   const [mood, setMood] = useState(1);
+  const [intensity, setIntensity] = useState<Intensity | null>(null);
+  const [withWho, setWithWho] = useState<WithWho | null>(null);
   const [customLabel, setCustomLabel] = useState("");
   const recentSlugs = useRecentActivities(4);
 
@@ -140,7 +142,7 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
     if (!open) return;
     supabase
       .from("activity_catalog")
-      .select("slug,label,category,icon,color,default_minutes,tags_json")
+      .select("slug,label,category,icon,color,default_minutes,tags_json,semantic_kind")
       .order("sort_order")
       .then(({ data }) => {
         if (data) setCatalog(data as any);
@@ -178,6 +180,8 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
       setActiveCat(null);
       setCustomLabel("");
       setMood(1);
+      setIntensity(null);
+      setWithWho(null);
     }
   }, [open]);
 
@@ -214,6 +218,8 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
     setSelected(item);
     setDuration(item.default_minutes);
     setMood(1);
+    setIntensity(null);
+    setWithWho(null);
   };
 
   const confirm = () => {
@@ -226,6 +232,9 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
       color: selected.color,
       duration_minutes: duration,
       mood_delta: mood,
+      semantic_kind: selected.semantic_kind ?? null,
+      intensity: selected.semantic_kind === "rorelse" ? intensity : null,
+      with_who: selected.semantic_kind === "socialt" ? withWho : null,
     });
     onOpenChange(false);
   };
@@ -241,6 +250,7 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
       color: "yellow",
       duration_minutes: 30,
       mood_delta: 1,
+      semantic_kind: null,
     });
     onOpenChange(false);
   };
