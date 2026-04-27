@@ -93,7 +93,13 @@ export const DesktopTopbar = () => {
 
   // Check-in-status: utvärdera vid mount, vid datumbyte (efter midnatt-väckning),
   // och när en check-in just genomförts (custom event från checkin-flödet).
-  // En enkel cache i sessionStorage hindrar onödiga DB-roundtrips inom samma dygn.
+  //
+  // Cross-device: sessionStorage är per-flik och kan inte veta om användaren
+  // checkat in från telefonen. Därför är cachen *rådgivande* — den ger ett
+  // snabbt initialvärde, men vi bekräftar alltid mot DB i bakgrunden vid mount
+  // och vid uppvakning. När vi väl har bekräftat att check-in är gjord (count>0
+  // i DB *under denna session*) markerar vi det med en confirmed-flagga och
+  // slipper då vidare anrop tills datumet byter.
   useEffect(() => {
     if (!user) {
       setNeedsCheckin(false);
@@ -102,41 +108,57 @@ export const DesktopTopbar = () => {
     }
 
     let cancelled = false;
+    // Datum då vi senast *bekräftade mot DB* att check-in är gjord. Bara då
+    // kan vi tryggt hoppa över DB-anrop vid uppvakning.
+    let confirmedDoneFor: string | null = null;
 
-    const evaluate = async (force = false) => {
+    const evaluate = async () => {
       const todayISO = localISODate(new Date());
-      const cached = sessionStorage.getItem("riktning:lastCheckinDate");
-      if (cached === todayISO) {
-        lastEvaluatedDateRef.current = todayISO;
-        if (!cancelled) setNeedsCheckin(false);
-        return;
-      }
-      // Skippa DB-anrop om vi redan utvärderat detta datum och inget tvingar omkörning.
-      if (!force && lastEvaluatedDateRef.current === todayISO) return;
 
-      const { count } = await supabase
+      // Vi har redan bekräftat mot DB att dagens check-in är gjord — inget mer att göra.
+      if (confirmedDoneFor === todayISO) return;
+
+      // Snabb optimistisk UI-uppdatering från sessionStorage (rådgivande, inte sanning).
+      const cached = sessionStorage.getItem("riktning:lastCheckinDate");
+      if (cached === todayISO && !cancelled) setNeedsCheckin(false);
+
+      // Sanningsanrop mot DB — fångar check-ins gjorda från en annan enhet.
+      const { count, error } = await supabase
         .from("daily_checkins")
         .select("id", { count: "exact", head: true })
         .eq("user_id", user.id)
         .eq("date", todayISO);
-      if (cancelled) return;
+      if (cancelled || error) return;
+
       lastEvaluatedDateRef.current = todayISO;
       const missing = (count ?? 0) === 0;
       setNeedsCheckin(missing);
-      if (!missing) sessionStorage.setItem("riktning:lastCheckinDate", todayISO);
+
+      if (missing) {
+        // Cachen var en lögn — städa så vi inte snabbflashar bort pillen nästa gång.
+        if (sessionStorage.getItem("riktning:lastCheckinDate") === todayISO) {
+          sessionStorage.removeItem("riktning:lastCheckinDate");
+        }
+      } else {
+        sessionStorage.setItem("riktning:lastCheckinDate", todayISO);
+        confirmedDoneFor = todayISO;
+      }
     };
 
     evaluate();
 
-    // Re-utvärdera vid uppvaknande — billig om datumet inte ändrats (cache/ref).
+    // Re-utvärdera vid uppvaknande. Snabb path: om vi redan DB-bekräftat dagens
+    // check-in i denna session är detta en no-op (ingen DB-anrop).
     const onWake = () => {
       if (document.visibilityState === "visible") evaluate();
     };
-    // Direkt-signal från checkin-flödet — pillen försvinner utan extra DB-anrop.
+    // Direkt-signal från checkin-flödet på *samma* enhet — pillen försvinner
+    // utan extra DB-anrop, och vi räknar det som DB-bekräftat.
     const onDone = () => {
       const todayISO = localISODate(new Date());
       sessionStorage.setItem("riktning:lastCheckinDate", todayISO);
       lastEvaluatedDateRef.current = todayISO;
+      confirmedDoneFor = todayISO;
       setNeedsCheckin(false);
     };
 
