@@ -399,13 +399,26 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
 
         {selected && (
           <div className="px-6 pb-6 overflow-y-auto">
-            <div className={`rounded-3xl p-4 mb-5 flex items-center gap-3 shadow-card ${colorBg(selected.color)}`}>
-              <div className="shrink-0 w-12 h-12 rounded-full bg-white/25 grid place-items-center">
-                <AbstractIcon name={selected.icon as IconName} size={28} color="currentColor" />
+            <div className="rounded-3xl p-4 mb-5 flex items-center gap-3 shadow-card bg-surface border border-border-soft">
+              <div
+                className="shrink-0 grid place-items-center"
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: "var(--icon-tile-radius)",
+                  background: `hsl(var(--${selected.color === "yellow" ? "yellow-journal" : selected.color === "blue" ? "blue-calm" : selected.color === "purple" ? "purple-sleep" : selected.color === "pink" ? "pink-move" : selected.color === "green" ? "green-recovery" : "orange-start"}) / 0.14)`,
+                }}
+                aria-hidden
+              >
+                <AbstractIcon
+                  name={selected.icon as IconName}
+                  size={26}
+                  color={`hsl(var(--${selected.color === "yellow" ? "yellow-journal" : selected.color === "blue" ? "blue-calm" : selected.color === "purple" ? "purple-sleep" : selected.color === "pink" ? "pink-move" : selected.color === "green" ? "green-recovery" : "orange-start"}))`}
+                />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-extrabold text-[17px] leading-tight">{selected.label}</h3>
-                <p className="text-xs opacity-90">{selected.category}</p>
+                <h3 className="font-extrabold text-[17px] leading-tight text-foreground">{selected.label}</h3>
+                <p className="text-xs text-text-secondary">{selected.category}</p>
               </div>
             </div>
 
