@@ -34,6 +34,7 @@ import {
   sevenDayLabels,
   sevenDayDates,
   seriesFor,
+  PDF_PAGE,
 } from "@/lib/pdfWidgets";
 
 type View = "home" | "form" | "meds" | "med_log" | "report";
