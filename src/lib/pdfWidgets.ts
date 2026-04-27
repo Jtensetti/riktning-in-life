@@ -276,7 +276,7 @@ export const drawScoreCards = (
     // Delta
     if (c.value != null && c.prev != null) {
       const d = Math.round(c.value - c.prev);
-      const sym = d > 0 ? "+" : d < 0 ? "−" : "=";
+      const sym = d > 0 ? "+" : d < 0 ? "-" : "=";
       const txt = d === 0 ? "oforandrat" : `${sym}${Math.abs(d)} mot forra`;
       setText(doc, d === 0 ? PDF_COLORS.inkMuted : d > 0 ? PDF_COLORS.green : PDF_COLORS.red);
       doc.setFont("helvetica", "bold");
@@ -611,7 +611,7 @@ export const drawSummaryBlock = (
     // Trend
     if (t.trend) {
       const goodUp = t.trend.goodWhenUp ?? true;
-      const arrow = t.trend.dir === "up" ? "↑" : t.trend.dir === "down" ? "↓" : "·";
+      const arrow = t.trend.dir === "up" ? "^" : t.trend.dir === "down" ? "v" : "=";
       const isPositive =
         t.trend.dir === "flat"
           ? null
@@ -683,7 +683,7 @@ export const drawClinicianSummary = (
     if (cur == null || prev == null) return "";
     const diff = cur - prev;
     if (Math.abs(diff) < 0.5) return " (stabil)";
-    const arrow = diff > 0 ? "↑" : "↓";
+    const arrow = diff > 0 ? "^" : "v";
     const positive = (diff > 0 && goodUp) || (diff < 0 && !goodUp);
     const sign = diff > 0 ? "+" : "";
     return ` (${arrow} ${sign}${Math.round(diff)} ${positive ? "förbättring" : "försämring"})`;
