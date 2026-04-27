@@ -707,9 +707,19 @@ export interface ClinicianSummaryInput {
 }
 
 /**
- * "Till läkaren" — kompakt narrativ sammanfattning. Cream-bakgrund med
- * tunn vänsteraccent, samma uttryck som appens kortmodul. Säkerhetsraden
- * får egen mjuk röd-band så den syns även i utskrift.
+ * "Till läkaren" — kompakt narrativ sammanfattning.
+ *
+ * Använder samma kort-mall som `drawSummaryBlock`/`drawScoreCards` så
+ * läkaren möter ett konsekvent visuellt språk genom hela rapporten:
+ *   • vit `surface`-bakgrund
+ *   • tunn `rule`-ram, `roundedRect` med radius 8
+ *   • accentprick + halo uppe vänster (blue-calm = vård/struktur)
+ *   • padding 14 pt, 7 pt UPPERCASE eyebrow i `inkMuted`
+ *   • brödtext 9 pt normal med 12 pt linjehöjd
+ *
+ * Säkerhetsraden behåller sin mjuka röd-fyllning så den syns även i
+ * svartvit utskrift, men med matchad radius (4) och inom samma
+ * inre-padding-grid som övriga rader.
  */
 export const drawClinicianSummary = (
   doc: jsPDF,
@@ -720,17 +730,27 @@ export const drawClinicianSummary = (
   const pageW = doc.internal.pageSize.getWidth();
   const w = pageW - margin * 2;
 
-  const padX = 18;
-  const padY = 16;
+  // ---- Kort-konstanter (matchar drawSummaryBlock exakt) ----
+  const PAD_X = 14;          // samma som summary-tiles
+  const PAD_Y = 14;          // samma vertikala andning
+  const RADIUS = 8;          // samma hörnradius
+  const LINE_H = 12;         // samma radavstånd för 9pt brödtext
+  const EYEBROW_FONT = 7;    // samma uppercase-eyebrow
+  const BODY_FONT = 9;       // samma brödtext
+  const META_FONT = 8;       // samma som .sub i summary-tiles
+
+  // Innehåll-kolumn — accentpricken sitter vid x = PAD_X+4 (radie 9)
+  // så textbaslinjen börjar vid PAD_X+22 likt summary-tiles.
+  const TEXT_X_OFFSET = 22;
   const startY = y;
 
   // ---- Mät innehåll först för exakt höjd ----
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
+  doc.setFontSize(BODY_FONT);
   const driverLines: string[] = [];
   const driversToShow = input.drivers.slice(0, 5);
   driversToShow.forEach((d) => {
-    const wrapped = doc.splitTextToSize(`•  ${d}`, w - padX * 2 - 8);
+    const wrapped = doc.splitTextToSize(`•  ${d}`, w - PAD_X * 2 - 8);
     driverLines.push(...wrapped);
   });
 
@@ -748,7 +768,7 @@ export const drawClinicianSummary = (
     .map((s) => `${s.label}: ${Math.round(s.value as number)}/100${fmtDelta(s.value, s.prev, s.goodWhenUp ?? true)}`)
     .join("    ");
   const narrativeLines = narrative
-    ? doc.splitTextToSize(narrative, w - padX * 2)
+    ? doc.splitTextToSize(narrative, w - PAD_X * 2)
     : ["Inte tillräckligt med data för att beräkna scores."];
 
   const safetyTotal =
@@ -759,88 +779,103 @@ export const drawClinicianSummary = (
       ? `Underlag: ${input.daysWithData}/${input.totalDays} dagar med checkin (${input.periodLabel}).`
       : `Underlag: ${input.periodLabel}.`;
 
-  const driversBlockH = driversToShow.length > 0 ? 18 + driverLines.length * 12 + 6 : 0;
-  const safetyH = hasSafety ? 26 : 0;
-  const totalH =
-    padY + 22 + 10 + narrativeLines.length * 12 + 10 + driversBlockH + safetyH + 16 + padY;
+  // Höjd — räknas i exakta multiplar av LINE_H så texten landar på samma
+  // baseline-rytm som övriga kort.
+  const headerH = LINE_H * 2;                                    // eyebrow + titelrad
+  const narrativeH = narrativeLines.length * LINE_H;
+  const driversH = driversToShow.length > 0 ? LINE_H + driverLines.length * LINE_H : 0;
+  const safetyBandH = hasSafety ? 22 : 0;                        // eget band
+  const coverageH = LINE_H;
+  const gapBetweenBlocks = 8;
+  const blocks = [narrativeH, driversH, safetyBandH, coverageH].filter((h) => h > 0);
+  const innerGaps = (blocks.length - 1) * gapBetweenBlocks;
+  const totalH = PAD_Y + headerH + 6 + blocks.reduce((a, b) => a + b, 0) + innerGaps + PAD_Y;
 
-  // ---- Måla bakgrund i cream för varm "anteckning"-känsla ----
-  setFill(doc, PDF_COLORS.cream);
+  // ---- Kort: vit bakgrund + tunn ram (samma mall som summary-tiles) ----
+  setFill(doc, PDF_COLORS.surface);
   setDraw(doc, PDF_COLORS.rule);
   doc.setLineWidth(0.5);
-  doc.roundedRect(margin, startY, w, totalH, 10, 10, "FD");
-  // Vänsteraccent (blue-calm) — tunn och hög
+  doc.roundedRect(margin, startY, w, totalH, RADIUS, RADIUS, "FD");
+
+  // Accentprick + halo uppe vänster (blue-calm = vård) — exakt samma
+  // mått som drawSummaryBlock: halo r=9, prick r=4, centrum vid (PAD_X+4, PAD_Y+4)
+  setFill(doc, softVariant(PDF_COLORS.blue));
+  doc.circle(margin + PAD_X + 4, startY + PAD_Y + 4, 9, "F");
   setFill(doc, PDF_COLORS.blue);
-  doc.roundedRect(margin, startY, 3, totalH, 1.5, 1.5, "F");
+  doc.circle(margin + PAD_X + 4, startY + PAD_Y + 4, 4, "F");
 
-  // ---- Eyebrow + rubrik ----
-  setText(doc, PDF_COLORS.blue);
+  // ---- Eyebrow: UPPERCASE, 7pt bold, inkMuted (samma som summary.label) ----
+  setText(doc, PDF_COLORS.inkMuted);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(7);
-  doc.text("AUTO-SAMMANFATTNING", margin + padX, startY + padY + 4);
+  doc.setFontSize(EYEBROW_FONT);
+  doc.text("TILL LÄKAREN", margin + PAD_X + TEXT_X_OFFSET, startY + PAD_Y + 2);
 
-  setText(doc, PDF_COLORS.ink);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.text("Till läkaren", margin + padX, startY + padY + 18);
-
+  // Period i högerkant — samma 8pt som .sub i summary-tiles
   setText(doc, PDF_COLORS.inkMuted);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.text(input.periodLabel, pageW - margin - padX, startY + padY + 18, { align: "right" });
+  doc.setFontSize(META_FONT);
+  doc.text(input.periodLabel, pageW - margin - PAD_X, startY + PAD_Y + 2, { align: "right" });
 
-  let cursor = startY + padY + 36;
+  // Andra raden i headern: en kort sub-text som binder ihop med pricken
+  setText(doc, PDF_COLORS.inkSoft);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(META_FONT);
+  doc.text("Auto-sammanfattning för vårdkontakt", margin + PAD_X + TEXT_X_OFFSET, startY + PAD_Y + 12);
+
+  // Innehållet börjar under headern, alignat med kortets vänsterkant (PAD_X)
+  let cursor = startY + PAD_Y + headerH + 6;
 
   // ---- Narrativ scoretext ----
   setText(doc, PDF_COLORS.ink);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
+  doc.setFontSize(BODY_FONT);
   narrativeLines.forEach((ln: string) => {
-    doc.text(ln, margin + padX, cursor);
-    cursor += 12;
+    doc.text(ln, margin + PAD_X, cursor);
+    cursor += LINE_H;
   });
-  cursor += 6;
 
   // ---- Drivare ----
   if (driversToShow.length > 0) {
+    cursor += gapBetweenBlocks;
     setText(doc, PDF_COLORS.inkMuted);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(7);
-    doc.text("VIKTIGASTE BIDRAGANDE FAKTORER", margin + padX, cursor);
-    cursor += 12;
+    doc.setFontSize(EYEBROW_FONT);
+    doc.text("VIKTIGASTE BIDRAGANDE FAKTORER", margin + PAD_X, cursor);
+    cursor += LINE_H;
     setText(doc, PDF_COLORS.ink);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
+    doc.setFontSize(BODY_FONT);
     driverLines.forEach((ln) => {
-      doc.text(ln, margin + padX, cursor);
-      cursor += 12;
+      doc.text(ln, margin + PAD_X, cursor);
+      cursor += LINE_H;
     });
-    cursor += 6;
   }
 
   // ---- Säkerhetsband ----
   if (hasSafety) {
+    cursor += gapBetweenBlocks;
     const bandH = 18;
-    setFill(doc, [253, 235, 235]); // mjuk röd
-    doc.roundedRect(margin + padX - 6, cursor - 12, w - padX * 2 + 12, bandH, 4, 4, "F");
+    setFill(doc, [253, 235, 235]); // mjuk röd — samma som tidigare
+    doc.roundedRect(margin + PAD_X - 6, cursor - 12, w - PAD_X * 2 + 12, bandH, 4, 4, "F");
     setFill(doc, PDF_COLORS.red);
-    doc.circle(margin + padX, cursor - 3, 2, "F");
+    doc.circle(margin + PAD_X, cursor - 3, 2, "F");
     setText(doc, PDF_COLORS.red);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
+    doc.setFontSize(BODY_FONT);
     const parts: string[] = [];
     if (input.safety!.acute > 0) parts.push(`${input.safety!.acute} dgr akuta signaler`);
     if (input.safety!.active > 0) parts.push(`${input.safety!.active} dgr aktiva tankar`);
     if (input.safety!.passive > 0) parts.push(`${input.safety!.passive} dgr passiva dödstankar`);
-    doc.text(`Säkerhet: ${parts.join("  ·  ")}`, margin + padX + 8, cursor);
-    cursor += bandH + 4;
+    doc.text(`Säkerhet: ${parts.join("  ·  ")}`, margin + PAD_X + 8, cursor);
+    cursor += bandH - 12 + 4; // landa på rätt baseline för nästa rad
   }
 
   // ---- Underlagsrad ----
+  cursor += gapBetweenBlocks - (hasSafety ? 4 : 0);
   setText(doc, PDF_COLORS.inkMuted);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.text(dataCoverage, margin + padX, cursor);
+  doc.setFontSize(META_FONT);
+  doc.text(dataCoverage, margin + PAD_X, cursor);
 
   setText(doc, PDF_COLORS.ink);
   return startY + totalH + 16;
