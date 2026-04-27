@@ -1,56 +1,71 @@
-## Vad jag fixar
 
-### 1. Inga emojis i aktivitetsflödet — `src/components/ActivityPicker.tsx`
-Skattningen "Hur kändes det efteråt?" använder idag 😔🙁😐🙂😊. Byter till **rena text-pillar** (tonas med färg + vikt så det fortfarande känns lekigt, inte kliniskt):
-- Sämre · Lite sämre · Som vanligt · Lite bättre · Mycket bättre
-- Aktiv pill = mörk fyllning (som idag), inaktiv = surface med border-soft.
-- Tar också bort den lilla `Star`-fyllda emoji-känslan? Nej — `Star` är en lucide-ikon, inte emoji, den får vara kvar (du bad oss göra den mindre, det är gjort).
+## Mål
+1. **Förifyllt "efter"-värde**: I `ExerciseDetail.tsx` ska `after`-state initieras med `before`-värdena när användaren går från fas `before` → `doing`. Då börjar slidern på samma punkt och man kan medvetet dra ner (oro) eller upp (energi/mående).
+2. **Valens-modell**: Inför en gemensam definition av vilka mått som är "bra att de minskar" (oro, tyngd, hopplöshet, skuld, säng/soffa-tid, biverkningar, missade meds) vs "bra att de ökar" (energi, mående, sömnkvalitet, funktion, WHO-5, faktisk övningstid, genomförda aktiviteter). Använd den överallt: i analys, deltavisning, dynamiska råd, journalsammanfattningar.
 
-### 2. Aktivitetskort utan ellips — `PickerCard` i `ActivityPicker.tsx`
-Nu: fast `height: 88px` + `line-clamp-2` → långa namn ("Skicka ett meddelande till …", "Lyssna på musik som …") trunkeras.
-Ändring:
-- Ta bort fast höjd. Sätt `minHeight: 88px` istället så kortet växer.
-- Ta bort `line-clamp-2`. Texten får wrappa till 3 rader vid behov.
-- Behåll padding 14/18 och radius 24 — visuellt likvärdigt för korta namn, men långa namn syns helt.
-- Stjärnan ligger redan absolut top-right; rätt-padding (`paddingRight: 40`) räcker när texten wrappar.
+## Ändringar
 
-### 3. "Frun" → könsneutralt — seed-data
-Två rader i `supabase/migrations/20260426133127_…sql` har "frun":
-- `('date-fru', 'Date-kväll med frun', …)`
-- `('film-med-frun', 'Titta på en film med frun', …)`
+### A. `src/pages/ExerciseDetail.tsx` — förifylld efter-skattning
+- När knappen "Kör igång" trycks (övergång `before → doing`): `setAfter({ ...before })` så slidrarna startar där användaren var.
+- Visa visuell hint i `after`-fasen: pilen/talet bredvid värdet visar delta jämfört med `before` med rätt valens-färg (grön = förbättring, neutral = oförändrad, mjuk röd = försämring) — inte värderande, bara informativt.
+- `SliderRow` får valfri prop `before?: number` + `direction: "lower-better" | "higher-better"` för att rendera den lilla deltachippen.
+- Spara även `delta` (after − before) i `note`-meta är inte nödvändigt — vi har redan både before/after-kolumner; deltat beräknas i analyslagret.
 
-Skapar **ny migration** som uppdaterar befintliga rader (UPDATE på `activity_catalog`):
-- "Date-kväll med frun" → **"Date-kväll med partner"**
-- "Titta på en film med frun" → **"Titta på en film med partner"**
+### B. Ny fil `src/lib/valence.ts` — central sanning
+Exportera:
+```ts
+export type Direction = "lower-better" | "higher-better" | "neutral";
+export const METRIC_DIRECTION: Record<string, Direction> = {
+  // checkin / övning
+  anxiety: "lower-better",
+  mood_heaviness: "lower-better",
+  hopelessness: "lower-better",
+  guilt_selfcriticism: "lower-better",
+  daytime_bed_sofa_time_minutes: "lower-better",
+  // bra att öka
+  mood: "higher-better",            // mood-after på övning (positiv skala)
+  energy: "higher-better",
+  sleep_hours: "higher-better",
+  sleep_quality: "higher-better",
+  function_score: "higher-better",
+  getting_started: "higher-better",
+  // medication / aktivitet
+  side_effect_severity: "lower-better",
+  medications_missed: "lower-better",
+  medications_taken: "higher-better",
+  exercises_actual_minutes: "higher-better",
+  activities_count: "higher-better",
+};
+export const isImprovement = (metric: string, before: number, after: number): "better" | "worse" | "same";
+export const improvementSign = (metric: string, delta: number): 1 | 0 | -1; // för färg/ikon
+export const formatDelta = (metric: string, before: number, after: number): { text: string; tone: "good" | "bad" | "neutral" };
+```
 
-(Slugs behålls för att inte tappa historik/favoriter.)
+### C. `ExerciseDetail.tsx` + `ActivityPicker.tsx` — använd valens
+- Övning: SliderRow renderar `formatDelta("anxiety", before, after)` för oro (lägre=bättre), för energi/mood (högre=bättre).
+- ActivityPicker har redan `mood_delta` (-2..+2) — markera tydligt med samma färgsystem i bekräftelse-vyn att +1/+2 är "bra".
 
-### 4. Vård-knappar — enhetlig färg, ingen 3D-accent — `src/pages/Vard.tsx`
-Idag: vita kort med en `borderLeft: 4px solid <color>` accent som ser ut som en 3D-flik bredvid kortet.
+### D. `src/lib/metrics.ts` — exponera session-effekt
+Lägg till hjälpare som aggregerar exercise_sessions:
+- `sessionEffect(sessions)`: medel-delta per dimension med valens applicerad ⇒ % förbättring.
+- Inkluderas i `daily_summaries`-beräkning (befintligt schema har redan `exercises_count`, `exercises_actual_minutes`; vi *läser* bara — ingen schemaändring).
 
-Ändring (samma språk som ActionCard / Today): **hela kortet får tonen**, mjukt och färgglatt.
-- Veckoskattningar (PHQ-9 / GAD-7 / WHO-5):
-  - Bakgrund = `--yellow-journal` / `--pink-move` / `--green-recovery` (samma toner som idag, men hela ytan, ~85-100% mättnad).
-  - Ikon-tile = vit/22 % opacitet (som ActionCard).
-  - Text = vit på pink/green, mörk på yellow (samma `isLightTone`-regel som ActionCard).
-  - Tar bort `borderLeft`-accenten helt.
-- "Läkemedel & biverkningar":
-  - Bakgrund = `--pink-move` (eller `--orange-start` för värme — jag väljer pink för att hålla läkemedels-pillerikonen tydlig).
-  - Vit ikon-tile + vit text.
-  - Tar bort `borderLeft`.
-- "Min krisplan" lämnas i sin lugna röd-tinted-cream-stil — den är tänkt att vara dämpad, inte signal-röd.
-- "Rapport"-kortet (blå gradient med illustration) lämnas — det är redan enhetligt med appens språk.
+### E. `src/lib/recommend.ts` + `dayInsights.ts` — dynamik baserat på valens
+- "Vandring sänkte din oro med 2 i snitt senaste veckan" (lower-better förbättring).
+- "Övningar du genomför längre än planerat ger större energi-lyft" (kombinerar `actual_duration_seconds > planned` med energi-delta).
+- Logga visade rekommendationer i `recommendations_log` (tabellen finns).
 
-Resultat: Vård-listan får samma färgglada Headspace-känsla som Idag/Utforska, utan att tappa identitet.
+### F. Patterns / Journal / WeeklyReport
+- `PatternsSection` + `WeeklyReport` ska använda `formatDelta` så att alla pilar/färger blir konsekventa (grön = bra, oavsett om det är en upp- eller nedåtgående linje).
+- Auto-journal från övningssessioner: skriv "Oro 6 → 4 (−2, bra)" i `body_json` med valens-tecknet bestämt av `valence.ts`.
 
-## Vad som INTE ändras
-- Ingen ändring i mood-emojis i `QuickLogPills` eller `QuickLog.tsx` (du sa "aktivitet ska inte ha emojis" — det gäller aktivitetspickern). Säg till om du vill ta bort dem där också.
-- Ingen ändring i datamodell, navigering, eller header.
-- Stjärn-favorit-ikonen (lucide `Star`) behålls — det är en ikon, inte emoji.
+### G. Tester
+- `src/test/valence.test.ts`: enhetstest för `isImprovement` per metrik.
+- Uppdatera `todayLayout.test.ts` om någon assertion påverkas.
 
-## QA
-Efter ändringen kollar jag i preview:
-- Aktivitetspicker: långa labels visas helt utan "…".
-- Skattningssteget visar text-pillar istället för emojis.
-- "Date-kväll med partner" / "Titta på en film med partner" finns i listan.
-- Vård-sidan: alla tre skattningskort + läkemedelskortet är fullfärgade utan 3D-accent.
+## Resultat för användaren
+- **Direkt**: efter-slidern startar på samma siffra som före — naturligt att dra ner oron.
+- **På sikt**: alla deltavisningar (övningar, aktiviteter, vecka, journal, dynamiska tips) använder samma "bra/dåligt"-logik så appen känns konsekvent och datadriven.
+
+## Inga schemaändringar
+Allt detta använder befintliga kolumner (`*_before`, `*_after`, `mood_delta`, `actual_duration_seconds`, `severity`). Ingen migration behövs.
