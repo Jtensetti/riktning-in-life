@@ -62,7 +62,10 @@ export const BottomNav = () => {
       color: a.color,
       duration_minutes: a.duration_minutes,
       mood_delta: a.mood_delta,
-    });
+      semantic_kind: a.semantic_kind ?? null,
+      intensity: a.intensity ?? null,
+      with_who: a.with_who ?? null,
+    } as any);
     if (error) {
       toast.error("Kunde inte logga. Försök igen.");
       return;

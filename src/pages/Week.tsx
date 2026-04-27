@@ -678,7 +678,7 @@ const Week = () => {
             all: `${totalMin} min totalt`,
             checkins: `${Math.round(totalMin / 60)} h sömn totalt`,
             exercises: `${totalMin} min övning`,
-            activeTime: `${totalMin} min aktiv tid`,
+            activeTime: `${totalMin} min rörelse + återhämtning`,
           };
 
           const toneByFilter: Record<typeof historyFilter, "green" | "purple" | "blue" | "orange"> = {
@@ -824,7 +824,7 @@ const Week = () => {
 
               const emptyText = historyFilter === "checkins" ? "Ingen check-in"
                 : historyFilter === "exercises" ? "Ingen övning"
-                : historyFilter === "activeTime" ? "Ingen aktiv tid"
+                : historyFilter === "activeTime" ? "Ingen rörelse eller återhämtning"
                 : "Ingen aktivitet loggad";
 
               return (
