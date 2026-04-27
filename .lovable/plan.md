@@ -1,74 +1,64 @@
-## Premiss (icke förhandlingsbar)
+## Mål
 
-**Mobilvyn rörs inte.** BottomNav, FAB, Journal-mallväljaren, ActivityPicker-drawers, Today-layouten — allt under `lg:`-breakpoint (1024px) är frusen. Varje ändring nedan är inhägnad bakom `hidden lg:…` eller `lg:`-prefix i Tailwind, eller villkor på viewport. Mobilanvändare ska se exakt samma pixlar efter som före.
+Importera den TipTap-baserade WYSIWYG-editorn från `fediverse-career-newest` till Riktning och använd den för **Journals "Fri text"-mall** — både mobil och desktop. Strukturerade mallar (Tre rader, Tankeloop, Kropp först, Bevislogg) behåller sina enkla `Textarea`-fält. Inga bilder i denna runda.
 
-## Insikt
+## Vad som hämtas över (i trimmad form)
 
-Mobil = i farten, tummen, 5–20 sekunder → snabblogg vinner.
-Desktop = sittande, tangentbord, längre stunder (kväll, terapiförberedelse) → skrivande och läsa tillbaka vinner.
+Editorn delas upp i fyra filer i `src/components/editor/`:
 
-Idag är desktop-navigationen en uppförstorad mobil. Det missar poängen med desktop.
+- **`TipTapEditor.tsx`** — TipTap-kärnan: StarterKit, Link, Placeholder. Image-extension utelämnad. Headings begränsade till H1–H3 (passar Riktnings tonläge bättre än 5 nivåer). Använder Riktnings tokens (`text-text-secondary`, `bg-surface`).
+- **`RichTextToolbar.tsx`** — kontextuell toolbar: visar formaterings-tools när text är markerad, infogningsverktyg annars. Bild-knappar borttagna. Svensk copy ("Brödtext", "Rubrik 1", "Punktlista"…).
+- **`LinkInsertSheet.tsx`** — bottom-sheet på mobil / popover på desktop för länkinsättning. `react-i18next` ersatt med ren svensk text (Riktning har ingen i18n).
+- **`RichTextEditor.tsx`** — orkestrerare. Bilduppladdning och `useKeyboardHeight` borttagna. Mobiltoolbaren ligger `position: fixed` längst ner med `env(safe-area-inset-bottom)`-padding så den följer fokus-läget utan att kräva visualViewport-mätning. Stöd för `onSubmit` (Cmd/Ctrl+Enter sparar).
 
-## Tre desktop-only justeringar
+## Beroenden (redan installerade)
 
-### 1. SideNav (desktop): byt huvud-CTA till "Skriv i journalen"
+`@tiptap/react`, `@tiptap/starter-kit`, `@tiptap/extension-link`, `@tiptap/extension-placeholder`, `dompurify`. Versioner: TipTap 3.22.4.
 
-Den orange "Logga aktivitet"-knappen i sidomenyn ersätts av en gul/journal-färgad **"✎ Skriv i journalen"** som primär CTA (öppnar `/journal`).
+## Integration i Journal
 
-Snabbloggning försvinner inte — den blir en kompakt **chip-rad ovanför** CTA:n med fyra ikon-knappar (Sömn, Kropp, Mående, Medicin) som öppnar samma `ActivityPicker`-drawer som mobilens FAB använder.
+I `src/pages/Journal.tsx`, i renderingen av "Fri text"-mallen (det `active === "free"`-grenen i editor-bodyn):
 
-```text
-┌──────────────────┐
-│ Idag             │
-│ Utforska         │
-│ ─────────────    │
-│ [😴][🚶][🙂][💊]  ← snabblogg-chips (desktop-only)
-│                  │
-│ ┃ ✎ Skriv i      │  ← primär CTA (yellow-journal)
-│ ┃   journalen    │
-│                  │
-│ Insikter         │
-│ Vård             │
-│ ─────────────    │
-│ Krisplan         │
-│ Inställningar    │
-└──────────────────┘
-```
+- Mobilgrenen (lg:hidden): `<Textarea value={free}…>` byts ut mot `<RichTextEditor value={free} onChange={setFree} placeholder="Tankar, känslor, dagen…" minHeight={220} onSubmit={save} />`.
+- Desktopgrenen (lg:block): samma byte, `minHeight={420}`. Cmd+Enter-tipset i UI:t fungerar fortsatt; `onSubmit={save}` triggar samma path.
 
-Berör endast `src/components/desktop/SideNav.tsx` — filen är redan `hidden lg:flex`, så ingen mobilrisk.
+Övriga mallars `<Textarea>`-fält rörs inte.
 
-### 2. Journal: split-pane på desktop (`lg:` only)
+## Säker rendering vid uppspelning
 
-Journal-sidan får en grenad render:
+Editorn lagrar `free_text` som **HTML**. Det är säkert att skriva — det är användarens egen data — men måste renderas defensivt vid läsning. Två platser:
 
-- **Under `lg`**: 100% identisk med dagens flöde (mall-grid → full-page editor). Oförändrat.
-- **Från `lg` och uppåt**: två-kolumns split-pane.
-  - **Vänster (huvudkolumn, ~640px)**: skrivytan. Aktiv mall öppnas inline här istället för att ta över hela skärmen. Stor textyta. Cmd/Ctrl+Enter sparar.
-  - **Höger (sidokolumn, ~320px)**: mall-väljare som vertikal lista + historik med sökfält. Klick på historikpost öppnar den read-only i vänsterkolumnen.
+1. **Historik-preview i Journal** (rad ~280): nuvarande `e.free_text` är råtext men kommer nu innehålla `<p>…</p>`. Ny helper `htmlToPreviewText(html, maxLen=160)` strippar taggar via DOMParser → `textContent`. Används endast för preview.
 
-Implementeras genom att extrahera nuvarande editor-JSX till en intern `<JournalEditor>`-komponent och rendera olika layouter via `lg:`-klasser. Mobilgrenen är ren copy-paste av nuvarande markup.
+2. **Veckorapport / liknande** som visar `free_text`: söker upp förekomster (`rg "free_text" src`) och avgör per fall — om fältet visas som rik text ska `dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }}` användas på en `<div className="ProseMirror">`. Om bara textsammanfattning visas: `htmlToPreviewText`.
 
-### 3. Today: desktop-only reflektionsprompt
+## CSS
 
-I `Today.tsx` läggs ett litet kort med `className="hidden lg:block"` i höger-kolumnen (som tillkommer i den redan godkända WideLayout-planen): *"Tre rader — 30 sekunder att fånga dagen"* → länkar till `/journal` med mallen `three_lines` förvald.
+Lägg till TipTap-stilar (`.ProseMirror` och `.article-content` block med blockquote, listor, headings, länkar, hr) i `src/index.css`, anpassat till Riktnings tokens — länkar i `hsl(var(--orange-start))`, blockquote-border i `hsl(var(--border))`, ingen mörkt-läge-specifik regel (Riktning är ljus-tema).
 
-Mobilen ser aldrig detta kort.
+Bakåtkompatibilitet: gamla `free_text`-poster som är ren text fungerar utan migration — TipTap accepterar plain text som content och visar det som ett `<p>`. Vid spara konverteras allt till HTML; ingen retroaktiv ändring.
+
+## Filer
+
+Nya:
+- `src/components/editor/TipTapEditor.tsx`
+- `src/components/editor/RichTextToolbar.tsx`
+- `src/components/editor/LinkInsertSheet.tsx`
+- `src/components/editor/RichTextEditor.tsx`
+- `src/lib/htmlText.ts` — `htmlToPreviewText(html, maxLen)` + `sanitizeJournalHtml(html)` (DOMPurify-wrapper).
+
+Modifierade:
+- `src/pages/Journal.tsx` — byter `<Textarea>` mot `<RichTextEditor>` i `active === "free"`-grenen (mobil + desktop), använder `htmlToPreviewText` i historik-preview.
+- `src/index.css` — TipTap content-stilar.
 
 ## Vad som INTE ändras
 
-- BottomNav, FAB, ActivityPicker triggers på mobil.
-- Journals nuvarande mall-grid och full-page editor under `lg`.
-- Today-layouten under `lg`.
-- Inga routes, inga datamodeller, inga drawers, inga sparflöden.
+- Strukturerade mall-fält (Tre rader, Tankeloop, Kropp först, Bevislogg).
+- Spara-flödet (samma `journal_entries.free_text`-kolumn).
+- Mobilens FAB, BottomNav, ActivityPicker.
+- Inga schemaändringar, inga edge functions.
 
-## Filer som påverkas
+## Risker
 
-- `src/components/desktop/SideNav.tsx` — byt CTA, lägg till chip-rad. (Filen är redan desktop-isolerad.)
-- `src/pages/Journal.tsx` — lägg till `lg:`-grenad layout runt befintlig JSX. Mobilgren oförändrad.
-- `src/pages/Today.tsx` — lägg till `<aside className="hidden lg:block">`-kort i höger-kolumnen.
-
-## Teknisk detalj
-
-- `ActivityPicker` får (om det inte redan finns) en `initialTemplate?: TemplateKey`-prop så chip-raden kan öppna rätt drawer direkt. Default-beteendet är oförändrat → mobilens FAB påverkas inte.
-- Journal-extraktionen görs så att mobilgrenen renderar exakt samma JSX-träd som idag (inga nya wrappers, inga nya CSS-klasser på mobil).
-- En enkel viewport-test (Playwright eller manuell) på 390px efter implementation för att verifiera pixel-paritet.
+- **Mobiltoolbar-positionering**: editor-versionen i källprojektet använder `useKeyboardHeight` för exakt placering över virtual keyboard. Vi förenklar med `position: fixed; bottom: 0` + `env(safe-area-inset-bottom)`. På iOS Safari kan tangentbordet täcka toolbaren delvis. Om det blir problem: porta `useKeyboardHeight`-hooken (visualViewport API) i en uppföljning.
+- **HTML i existerande free_text**: Inga befintliga poster har HTML, så ingen migration behövs. Nya poster skrivs som HTML från och med nu.

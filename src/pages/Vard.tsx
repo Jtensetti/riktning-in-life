@@ -17,6 +17,7 @@ import { patchUserSettings } from "@/lib/userSettingsSync";
 import { FORMS, FormType, SIDE_EFFECTS } from "@/lib/forms";
 import { burdenScore, functionScore, recoveryScore, stabilityScore, stabilityLabel, pctChange, splitWeeks, type Checkin, type WeeklyFormScore } from "@/lib/metrics";
 import jsPDF from "jspdf";
+import { htmlToPreviewText } from "@/lib/htmlText";
 import {
   PDF_COLORS,
   drawReportHeader,
@@ -698,7 +699,7 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
       lines.push("", "JOURNAL (utvalda)");
       j.slice(0, 10).forEach((e: any) => {
         lines.push(`- ${e.date} · ${e.template_type}${e.title ? ` · ${e.title}` : ""}`);
-        if (e.free_text) lines.push(`  ${e.free_text.slice(0, 200)}`);
+        if (e.free_text) lines.push(`  ${htmlToPreviewText(e.free_text, 200)}`);
       });
     }
 

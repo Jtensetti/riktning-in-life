@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { ChevronLeft, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { RichTextEditor } from "@/components/editor/RichTextEditor";
+import { htmlToPreviewText } from "@/lib/htmlText";
 
 type TemplateKey = "three_lines" | "thought_loop" | "body_first" | "evidence" | "free";
 
@@ -167,12 +169,12 @@ const Journal = () => {
         {active === "free" ? (
           <div>
             <label className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-1.5 block">Skriv fritt</label>
-            <Textarea
+            <RichTextEditor
               value={free}
-              onChange={e => setFree(e.target.value)}
-              onKeyDown={compact ? undefined : onEditorKeyDown}
+              onChange={setFree}
               placeholder="Tankar, känslor, dagen…"
-              className={`rounded-2xl bg-surface text-base ${compact ? "min-h-[200px]" : "min-h-[420px]"}`}
+              minHeight={compact ? 220 : 420}
+              onSubmit={compact ? undefined : save}
             />
           </div>
         ) : (
@@ -298,7 +300,9 @@ const Journal = () => {
                               </span>
                             </div>
                             <p className="text-xs text-text-secondary line-clamp-2">
-                              {e.free_text ?? Object.values(e.body_json ?? {}).filter(Boolean).join(" · ")}
+                              {e.free_text
+                                ? htmlToPreviewText(e.free_text, 180)
+                                : Object.values(e.body_json ?? {}).filter(Boolean).join(" · ")}
                             </p>
                           </li>
                         );
@@ -373,7 +377,9 @@ const Journal = () => {
         <ul className="space-y-4">
           {entries.map((e, i) => {
             const t = TEMPLATES[e.template_type as TemplateKey];
-            const preview = e.free_text ?? Object.values(e.body_json ?? {}).filter(Boolean).join(" · ");
+            const preview = e.free_text
+              ? htmlToPreviewText(e.free_text, 240)
+              : Object.values(e.body_json ?? {}).filter(Boolean).join(" · ");
             const toggleReport = async () => {
               await supabase.from("journal_entries").update({ include_in_report: !e.include_in_report }).eq("id", e.id);
               load();

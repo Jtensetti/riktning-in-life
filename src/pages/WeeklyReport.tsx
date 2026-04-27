@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { WeeklyAIInsight } from "@/components/WeeklyAIInsight";
 import { burdenScore, functionScore, recoveryScore, stabilityScore, splitWeeks, type Checkin, type WeeklyFormScore } from "@/lib/metrics";
 import { formatDelta, improvementSign } from "@/lib/valence";
+import { htmlToPreviewText } from "@/lib/htmlText";
 import {
   PDF_COLORS,
   drawReportHeader,
@@ -445,7 +446,7 @@ const WeeklyReport = () => {
       } else {
         for (const e of data.journals.slice(0, 8)) {
           writeLine(`${e.date} · ${e.template_type}${e.title ? ` · ${e.title}` : ""}`, { bold: true });
-          if (e.free_text) writeLine(e.free_text.slice(0, 280), { muted: true });
+          if (e.free_text) writeLine(htmlToPreviewText(e.free_text, 280), { muted: true });
           y += 2;
         }
       }
