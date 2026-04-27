@@ -3,11 +3,11 @@ import { LineChart, Line, ResponsiveContainer } from "recharts";
 import { chartTokens, toneHsl } from "@/lib/chartColors";
 import {
   chartAnimation,
-  chartHeights,
   chartLineActiveDot,
   chartLineDot,
   chartMargins,
 } from "@/lib/chartTheme";
+import { useChartHeight } from "@/lib/useChartHeight";
 import { AnimatedChart, buildChartSignature } from "./AnimatedChart";
 import { ThemedGrid, ThemedTooltip, ThemedXAxis, ThemedYAxis } from "./ChartPrimitives";
 
@@ -46,7 +46,9 @@ const fmtDate = (iso: string): string => {
  * 7-dagars linjediagram för veckans Riktning (0–100).
  * Använder samma tema-tokens som övriga ChartCard-diagram.
  */
-export const WeekDirectionChart = ({ data, height = chartHeights.expanded }: Props) => {
+export const WeekDirectionChart = ({ data, height }: Props) => {
+  const heights = useChartHeight();
+  const resolvedHeight = height ?? heights.expanded;
   const rows = useMemo(() => data.map((p) => ({ ...p, label: dayLetter(p.date) })), [data]);
   const stroke = toneHsl("green");
   const sig = buildChartSignature(data);
