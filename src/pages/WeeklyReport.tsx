@@ -140,19 +140,21 @@ const WeeklyReport = () => {
     };
   }, [user]);
 
+  const persistQuestions = (next: string[]) => {
+    setQuestions(next);
+    try { localStorage.setItem(QUESTIONS_KEY, JSON.stringify(next)); } catch { /* quota */ }
+    void patchUserSettings({ weekly_questions: next });
+  };
+
   const addQuestion = () => {
     const q = draft.trim();
     if (!q) return;
-    const next = [...questions, q];
-    setQuestions(next);
-    localStorage.setItem(QUESTIONS_KEY, JSON.stringify(next));
+    persistQuestions([...questions, q]);
     setDraft("");
   };
 
   const removeQuestion = (i: number) => {
-    const next = questions.filter((_, idx) => idx !== i);
-    setQuestions(next);
-    localStorage.setItem(QUESTIONS_KEY, JSON.stringify(next));
+    persistQuestions(questions.filter((_, idx) => idx !== i));
   };
 
   const summary = useMemo(() => {
