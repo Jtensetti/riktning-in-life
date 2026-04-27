@@ -56,7 +56,7 @@ const Explore = () => {
   }, [user]);
 
   return (
-    <AppShell>
+    <AppShell wide>
       <ScreenHeader
         screen="explore"
         title="Utforska"

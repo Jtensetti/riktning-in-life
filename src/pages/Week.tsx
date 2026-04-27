@@ -462,7 +462,7 @@ const Week = () => {
   }
 
   return (
-    <AppShell>
+    <AppShell wide>
       <ScreenHeader
         screen="insights"
         title="Insikter"
