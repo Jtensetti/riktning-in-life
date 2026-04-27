@@ -164,7 +164,7 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
     onLogged?.();
 
     toast.success(`${item.label} loggad`, {
-      description: `${item.default_minutes} min · 🙂 lite bättre`,
+      description: `${item.default_minutes} min · lite bättre`,
       action: {
         label: "Ändra",
         onClick: () => setEditSheet({ id: inserted.id, label: item.label, mood: 1, minutes: item.default_minutes }),
