@@ -1,71 +1,54 @@
-
 ## Mål
-1. **Förifyllt "efter"-värde**: I `ExerciseDetail.tsx` ska `after`-state initieras med `before`-värdena när användaren går från fas `before` → `doing`. Då börjar slidern på samma punkt och man kan medvetet dra ner (oro) eller upp (energi/mående).
-2. **Valens-modell**: Inför en gemensam definition av vilka mått som är "bra att de minskar" (oro, tyngd, hopplöshet, skuld, säng/soffa-tid, biverkningar, missade meds) vs "bra att de ökar" (energi, mående, sömnkvalitet, funktion, WHO-5, faktisk övningstid, genomförda aktiviteter). Använd den överallt: i analys, deltavisning, dynamiska råd, journalsammanfattningar.
+En lugn, läsvänlig **analysvy** som svarar på frågan "Vad rör sig åt rätt håll den här veckan?" — inte ännu en dashboard. Bygger vidare på `valence.ts`, `metrics.ts` och `Sparkline`-primitiven som redan finns.
 
-## Ändringar
+## 1. Ny route: `/analys`
+- Rendera ny sida `src/pages/Analysis.tsx`.
+- Lägg in route i `src/App.tsx` (`/analys` → `<Analysis />`).
+- Behåll `/insikter` → `Week.tsx` som det rikare dashboard-läget. Lägg till en länk-knapp överst i `Week.tsx` ("Öppna analysvy") och en motsvarande tillbaka-länk i `Analysis.tsx`. Inga ändringar i bottom-navigationen — vi vill inte trycka in en sjätte flik.
 
-### A. `src/pages/ExerciseDetail.tsx` — förifylld efter-skattning
-- När knappen "Kör igång" trycks (övergång `before → doing`): `setAfter({ ...before })` så slidrarna startar där användaren var.
-- Visa visuell hint i `after`-fasen: pilen/talet bredvid värdet visar delta jämfört med `before` med rätt valens-färg (grön = förbättring, neutral = oförändrad, mjuk röd = försämring) — inte värderande, bara informativt.
-- `SliderRow` får valfri prop `before?: number` + `direction: "lower-better" | "higher-better"` för att rendera den lilla deltachippen.
-- Spara även `delta` (after − before) i `note`-meta är inte nödvändigt — vi har redan både before/after-kolumner; deltat beräknas i analyslagret.
+## 2. Ny komponent: `MetricTrendCard`
+Fil: `src/components/MetricTrendCard.tsx`. En `InsightCard`-baserad rad per mått:
 
-### B. Ny fil `src/lib/valence.ts` — central sanning
-Exportera:
-```ts
-export type Direction = "lower-better" | "higher-better" | "neutral";
-export const METRIC_DIRECTION: Record<string, Direction> = {
-  // checkin / övning
-  anxiety: "lower-better",
-  mood_heaviness: "lower-better",
-  hopelessness: "lower-better",
-  guilt_selfcriticism: "lower-better",
-  daytime_bed_sofa_time_minutes: "lower-better",
-  // bra att öka
-  mood: "higher-better",            // mood-after på övning (positiv skala)
-  energy: "higher-better",
-  sleep_hours: "higher-better",
-  sleep_quality: "higher-better",
-  function_score: "higher-better",
-  getting_started: "higher-better",
-  // medication / aktivitet
-  side_effect_severity: "lower-better",
-  medications_missed: "lower-better",
-  medications_taken: "higher-better",
-  exercises_actual_minutes: "higher-better",
-  activities_count: "higher-better",
-};
-export const isImprovement = (metric: string, before: number, after: number): "better" | "worse" | "same";
-export const improvementSign = (metric: string, delta: number): 1 | 0 | -1; // för färg/ikon
-export const formatDelta = (metric: string, before: number, after: number): { text: string; tone: "good" | "bad" | "neutral" };
-```
+- **Vänster:** ikon + svenskt mått-namn ("Oro", "Sömn", "Rörelse", "Energi", "Tyngd", "Funktion").
+- **Mitten:** `Sparkline` (7-dagars värden, tone följer mått-färg).
+- **Höger:** delta-chip via `formatDelta(metric, prevWeekMean, currWeekMean)` — grön när det går åt rätt håll, mjuk röd när det går åt fel håll, neutral annars. Använder befintlig `deltaChipClass`.
+- **Under:** en mening: *"Lite mindre oro än förra veckan."* / *"Sömnen är ganska stabil."* / *"Du har rört på dig fler dagar."* Genereras av en ny `verdictFor(metric, before, after)` i `src/lib/analysis.ts`.
 
-### C. `ExerciseDetail.tsx` + `ActivityPicker.tsx` — använd valens
-- Övning: SliderRow renderar `formatDelta("anxiety", before, after)` för oro (lägre=bättre), för energi/mood (högre=bättre).
-- ActivityPicker har redan `mood_delta` (-2..+2) — markera tydligt med samma färgsystem i bekräftelse-vyn att +1/+2 är "bra".
+## 3. Ny modul: `src/lib/analysis.ts`
+Ren, testbar logik (ingen UI):
 
-### D. `src/lib/metrics.ts` — exponera session-effekt
-Lägg till hjälpare som aggregerar exercise_sessions:
-- `sessionEffect(sessions)`: medel-delta per dimension med valens applicerad ⇒ % förbättring.
-- Inkluderas i `daily_summaries`-beräkning (befintligt schema har redan `exercises_count`, `exercises_actual_minutes`; vi *läser* bara — ingen schemaändring).
+- `weeklyMeans(checkins, metric)` → `{ current: number|null, previous: number|null }` baserat på `splitWeeks` (redan i `metrics.ts`).
+- `movementWeeklyCount(checkins)` → andel dagar med rörelse (yes räknas 1.0, little 0.5) — så vi kan visa rörelse även fast det inte är en 0–10-skala.
+- `verdictFor(metric, before, after)` → kort svensk mening, väljer ton via `improvementSign`. Tröskel ±0.5 räknas som "ganska stabil". Returnerar samma sats oavsett om värdet stiger eller sjunker — det är `improvementSign` som avgör om det är bra eller dåligt.
+- `overallVerdict(deltas)` → räknar hur många mått som rör sig åt rätt håll och returnerar t.ex. *"3 av 5 mått pekar uppåt — främst sömn och oro."* Används som hjältetext överst på sidan.
 
-### E. `src/lib/recommend.ts` + `dayInsights.ts` — dynamik baserat på valens
-- "Vandring sänkte din oro med 2 i snitt senaste veckan" (lower-better förbättring).
-- "Övningar du genomför längre än planerat ger större energi-lyft" (kombinerar `actual_duration_seconds > planned` med energi-delta).
-- Logga visade rekommendationer i `recommendations_log` (tabellen finns).
+Tester läggs i `src/test/analysis.test.ts` (verdict-strängar, riktning för lower/higher-better, gränsfall med < 3 datapunkter → "för lite data").
 
-### F. Patterns / Journal / WeeklyReport
-- `PatternsSection` + `WeeklyReport` ska använda `formatDelta` så att alla pilar/färger blir konsekventa (grön = bra, oavsett om det är en upp- eller nedåtgående linje).
-- Auto-journal från övningssessioner: skriv "Oro 6 → 4 (−2, bra)" i `body_json` med valens-tecknet bestämt av `valence.ts`.
+## 4. Innehåll i Analysis-sidan
+Layout (mobil-first, samma `space-y-4`-rytm som övriga sidor):
 
-### G. Tester
-- `src/test/valence.test.ts`: enhetstest för `isImprovement` per metrik.
-- Uppdatera `todayLayout.test.ts` om någon assertion påverkas.
+1. **Header** via `ScreenHeader` ("Analys", grön ton, ikon `pie`).
+2. **HeroCard** med `overallVerdict` + en mening om datatäckning ("baserat på X loggade dagar").
+3. **`SparseDataNotice`** om < 4 dagar med data senaste veckan — då döljs delta-chipsen och vi visar bara sparklines med texten "Logga några dagar till så kan vi jämföra".
+4. **Sektion "Vad förändras"** — lista av `MetricTrendCard` för:
+   - Oro (`anxiety`, lower-better, blå)
+   - Tyngd (`mood_heaviness`, lower-better, lila)
+   - Sömn (`sleep_hours`, higher-better, lila)
+   - Energi (`energy`, higher-better, gul)
+   - Funktion (`function_score`, higher-better, grön)
+   - Rörelse (egen kalkyl via `movementWeeklyCount`, higher-better, rosa)
+5. **Sektion "Det här verkar hjälpa"** — återanvänder befintlig `buildLiftSummary` (från `lib/dayInsights.ts`) för att lista upp till 3 aktiviteter/övningar med störst genomsnittligt humörlyft, formaterat med samma valens-färger.
+6. **Footer-länk** "Se hela veckodashboarden" → `/insikter`.
 
-## Resultat för användaren
-- **Direkt**: efter-slidern startar på samma siffra som före — naturligt att dra ner oron.
-- **På sikt**: alla deltavisningar (övningar, aktiviteter, vecka, journal, dynamiska tips) använder samma "bra/dåligt"-logik så appen känns konsekvent och datadriven.
+## 5. Datahämtning
+- En `useEffect` som hämtar 14 dagars `daily_checkins` (för att kunna jämföra denna vecka mot förra), 30 dagars `activity_logs` + `exercise_sessions` (för lift-summary) — exakt samma queries som `Week.tsx` redan kör. Återanvänd typerna `Checkin` från `metrics.ts`.
+- Inga schemaändringar, ingen migration, ingen ny edge function. Allt körs klient-sidan på data som redan loggas.
 
-## Inga schemaändringar
-Allt detta använder befintliga kolumner (`*_before`, `*_after`, `mood_delta`, `actual_duration_seconds`, `severity`). Ingen migration behövs.
+## 6. Testning
+- `src/test/analysis.test.ts`: verdict-formuleringar, splitWeeks-integration, sparse-data-fallback.
+- Kör `vitest` och `tsc --noEmit` innan jag rapporterar klart.
+
+## Vad jag *inte* gör (för att hålla scopet)
+- Ingen ny tabell, ingen RPC, ingen AI-call. Vi kan koppla på `weekly-insight`-edge-funktionen senare om du vill ha en LLM-skriven sammanfattning ovanpå.
+- Ingen ändring av `BottomNav` — analysvyn nås från `Insikter`-fliken.
+- `WeeklyReport` (PDF) lämnas orörd; den är klinikversionen.

@@ -25,6 +25,7 @@ import QuickLog from "./pages/QuickLog";
 import Health from "./pages/Health";
 import Explore from "./pages/Explore";
 import More from "./pages/More";
+import Analysis from "./pages/Analysis";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -65,6 +66,7 @@ const App = () => {
           <Route path="/ovningar/:id" element={<ExerciseDetail />} />
           <Route path="/vecka" element={<Week />} />
           <Route path="/insikter" element={<Week />} />
+          <Route path="/analys" element={<Analysis />} />
           <Route path="/utforska" element={<Explore />} />
           <Route path="/mer" element={<More />} />
           <Route path="/journal" element={<Journal />} />
