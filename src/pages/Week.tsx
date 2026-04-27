@@ -797,6 +797,9 @@ const Week = () => {
           {(() => {
             const todayIso = new Date().toISOString().split("T")[0];
             // Beräkna ett relevanspoäng per dag givet aktivt filter.
+            const isKindFilter = (f: HistoryFilter): f is SemanticKind =>
+              f !== "all" && f !== "checkins" && f !== "exercises";
+
             const relevanceFor = (d: typeof timeline[number]): number => {
               if (historyFilter === "checkins") {
                 if (!d.checkin) return 0;
@@ -806,9 +809,10 @@ const Week = () => {
               if (historyFilter === "exercises") {
                 return d.sess.reduce((s, x) => s + (x.exercises?.duration_minutes ?? 0), 0);
               }
-              if (historyFilter === "activeTime") {
-                return d.acts.reduce((s, a) => s + (a.duration_minutes ?? 0), 0)
-                  + d.sess.reduce((s, x) => s + (x.exercises?.duration_minutes ?? 0), 0);
+              if (isKindFilter(historyFilter)) {
+                return d.acts
+                  .filter((a) => a.semantic_kind === historyFilter)
+                  .reduce((s, a) => s + (a.duration_minutes ?? 0), 0);
               }
               // "all" — totalvolym + bonus om check-in finns
               return d.totalMinutes + (d.checkin ? 10 : 0);
@@ -832,11 +836,14 @@ const Week = () => {
               const dayLabel = isToday ? "Idag" : date.toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "short" });
 
               // Filtrera vad som faktiskt visas per dag enligt valt filter
-              const showActs = historyFilter === "all" || historyFilter === "activeTime";
-              const showSess = historyFilter === "all" || historyFilter === "exercises" || historyFilter === "activeTime";
+              const kindActive = isKindFilter(historyFilter);
+              const showActs = historyFilter === "all" || kindActive;
+              const showSess = historyFilter === "all" || historyFilter === "exercises";
               const showCheckin = historyFilter === "all" || historyFilter === "checkins";
 
-              const visibleActs = showActs ? d.acts : [];
+              const visibleActs = showActs
+                ? (kindActive ? d.acts.filter((a) => a.semantic_kind === historyFilter) : d.acts)
+                : [];
               const visibleSess = showSess ? d.sess : [];
               const visibleCheckin = showCheckin ? d.checkin : null;
               const isEmpty = visibleActs.length === 0 && visibleSess.length === 0 && !visibleCheckin;
@@ -851,13 +858,13 @@ const Week = () => {
                 if (!isEmpty || !isToday) return null;
                 if (historyFilter === "checkins") return { label: "Logga check-in", to: "/checkin" };
                 if (historyFilter === "exercises") return { label: "Starta en övning", to: "/ovningar" };
-                if (historyFilter === "activeTime") return { label: "Logga aktivitet", to: "/snabblogg" };
+                if (kindActive) return { label: "Logga aktivitet", to: "/snabblogg" };
                 return { label: "Logga något smått", to: "/snabblogg" };
               })();
 
               const emptyText = historyFilter === "checkins" ? "Ingen check-in"
                 : historyFilter === "exercises" ? "Ingen övning"
-                : historyFilter === "activeTime" ? "Ingen rörelse eller återhämtning"
+                : kindActive ? KIND_META[historyFilter].emptyText
                 : "Ingen aktivitet loggad";
 
               return (
