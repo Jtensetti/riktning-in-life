@@ -30,8 +30,32 @@ import {
   sevenDayDates,
   seriesFor,
 } from "@/lib/pdfWidgets";
+import { patchUserSettings, SETTINGS_HYDRATED_EVENT } from "@/lib/userSettingsSync";
 
-const QUESTIONS_KEY = "riktning_doctor_questions";
+// Frågor till läkaren synkas via user_settings.weekly_questions så att
+// listan följer användaren mellan mobil och desktop. Lokal cache läses
+// synkront för snabb första render.
+const QUESTIONS_KEY = "riktning_weekly_questions";
+const LEGACY_QUESTIONS_KEY = "riktning_doctor_questions";
+
+const readCachedQuestions = (): string[] => {
+  try {
+    const raw = localStorage.getItem(QUESTIONS_KEY);
+    if (raw) return JSON.parse(raw) as string[];
+    // Engångsmigrering från det gamla nyckelnamnet (lokal-bara) så att
+    // användare som hann skapa frågor innan synken inte tappar dem.
+    const legacy = localStorage.getItem(LEGACY_QUESTIONS_KEY);
+    if (legacy) {
+      const parsed = JSON.parse(legacy) as string[];
+      localStorage.setItem(QUESTIONS_KEY, JSON.stringify(parsed));
+      localStorage.removeItem(LEGACY_QUESTIONS_KEY);
+      return parsed;
+    }
+    return [];
+  } catch {
+    return [];
+  }
+};
 
 const isoDaysAgo = (n: number) => {
   const d = new Date();
@@ -61,16 +85,17 @@ const WeeklyReport = () => {
     activities: { date: string; label: string; category: string; duration_minutes: number | null; mood_delta: number | null }[];
   } | null>(null);
   const [loadingData, setLoadingData] = useState(true);
-  const [questions, setQuestions] = useState<string[]>(() => {
-    try {
-      const raw = localStorage.getItem(QUESTIONS_KEY);
-      return raw ? (JSON.parse(raw) as string[]) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [questions, setQuestions] = useState<string[]>(readCachedQuestions);
   const [draft, setDraft] = useState("");
   const [includeJournal, setIncludeJournal] = useState(true);
+
+  // Lyssna på serverhydrering — på en ny enhet vill vi att frågorna dyker upp
+  // så fort hydrateUserSettings har skrivit ner cachen.
+  useEffect(() => {
+    const onHydrated = () => setQuestions(readCachedQuestions());
+    window.addEventListener(SETTINGS_HYDRATED_EVENT, onHydrated);
+    return () => window.removeEventListener(SETTINGS_HYDRATED_EVENT, onHydrated);
+  }, []);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
@@ -115,19 +140,21 @@ const WeeklyReport = () => {
     };
   }, [user]);
 
+  const persistQuestions = (next: string[]) => {
+    setQuestions(next);
+    try { localStorage.setItem(QUESTIONS_KEY, JSON.stringify(next)); } catch { /* quota */ }
+    void patchUserSettings({ weekly_questions: next });
+  };
+
   const addQuestion = () => {
     const q = draft.trim();
     if (!q) return;
-    const next = [...questions, q];
-    setQuestions(next);
-    localStorage.setItem(QUESTIONS_KEY, JSON.stringify(next));
+    persistQuestions([...questions, q]);
     setDraft("");
   };
 
   const removeQuestion = (i: number) => {
-    const next = questions.filter((_, idx) => idx !== i);
-    setQuestions(next);
-    localStorage.setItem(QUESTIONS_KEY, JSON.stringify(next));
+    persistQuestions(questions.filter((_, idx) => idx !== i));
   };
 
   const summary = useMemo(() => {

@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronLeft, ChevronRight, Plus, Download, Trash2, FileDown, Mail } from "lucide-react";
 import { toast } from "sonner";
-import { patchUserSettings } from "@/lib/userSettingsSync";
+import { patchUserSettings, SETTINGS_HYDRATED_EVENT } from "@/lib/userSettingsSync";
 import { FORMS, FormType, SIDE_EFFECTS } from "@/lib/forms";
 import { burdenScore, functionScore, recoveryScore, stabilityScore, stabilityLabel, pctChange, splitWeeks, type Checkin, type WeeklyFormScore } from "@/lib/metrics";
 import jsPDF from "jspdf";
@@ -515,6 +515,17 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
   const [generating, setGenerating] = useState(false);
   const [report, setReport] = useState<string | null>(null);
   const [doctorEmail, setDoctorEmail] = useState<string>(() => localStorage.getItem("riktning_doctor_email") || "");
+
+  // Cross-device-sync: när serverdata kommer in (ny enhet/första inloggning)
+  // hydreras lokal cache av userSettingsSync. Plocka upp doctor_email därifrån.
+  useEffect(() => {
+    const onHydrated = () => {
+      const fromCache = localStorage.getItem("riktning_doctor_email") || "";
+      setDoctorEmail((current) => current || fromCache);
+    };
+    window.addEventListener(SETTINGS_HYDRATED_EVENT, onHydrated);
+    return () => window.removeEventListener(SETTINGS_HYDRATED_EVENT, onHydrated);
+  }, []);
 
   useEffect(() => {
     if (!user) return;
