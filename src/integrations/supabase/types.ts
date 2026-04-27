@@ -23,6 +23,7 @@ export type Database = {
           icon: string
           id: string
           label: string
+          semantic_kind: string | null
           slug: string
           sort_order: number
           tags_json: Json
@@ -35,6 +36,7 @@ export type Database = {
           icon?: string
           id?: string
           label: string
+          semantic_kind?: string | null
           slug: string
           sort_order?: number
           tags_json?: Json
@@ -47,6 +49,7 @@ export type Database = {
           icon?: string
           id?: string
           label?: string
+          semantic_kind?: string | null
           slug?: string
           sort_order?: number
           tags_json?: Json
@@ -87,12 +90,15 @@ export type Database = {
           energy_before: number | null
           icon: string
           id: string
+          intensity: string | null
           label: string
           mood_after: number | null
           mood_before: number | null
           mood_delta: number | null
           note: string | null
+          semantic_kind: string | null
           user_id: string
+          with_who: string | null
         }
         Insert: {
           activity_slug: string
@@ -106,12 +112,15 @@ export type Database = {
           energy_before?: number | null
           icon?: string
           id?: string
+          intensity?: string | null
           label: string
           mood_after?: number | null
           mood_before?: number | null
           mood_delta?: number | null
           note?: string | null
+          semantic_kind?: string | null
           user_id: string
+          with_who?: string | null
         }
         Update: {
           activity_slug?: string
@@ -125,12 +134,15 @@ export type Database = {
           energy_before?: number | null
           icon?: string
           id?: string
+          intensity?: string | null
           label?: string
           mood_after?: number | null
           mood_before?: number | null
           mood_delta?: number | null
           note?: string | null
+          semantic_kind?: string | null
           user_id?: string
+          with_who?: string | null
         }
         Relationships: []
       }
