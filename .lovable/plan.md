@@ -1,50 +1,116 @@
-## Navigation audit — vad fungerar och vad skaver
+## Desktop-flöde — genomtänkt, ärligt mot varje sida
 
-Jag gick igenom alla `navigate(...)` och `<NavLink>`-anrop i appen. Strukturen är i grunden bra: 5 tabbar (Idag, Utforska, Logga, Insikter, Vård), tydliga djupsidor (krisplan, övning, rutin, artikel), och en "Mer"-flik bakom kugghjulet. Det finns dock sex specifika ställen där destinationen känns fel eller saknas.
+**Premiss:** Mobilen rörs inte. Allt nedan aktiveras endast vid `lg:` (≥1024px). Under det breakpointet är appen pixel-identisk med idag.
 
-### Issue 1 — "Senaste aktivitet" landar alltid på `/ovningar`-listan
-**Var:** `Today.tsx` rad 951
-**Problem:** Du loggar 15 min dagsljuspromenad, trycker på loggen, och hamnar på en *lista över alla övningar* — inte på den övning du nyss gjorde.
-**Fix:** Navigera till `/ovningar/${ex.id}` när vi har ett exercise-id (vilket vi alltid har — `s.exercises` är källan).
+### Designfilosofin bakom valet
 
-### Issue 2 — `/snabblogg` har ingen tillbaka-knapp
-**Var:** `QuickLog.tsx` rad 334
-**Problem:** Sidan nås från Today (quick-starts som "Logga sömn", "Snabblogga mående") och från Insikter (tomma-state CTA). Väl där finns ingen väg tillbaka utom att trycka tabbar nere.
-**Fix:** Lägg till `topLeft`-tillbakaknapp i `ScreenHeader` som går `navigate(-1)` (eller `/` som fallback).
+Jag övervägde fyra olika riktningar (fast sidebar+kontextpanel, master-detail, parallella handlingar, eller en *adaptiv* layout per sida). Den som faktiskt respekterar både Riktnings karaktär *och* desktop som medium är den fjärde — för en enkel anledning:
 
-### Issue 3 — `/ovningar` har ingen tillbaka-knapp eller header-stil
-**Var:** `Exercises.tsx` rad 92–94
-**Problem:** Sidan är inte en tab, men nås från ~6 ställen (Today rec, Today routine, Explore "Se alla", LearnArticle, etc.). Använder `<h1>` direkt istället för `ScreenHeader`, och har ingen back.
-**Fix:** Byt till `ScreenHeader screen="explore" title="Övningar"` med `topLeft={<button onClick={() => navigate(-1)}>← Tillbaka</button>}`.
+> **Vissa sidor i Riktning blir bättre när de får luft. Andra blir sämre.**
 
-### Issue 4 — `/journal` saknar tillbaka-knapp i listvyn
-**Var:** `Journal.tsx` rad 207
-**Problem:** Nås via Today quick-starts ("Skriv tre rader", "Imorgon-lista"). I editor-läget finns en tillbaka, men listvyn saknar.
-**Fix:** Lägg `topLeft` i `ScreenHeader` på listvyn → `navigate(-1)`.
+Idag och Krisplan är *rofyllda läs-strömmar* — designade för att man ska andas mellan korten. Att tvinga in dem i en bred grid skulle förstöra rytmen. Insikter och Vård är däremot *översikter med flera lager* — de tjänar verkligen på att visa graf och lista samtidigt, eller skattningar och mediciner sida vid sida.
 
-### Issue 5 — `Mer` "Tillbaka" är `navigate(-1)`, men nås bara från Idag
-**Var:** `More.tsx` rad 19
-**Problem:** Funkar oftast, men om man landar i appen via push-länk eller delad URL direkt på `/mer` blir bakåt en historikbugg (kan ta dig ut ur appen).
-**Fix:** Byt till `navigate("/", { replace: false })` med `-1` som fallback. Liten kanttill men mer förutsägbart.
+Så istället för en universal layout som behandlar alla sidor lika, gör vi det här:
 
-### Issue 6 — `ExerciseDetail` "back" går alltid till `/ovningar` (eller rutinen)
-**Var:** `ExerciseDetail.tsx` rad 148
-**Problem:** Om du startade en övning från Today's "Rekommenderat just nu" eller från en artikel, kastas du till listsidan istället för dit du kom från. `useSmartBack`-hooken finns redan men används inte här.
-**Fix:** Använd `useSmartBack({ defaultTo: "/" })` så sequence-kontext respekteras och övriga ingångar går tillbaka i historik. Eller enklare: använd `navigate(-1)` som default när ingen sequence finns.
+```text
+┌──────────────────────────────────────────────────────────────────┐
+│ Riktning                                       [konto] [logga ut]│  topbar 56px
+├──────────┬───────────────────────────────────────────────────────┤
+│          │                                                       │
+│ SIDEBAR  │   INNEHÅLL  (varierar per sida — se nedan)            │
+│ 240px    │                                                       │
+│          │                                                       │
+│ Idag     │                                                       │
+│ Utforska │                                                       │
+│ ⊕ Logga  │                                                       │
+│ Insikter │                                                       │
+│ Vård     │                                                       │
+│ ─────    │                                                       │
+│ Journal  │                                                       │
+│ Krisplan │                                                       │
+│ Inställ. │                                                       │
+└──────────┴───────────────────────────────────────────────────────┘
+```
 
-### Det som *fungerar bra* (vi rör inte)
-- Bottom nav: 5 tabbar, FAB är kontextuell (öppnar check-in om dagen inte är loggad, annars picker). Logiskt.
-- Vård är en tab och behöver ingen tillbakaknapp. Sub-views (Formulär, Mediciner, Rapport) har lokal "Tillbaka" via state.
-- Krisplan, Settings, LearnArticle, SequenceDetail har alla rimliga tillbaka-knappar.
-- Checkin → "Tillbaka" till `/` är rätt (det är en wizard, ej en djuplänk).
-- Auth/Onboarding använder `replace: true` korrekt.
+### Två innehållslägen — sidan väljer själv
 
-### Filer som ändras
-- `src/pages/Today.tsx` — 1 rad (issue 1)
-- `src/pages/QuickLog.tsx` — lägg till topLeft (issue 2)
-- `src/pages/Exercises.tsx` — byt h1 mot ScreenHeader med topLeft (issue 3)
-- `src/pages/Journal.tsx` — lägg till topLeft (issue 4)
-- `src/pages/More.tsx` — ändra back-target (issue 5)
-- `src/pages/ExerciseDetail.tsx` — använd useSmartBack eller `navigate(-1)` (issue 6)
+**Läge 1: "Lugn ström" (max-w-md, centrerad)**
+Sidan renderas exakt som på mobil — 448px-kolumn, samma kort, samma rytm. Bara centrerad i det tillgängliga utrymmet med generös cream-bakgrund runt.
 
-Inga schemaändringar, inga nya beroenden. Endast 6 små edits.
+Används för: **Idag, Krisplan, Journal-editor, Checkin (wizard), Onboarding, Auth, ExerciseDetail (övningsspelare), LearnArticle.**
+
+Varför: Dessa är *fokustillstånd*. När du gör en check-in eller läser en artikel ska resten av världen falla bort. På desktop blir det en lugn, läsbar bok mitt på skärmen — inte ett dashboard.
+
+**Läge 2: "Arbetsyta" (bred, två-kolumns inom sidan)**
+Sidan får använda hela bredden (max ~1200px). Vänster kolumn = primärt innehåll (graf/översikt). Höger kolumn = sekundärt (lista/detaljer). Båda kolumnerna är fortfarande *sidans egna sektioner* — vi flyttar inte in fjärrinnehåll.
+
+Används för: **Insikter, Vård, Utforska, Övningar (lista), Sequences (lista), Learn (lista), Mer.**
+
+Varför: Dessa sidor består redan av flera oberoende sektioner som staplas vertikalt på mobil. På desktop är det slöseri — sektionerna kan stå sida vid sida.
+
+### Konkret per sida
+
+| Sida | Desktop-läge | Vad ändras inuti |
+|------|--------------|------------------|
+| **Idag** | Lugn ström | Inget. Samma flöde, centrerat. |
+| **Utforska** | Arbetsyta | Vänster: hjälte-kort + kategorier. Höger: "Senast" + "Föreslaget för dig". |
+| **Insikter (Week)** | Arbetsyta | Vänster: trender + chart. Höger: prio-kort + senaste loggar. |
+| **Vård** | Arbetsyta | Vänster: krisplan-kort + skattningar. Höger: läkemedel + rapport-export. |
+| **Krisplan** | Lugn ström | Inget. Centrerad. |
+| **Journal (lista)** | Arbetsyta | Vänster: mallar. Höger: tidigare anteckningar. |
+| **Journal (editor)** | Lugn ström | Inget. Skrivande = fokus. |
+| **Övningar / Sequences / Learn** | Arbetsyta | Vänster: sök + kategorier. Höger: lista. |
+| **ExerciseDetail / LearnArticle** | Lugn ström | Inget. Läsa = fokus. |
+| **Checkin (wizard)** | Lugn ström | Inget. Fyll i = fokus. |
+| **Inställningar / Mer** | Arbetsyta | Vänster: sektioner. Höger: konto/data. |
+| **Auth / Onboarding** | Lugn ström | Centrerad, mjuk bakgrund. |
+
+### Sidebar i detalj
+
+- 240px bred, fast vänster, full höjd, cream-bakgrund med tunn border höger.
+- 8 rader: Idag, Utforska, **Logga (orange knapp, sticker ut)**, Insikter, Vård · separator · Journal, Krisplan, Inställningar.
+- Aktiv rad får färgad vänsterkant + bakgrund i tabbens identitet (samma `screenIdentity`-färg som mobil-tabben har).
+- "Logga"-knappen öppnar samma `ActivityPicker` som FAB:en.
+- **Ingen kollaps.** Riktning är inte ett produktivitetsverktyg där man behöver dölja navigation. Lugn och förutsägbar.
+
+### Topbar i detalj
+
+- 56px hög, full bredd, samma cream som resten.
+- Vänster: ordmärket "Riktning" (text, ingen ny logo-fil).
+- Höger: e-post + en liten utloggningsikon. Det är allt.
+- Ingen sökruta, ingen avisering, ingen notifikations-bjällra. Inte den sortens app.
+
+### Vad jag medvetet INTE gör
+
+- **Ingen kontextpanel som visar "annan info".** Alla data på en sida hör hemma på den sidan. Vi blandar inte.
+- **Ingen modal-stack eller flytande paneler.** Lugnt, statiskt, förutsägbart.
+- **Inga nya komponenter för datapresentation.** Återanvänder `InsightCard`, `ListCard`, `ActionCard`, `ColorCard` rakt av — bara i grid istället för stack.
+- **Ingen "förstoring" av mobilkort.** Korten har samma storlek på desktop som mobil. Vi sätter bara två bredvid varandra istället för en under en.
+- **Inga route-ändringar.** Samma URL:er, samma djuplänkar, samma back-knappar.
+
+### Implementationen i kod
+
+**Nya filer:**
+- `src/components/desktop/DesktopShell.tsx` — wrappar `AppShell`s innehåll på `lg:`. Innehåller sidebar + topbar + slot för sidans innehåll.
+- `src/components/desktop/SideNav.tsx` — 8-radig sidebar med screenIdentity-färger.
+- `src/components/desktop/DesktopTopbar.tsx` — 56px topbar.
+- `src/components/desktop/WideLayout.tsx` — enkel wrapper: `<WideLayout left={...} right={...} />`. Renderar two-column på `lg:`, stack på mobil. Sidor som vill ha "arbetsyta" använder den.
+
+**Ändrade filer:**
+- `src/components/AppShell.tsx` — på `lg:` rendera `DesktopShell` runt `<main>`. Mobil-rendering oförändrad (samma `max-w-md`).
+- `src/components/BottomNav.tsx` — `lg:hidden`.
+- `src/pages/Week.tsx`, `Vard.tsx`, `Explore.tsx`, `Exercises.tsx`, `Sequences.tsx`, `Learn.tsx`, `Journal.tsx`, `More.tsx`, `Settings.tsx` — wrappa innehållssektionerna i `<WideLayout left right>`. På mobil renderas `WideLayout` som vanlig stack — så ingen visuell förändring där.
+- `src/pages/Auth.tsx`, `Onboarding.tsx`, `Checkin.tsx`, `ExerciseDetail.tsx`, `LearnArticle.tsx` — ingen ändring i innehållet, bara en `lg:`-bakgrund som säkerställer att det centrerade `max-w-md`-innehållet ser lugnt ut på en stor skärm.
+
+**Alla ändringar är `lg:`-prefixade eller villkorade på breakpoint.** På mobil = noll diff i renderat DOM-träd.
+
+### Resultat — för riktiga användare
+
+- **På mobil:** Inget har hänt. Pixel-identiskt.
+- **På laptop (1366×768) eller större:**
+  - Ingen bottom-nav, en lugn vänster-sidebar istället. Logga-knappen är direkt synlig.
+  - Idag, Krisplan och alla wizards/läs-vyer känns som en boksida mitt på skärmen — inbjudande, inte tomma.
+  - Insikter, Vård, Utforska blir riktiga översikter där du ser allt på en skärm utan att scrolla — *utan att informationen ändras*.
+  - Riktnings karaktär (cream, runda hörn, bokstavstung typografi, en handling i taget) är intakt. Det känns inte som en mobilapp i en ram, men inte heller som en främmande dashboard.
+
+Inga schema-ändringar. Inga nya beroenden. Endast en ny `lg:`-lager ovanpå nuvarande kod.
