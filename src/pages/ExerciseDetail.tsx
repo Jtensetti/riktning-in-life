@@ -5,11 +5,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Check, ChevronRight } from "lucide-react";
+import { ArrowLeft, ArrowDown, ArrowUp, Check, ChevronRight, Minus } from "lucide-react";
 import { Illustration, categoryIll } from "@/components/Illustrations";
 import { AbstractIcon } from "@/components/AbstractIcon";
 import { iconForExerciseCategory } from "@/lib/icons";
 import { MechanismCard, type Evidence } from "@/components/MechanismCard";
+import { formatDelta, deltaChipClass } from "@/lib/valence";
 import { toast } from "sonner";
 
 type Exercise = {
@@ -205,7 +206,13 @@ const ExerciseDetail = () => {
               </p>
             </div>
             <Button
-              onClick={() => setPhase("after")}
+              onClick={() => {
+                // Förifyll efter-värdena så att slidern startar där användaren
+                // var innan övningen. Det gör det naturligt att medvetet dra ner
+                // oron / upp energin efteråt — och vi får ärliga deltan i datan.
+                setAfter({ ...before });
+                setPhase("after");
+              }}
               variant="pill-brand"
               size="pill"
               className="w-full"
@@ -218,9 +225,12 @@ const ExerciseDetail = () => {
         {phase === "after" && (
           <div className="animate-fade-in-up">
             <h3 className="text-xl mb-3 mt-2">Hur är det nu?</h3>
-            <SliderRow label="Oro" value={after.anxiety} onChange={(v) => setAfter(a => ({ ...a, anxiety: v }))} />
-            <SliderRow label="Energi" value={after.energy} onChange={(v) => setAfter(a => ({ ...a, energy: v }))} />
-            <SliderRow label="Mående" value={after.mood} onChange={(v) => setAfter(a => ({ ...a, mood: v }))} />
+            <p className="text-sm text-text-secondary mb-4 -mt-1">
+              Slidrarna börjar där du var innan. Dra dit du är nu.
+            </p>
+            <SliderRow label="Oro" metric="anxiety" value={after.anxiety} before={before.anxiety} onChange={(v) => setAfter(a => ({ ...a, anxiety: v }))} />
+            <SliderRow label="Energi" metric="energy" value={after.energy} before={before.energy} onChange={(v) => setAfter(a => ({ ...a, energy: v }))} />
+            <SliderRow label="Mående" metric="mood" value={after.mood} before={before.mood} onChange={(v) => setAfter(a => ({ ...a, mood: v }))} />
             <div className="card-cream p-5 mb-4">
               <label className="text-sm font-extrabold mb-2 block">Anteckning (valfri)</label>
               <Textarea
@@ -268,14 +278,42 @@ const ExerciseDetail = () => {
   );
 };
 
-const SliderRow = ({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) => (
-  <div className="card-cream p-5 mb-4">
-    <div className="flex items-center justify-between mb-3">
-      <label className="text-sm font-extrabold">{label}</label>
-      <span className="text-base font-extrabold text-orange-deep">{value}</span>
+const SliderRow = ({
+  label,
+  value,
+  onChange,
+  before,
+  metric,
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  before?: number;
+  metric?: string;
+}) => {
+  const showDelta = typeof before === "number" && typeof metric === "string";
+  const d = showDelta ? formatDelta(metric, before, value) : null;
+  const ArrowIcon = d?.arrow === "up" ? ArrowUp : d?.arrow === "down" ? ArrowDown : Minus;
+  return (
+    <div className="card-cream p-5 mb-4">
+      <div className="flex items-center justify-between mb-3 gap-2">
+        <label className="text-sm font-extrabold">{label}</label>
+        <div className="flex items-center gap-2">
+          {d && (
+            <span
+              aria-label={d.ariaLabel}
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-extrabold tabular-nums ${deltaChipClass(d.tone)}`}
+            >
+              <ArrowIcon size={12} strokeWidth={2.6} />
+              {d.text}
+            </span>
+          )}
+          <span className="text-base font-extrabold text-orange-deep tabular-nums">{value}</span>
+        </div>
+      </div>
+      <Slider value={[value]} min={0} max={10} step={1} onValueChange={([v]) => onChange(v)} />
     </div>
-    <Slider value={[value]} min={0} max={10} step={1} onValueChange={([v]) => onChange(v)} />
-  </div>
-);
+  );
+};
 
 export default ExerciseDetail;
