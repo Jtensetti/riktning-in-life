@@ -145,63 +145,176 @@ const Journal = () => {
     return <AppShell><div className="h-40 rounded-3xl bg-surface-alt animate-pulse" /></AppShell>;
   }
 
+  // Cmd/Ctrl+Enter saves on desktop when an editor is open.
+  const onEditorKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      e.preventDefault();
+      const canSave = active === "free" ? free.trim().length > 0 : Object.values(body).some(v => v?.trim());
+      if (canSave && !saving) save();
+    }
+  };
+
+  // ===== Mobile editor (active template) — UNCHANGED markup, hidden on desktop. =====
   if (active) {
     const t = TEMPLATES[active];
     const canSave = active === "free" ? free.trim().length > 0 : Object.values(body).some(v => v?.trim());
-    return (
-      <AppShell>
-        <button onClick={() => setActive(null)} className="flex items-center gap-1 text-sm font-bold text-text-secondary mb-4 press-soft">
-          <ChevronLeft size={18} /> Tillbaka
-        </button>
-        <div
-          className={`-mx-6 mb-6 px-6 pt-6 pb-7 rounded-b-[28px] flex items-center gap-4 ${t.text}`}
-          style={{ background: `hsl(${t.tone})` }}
-        >
-          <AbstractIcon name={t.icon} size={48} color={t.iconColor} inline />
-          <div className="flex-1 min-w-0">
-            <h1 className="text-h2 mb-0.5">{t.title}</h1>
-            <p className="text-body opacity-90">{t.subtitle}</p>
-          </div>
+    const editorBody = (compact: boolean) => (
+      <div className="space-y-4 mb-6">
+        <div>
+          <label className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-1.5 block">Titel (valfritt)</label>
+          <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Ge dagen en titel" className="h-12 rounded-2xl bg-surface" />
         </div>
-
-
-        <div className="space-y-4 mb-6">
+        {active === "free" ? (
           <div>
-            <label className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-1.5 block">Titel (valfritt)</label>
-            <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Ge dagen en titel" className="h-12 rounded-2xl bg-surface" />
+            <label className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-1.5 block">Skriv fritt</label>
+            <Textarea
+              value={free}
+              onChange={e => setFree(e.target.value)}
+              onKeyDown={compact ? undefined : onEditorKeyDown}
+              placeholder="Tankar, känslor, dagen…"
+              className={`rounded-2xl bg-surface text-base ${compact ? "min-h-[200px]" : "min-h-[420px]"}`}
+            />
           </div>
-          {active === "free" ? (
-            <div>
-              <label className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-1.5 block">Skriv fritt</label>
-              <Textarea value={free} onChange={e => setFree(e.target.value)} placeholder="Tankar, känslor, dagen…" className="min-h-[200px] rounded-2xl bg-surface text-base" />
+        ) : (
+          t.fields.map((f, i) => (
+            <div key={f.key} className="animate-fade-in-up" style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}>
+              <label className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-1.5 block">{f.label}</label>
+              <Textarea
+                value={body[f.key] ?? ""}
+                onChange={e => setBody(b => ({ ...b, [f.key]: e.target.value }))}
+                onKeyDown={compact ? undefined : onEditorKeyDown}
+                className={`rounded-2xl bg-surface text-base ${compact ? "min-h-[80px]" : "min-h-[120px]"}`}
+              />
             </div>
-          ) : (
-            t.fields.map((f, i) => (
-              <div key={f.key} className="animate-fade-in-up" style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}>
-                <label className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-1.5 block">{f.label}</label>
-                <Textarea
-                  value={body[f.key] ?? ""}
-                  onChange={e => setBody(b => ({ ...b, [f.key]: e.target.value }))}
-                  className="min-h-[80px] rounded-2xl bg-surface text-base"
-                />
+          ))
+        )}
+      </div>
+    );
+
+    return (
+      <>
+        {/* Mobile: full-page editor — original markup preserved verbatim. */}
+        <div className="lg:hidden">
+          <AppShell>
+            <button onClick={() => setActive(null)} className="flex items-center gap-1 text-sm font-bold text-text-secondary mb-4 press-soft">
+              <ChevronLeft size={18} /> Tillbaka
+            </button>
+            <div
+              className={`-mx-6 mb-6 px-6 pt-6 pb-7 rounded-b-[28px] flex items-center gap-4 ${t.text}`}
+              style={{ background: `hsl(${t.tone})` }}
+            >
+              <AbstractIcon name={t.icon} size={48} color={t.iconColor} inline />
+              <div className="flex-1 min-w-0">
+                <h1 className="text-h2 mb-0.5">{t.title}</h1>
+                <p className="text-body opacity-90">{t.subtitle}</p>
               </div>
-            ))
-          )}
+            </div>
+
+            {editorBody(true)}
+
+            <Button
+              disabled={!canSave || saving}
+              onClick={save}
+              variant="pill-brand"
+              size="pill"
+              className="w-full"
+            >
+              {saving ? "Sparar…" : "Spara"}
+            </Button>
+          </AppShell>
         </div>
 
-        <Button
-          disabled={!canSave || saving}
-          onClick={save}
-          variant="pill-brand"
-          size="pill"
-          className="w-full"
-        >
-          {saving ? "Sparar…" : "Spara"}
-        </Button>
-      </AppShell>
+        {/* Desktop: split-pane inline editor + template list. */}
+        <div className="hidden lg:block">
+          <AppShell wide>
+            <div className="grid grid-cols-[1fr_320px] gap-6">
+              {/* Left: editor */}
+              <div>
+                <button onClick={() => setActive(null)} className="flex items-center gap-1 text-sm font-bold text-text-secondary mb-3 press-soft">
+                  <ChevronLeft size={18} /> Tillbaka till mallar
+                </button>
+                <div
+                  className={`mb-5 px-6 pt-5 pb-6 rounded-3xl flex items-center gap-4 ${t.text}`}
+                  style={{ background: `hsl(${t.tone})` }}
+                >
+                  <AbstractIcon name={t.icon} size={44} color={t.iconColor} inline />
+                  <div className="flex-1 min-w-0">
+                    <h1 className="text-h2 mb-0.5">{t.title}</h1>
+                    <p className="text-body opacity-90">{t.subtitle}</p>
+                  </div>
+                </div>
+
+                {editorBody(false)}
+
+                <div className="flex items-center gap-3">
+                  <Button
+                    disabled={!canSave || saving}
+                    onClick={save}
+                    variant="pill-brand"
+                    size="pill"
+                  >
+                    {saving ? "Sparar…" : "Spara"}
+                  </Button>
+                  <span className="text-xs text-text-secondary">Tips: ⌘/Ctrl + Enter för att spara</span>
+                </div>
+              </div>
+
+              {/* Right: template switcher + recent history */}
+              <aside className="space-y-4">
+                <div>
+                  <h3 className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-2">Byt mall</h3>
+                  <ul className="space-y-1.5">
+                    {(Object.keys(TEMPLATES) as TemplateKey[]).map(k => {
+                      const tt = TEMPLATES[k];
+                      const isActive = k === active;
+                      return (
+                        <li key={k}>
+                          <button
+                            onClick={() => startTemplate(k)}
+                            className={`w-full flex items-center gap-3 px-3 h-11 rounded-2xl press-soft transition-colors ${isActive ? "bg-surface-alt" : "hover:bg-surface-alt/60"}`}
+                          >
+                            <span className={`w-2 h-8 rounded-full ${tt.bg}`} />
+                            <span className="text-[14px] font-extrabold flex-1 text-left">{tt.title}</span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-2">Senaste</h3>
+                  {entries.length === 0 ? (
+                    <p className="text-sm text-text-secondary">Inga anteckningar än.</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {entries.slice(0, 8).map(e => {
+                        const tt = TEMPLATES[e.template_type as TemplateKey];
+                        return (
+                          <li key={e.id} className="card-soft p-3">
+                            <div className="flex items-baseline justify-between gap-2 mb-0.5">
+                              <span className="text-[13px] font-extrabold truncate">{e.title || tt?.title || "Anteckning"}</span>
+                              <span className="text-[10px] font-semibold text-text-secondary shrink-0">
+                                {new Date(e.created_at).toLocaleDateString("sv-SE", { day: "numeric", month: "short" })}
+                              </span>
+                            </div>
+                            <p className="text-xs text-text-secondary line-clamp-2">
+                              {e.free_text ?? Object.values(e.body_json ?? {}).filter(Boolean).join(" · ")}
+                            </p>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              </aside>
+            </div>
+          </AppShell>
+        </div>
+      </>
     );
   }
 
+  // ===== Index view (no template active) — original markup preserved. =====
   return (
     <AppShell wide>
       <ScreenHeader
@@ -219,7 +332,7 @@ const Journal = () => {
       />
 
       <h2 className="text-lg font-extrabold mb-3">Mallar</h2>
-      <div className="grid grid-cols-2 gap-3 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
         {(Object.keys(TEMPLATES) as TemplateKey[]).map((k, i) => {
           const t = TEMPLATES[k];
           const onYellow = t.text === "text-foreground";
@@ -231,7 +344,6 @@ const Journal = () => {
               className={`relative overflow-hidden w-full text-left rounded-3xl ${t.bg} ${t.text} p-4 shadow-card press-soft animate-pop-in flex flex-col justify-between min-h-[148px]`}
               style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
             >
-              {/* Bakgrundsblob — samma sticker-rytm som ColorCard */}
               <span aria-hidden className="absolute -bottom-10 -right-10 w-36 h-36 rounded-full bg-foreground/10 pointer-events-none" />
               <span aria-hidden className="absolute -top-6 -left-6 w-20 h-20 rounded-full bg-white/10 pointer-events-none" />
               <div className={`relative z-[1] w-9 h-9 rounded-full grid place-items-center ${plusBg}`}>
