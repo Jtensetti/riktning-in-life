@@ -35,7 +35,9 @@ const colorBg = (color: string): string => {
     case "purple": return "bg-purple-sleep text-white";
     case "pink": return "bg-pink-move text-white";
     case "green": return "bg-green-recovery text-white";
-    default: return "bg-cream-card text-foreground";
+    // Default: lugn blåton i stället för cream/lila — undviker
+    // att aktiviteter utan explicit färg ärver något grått eller lila.
+    default: return "bg-blue-calm/15 text-foreground";
   }
 };
 
