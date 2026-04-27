@@ -18,6 +18,8 @@ interface Props {
   height?: number;
   /** Tom-stapel-höjd så raden alltid har visuell rytm. */
   emptyMin?: number;
+  /** Etikett som visas i tooltip och aria-label (t.ex. "Rörelse", "Sömn"). */
+  label?: string;
 }
 
 const dayLetter = (iso: string): string => {
@@ -29,7 +31,7 @@ const dayLetter = (iso: string): string => {
  * Stapeldiagram för aktiv tid per dag. Varje stapel färgas efter dominant aktivitet,
  * tomma dagar visas som ljus border-soft-stapel så raden känns balanserad.
  */
-export const ActivityBars = ({ data, height = chartHeights.compact, emptyMin = 4 }: Props) => {
+export const ActivityBars = ({ data, height = chartHeights.compact, emptyMin = 4, label = "Aktivitet" }: Props) => {
   const chartData = useMemo(
     () =>
       data.map((d) => ({
@@ -49,7 +51,7 @@ export const ActivityBars = ({ data, height = chartHeights.compact, emptyMin = 4
 
   return (
     <AnimatedChart signature={sig}>
-      <div style={{ height }} role="img" aria-label="Aktiv tid per dag senaste veckan">
+      <div style={{ height }} role="img" aria-label={`${label} per dag senaste veckan`}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={chartMargins.bars} barCategoryGap={chartBarLayout.categoryGap}>
             <ThemedXAxis />
@@ -58,7 +60,7 @@ export const ActivityBars = ({ data, height = chartHeights.compact, emptyMin = 4
               variant="bar"
               formatter={(_, __, item) => {
                 const d = item.payload as (typeof chartData)[number];
-                return [d.isEmpty ? "Ingen logg" : `${d.minutes} min`, "Aktiv tid"];
+                return [d.isEmpty ? "Ingen logg" : `${d.minutes} min`, label];
               }}
               labelFormatter={(_, payload) => {
                 const iso = payload?.[0]?.payload?.date as string | undefined;
