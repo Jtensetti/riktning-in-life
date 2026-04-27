@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { ChevronLeft, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { RichTextEditor } from "@/components/editor/RichTextEditor";
+import { htmlToPreviewText } from "@/lib/htmlText";
 
 type TemplateKey = "three_lines" | "thought_loop" | "body_first" | "evidence" | "free";
 
