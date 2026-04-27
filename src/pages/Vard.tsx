@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
+import { WideLayout } from "@/components/desktop/WideLayout";
 import { Illustration } from "@/components/Illustrations";
 import { AbstractIcon } from "@/components/AbstractIcon";
 import { ScreenHeader } from "@/components/ui-kit/ScreenHeader";
@@ -82,116 +83,125 @@ const Vard = () => {
   const latest = (t: FormType) => forms.find(f => f.type === t);
 
   return (
-    <AppShell>
+    <AppShell wide>
       <ScreenHeader
         screen="care"
         title="Vård"
         subtitle="Skattningar, läkemedel och rapport till vården."
       />
 
-      <section className="mb-7">
-        <button
-          onClick={() => navigate("/krisplan")}
-          className="w-full rounded-3xl p-4 text-left press-soft animate-pop-in flex items-center gap-3"
-          style={{ background: "hsl(var(--red-risk) / 0.08)", border: "1px solid hsl(var(--red-risk) / 0.25)" }}
-        >
-          <div className="w-12 h-12 rounded-2xl bg-red-risk grid place-items-center shrink-0 shadow-sm">
-            <AbstractIcon name="shield-soft" size={22} color="hsl(var(--surface))" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-extrabold uppercase tracking-wider text-red-risk mb-0.5">När det blir svårt</p>
-            <p className="text-[15px] font-extrabold">Min krisplan</p>
-            <p className="text-xs text-text-secondary">Förbered i lugnt läge — använd när det behövs.</p>
-          </div>
-          <ChevronRight size={18} className="text-text-secondary shrink-0" />
-        </button>
-      </section>
-
-      <section className="mb-7">
-        <h2 className="text-lg font-extrabold mb-1">Veckoskattningar</h2>
-        <p className="text-xs text-text-secondary mb-3">Görs en gång i veckan — håller riktningen i sikte.</p>
-        <div className="space-y-3">
-          {(["phq9", "gad7", "who5"] as FormType[]).map((t, i) => {
-            const f = FORMS[t];
-            const last = latest(t);
-            const final = last && f.toFinal ? f.toFinal(last.total_score) : last?.total_score;
-            // Neutral cream-yta — färgen lever bara i ikonbrickan.
-            const tileTone =
-              t === "phq9" ? "yellow-journal"
-                : t === "gad7" ? "pink-move"
-                  : "green-recovery";
-            const tileBg = `hsl(var(--${tileTone}) / 0.14)`;
-            const iconColor = `hsl(var(--${tileTone}))`;
-            return (
+      <WideLayout
+        left={
+          <>
+            <section className="mb-7">
               <button
-                key={t}
-                onClick={() => { setActiveForm(t); setView("form"); }}
+                onClick={() => navigate("/krisplan")}
+                className="w-full rounded-3xl p-4 text-left press-soft animate-pop-in flex items-center gap-3"
+                style={{ background: "hsl(var(--red-risk) / 0.08)", border: "1px solid hsl(var(--red-risk) / 0.25)" }}
+              >
+                <div className="w-12 h-12 rounded-2xl bg-red-risk grid place-items-center shrink-0 shadow-sm">
+                  <AbstractIcon name="shield-soft" size={22} color="hsl(var(--surface))" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-extrabold uppercase tracking-wider text-red-risk mb-0.5">När det blir svårt</p>
+                  <p className="text-[15px] font-extrabold">Min krisplan</p>
+                  <p className="text-xs text-text-secondary">Förbered i lugnt läge — använd när det behövs.</p>
+                </div>
+                <ChevronRight size={18} className="text-text-secondary shrink-0" />
+              </button>
+            </section>
+
+            <section className="mb-7">
+              <h2 className="text-lg font-extrabold mb-1">Veckoskattningar</h2>
+              <p className="text-xs text-text-secondary mb-3">Görs en gång i veckan — håller riktningen i sikte.</p>
+              <div className="space-y-3">
+                {(["phq9", "gad7", "who5"] as FormType[]).map((t, i) => {
+                  const f = FORMS[t];
+                  const last = latest(t);
+                  const final = last && f.toFinal ? f.toFinal(last.total_score) : last?.total_score;
+                  // Neutral cream-yta — färgen lever bara i ikonbrickan.
+                  const tileTone =
+                    t === "phq9" ? "yellow-journal"
+                      : t === "gad7" ? "pink-move"
+                        : "green-recovery";
+                  const tileBg = `hsl(var(--${tileTone}) / 0.14)`;
+                  const iconColor = `hsl(var(--${tileTone}))`;
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => { setActiveForm(t); setView("form"); }}
+                      className="w-full flex items-center gap-3 text-left press-soft animate-fade-in-up rounded-3xl bg-surface border border-border-soft px-4 py-4 shadow-card"
+                      style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
+                    >
+                      <div
+                        className="shrink-0 grid place-items-center"
+                        style={{ width: 44, height: 44, borderRadius: "var(--icon-tile-radius)", background: tileBg }}
+                        aria-hidden
+                      >
+                        <AbstractIcon name="bookmark-soft" size={22} color={iconColor} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[15px] font-extrabold text-foreground">{f.title}</div>
+                        <div className="text-xs text-text-secondary">
+                          {last
+                            ? `Senast: ${final}${f.toFinal ? "/100" : `/${f.maxRaw}`} · ${f.scoreLabel(last.total_score)}`
+                            : "Aldrig genomförd"}
+                        </div>
+                      </div>
+                      <ChevronRight size={18} className="text-text-secondary" />
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          </>
+        }
+        right={
+          <>
+            <section className="mb-7">
+              <h2 className="text-lg font-extrabold mb-3">Läkemedel</h2>
+              <button
+                onClick={() => setView("meds")}
                 className="w-full flex items-center gap-3 text-left press-soft animate-fade-in-up rounded-3xl bg-surface border border-border-soft px-4 py-4 shadow-card"
-                style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
               >
                 <div
                   className="shrink-0 grid place-items-center"
-                  style={{ width: 44, height: 44, borderRadius: "var(--icon-tile-radius)", background: tileBg }}
+                  style={{ width: 44, height: 44, borderRadius: "var(--icon-tile-radius)", background: "hsl(var(--pink-move) / 0.14)" }}
                   aria-hidden
                 >
-                  <AbstractIcon name="bookmark-soft" size={22} color={iconColor} />
+                  <AbstractIcon name="pill-bottle" size={22} color="hsl(var(--pink-move))" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[15px] font-extrabold text-foreground">{f.title}</div>
-                  <div className="text-xs text-text-secondary">
-                    {last
-                      ? `Senast: ${final}${f.toFinal ? "/100" : `/${f.maxRaw}`} · ${f.scoreLabel(last.total_score)}`
-                      : "Aldrig genomförd"}
-                  </div>
+                  <div className="text-[15px] font-extrabold text-foreground">Läkemedel & biverkningar</div>
+                  <div className="text-xs text-text-secondary">{meds.filter(m => m.active).length} aktiva · {meds.length} totalt</div>
                 </div>
                 <ChevronRight size={18} className="text-text-secondary" />
               </button>
-            );
-          })}
-        </div>
-      </section>
+            </section>
 
-      <section className="mb-7">
-        <h2 className="text-lg font-extrabold mb-3">Läkemedel</h2>
-        <button
-          onClick={() => setView("meds")}
-          className="w-full flex items-center gap-3 text-left press-soft animate-fade-in-up rounded-3xl bg-surface border border-border-soft px-4 py-4 shadow-card"
-        >
-          <div
-            className="shrink-0 grid place-items-center"
-            style={{ width: 44, height: 44, borderRadius: "var(--icon-tile-radius)", background: "hsl(var(--pink-move) / 0.14)" }}
-            aria-hidden
-          >
-            <AbstractIcon name="pill-bottle" size={22} color="hsl(var(--pink-move))" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-[15px] font-extrabold text-foreground">Läkemedel & biverkningar</div>
-            <div className="text-xs text-text-secondary">{meds.filter(m => m.active).length} aktiva · {meds.length} totalt</div>
-          </div>
-          <ChevronRight size={18} className="text-text-secondary" />
-        </button>
-      </section>
-
-      <section className="mb-7">
-        <h2 className="text-lg font-extrabold mb-3">Rapport</h2>
-        <button
-          onClick={() => setView("report")}
-          className="w-full rounded-3xl text-white p-1 overflow-hidden shadow-elev text-left press-soft animate-pop-in"
-          style={{ background: "linear-gradient(135deg, hsl(var(--blue-calm)) 0%, hsl(var(--blue-deep)) 100%)" }}
-        >
-          <div className="rounded-[20px] overflow-hidden">
-            <Illustration name="care" className="w-full h-auto" />
-          </div>
-          <div className="px-4 py-4 flex items-center gap-3">
-            <AbstractIcon name="bookmark-soft" size={22} color="hsl(var(--surface))" />
-            <div className="flex-1">
-              <div className="text-[17px] font-extrabold">Exportera till vården</div>
-              <div className="text-xs opacity-90">14, 30 eller 90 dagar · text/PDF</div>
-            </div>
-            <ChevronRight size={18} />
-          </div>
-        </button>
-      </section>
+            <section className="mb-7">
+              <h2 className="text-lg font-extrabold mb-3">Rapport</h2>
+              <button
+                onClick={() => setView("report")}
+                className="w-full rounded-3xl text-white p-1 overflow-hidden shadow-elev text-left press-soft animate-pop-in"
+                style={{ background: "linear-gradient(135deg, hsl(var(--blue-calm)) 0%, hsl(var(--blue-deep)) 100%)" }}
+              >
+                <div className="rounded-[20px] overflow-hidden">
+                  <Illustration name="care" className="w-full h-auto" />
+                </div>
+                <div className="px-4 py-4 flex items-center gap-3">
+                  <AbstractIcon name="bookmark-soft" size={22} color="hsl(var(--surface))" />
+                  <div className="flex-1">
+                    <div className="text-[17px] font-extrabold">Exportera till vården</div>
+                    <div className="text-xs opacity-90">14, 30 eller 90 dagar · text/PDF</div>
+                  </div>
+                  <ChevronRight size={18} />
+                </div>
+              </button>
+            </section>
+          </>
+        }
+      />
     </AppShell>
   );
 };
