@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { BarChart, Bar, ResponsiveContainer } from "recharts";
 import { toneHsl, toneSoftBg, type ChartTone } from "@/lib/chartColors";
-import { chartAnimation, chartBarLayout, chartHeights, chartMargins } from "@/lib/chartTheme";
+import { chartAnimation, chartBarLayout, chartMargins } from "@/lib/chartTheme";
+import { useChartHeight } from "@/lib/useChartHeight";
 import { AnimatedChart } from "./AnimatedChart";
 import { ThemedTooltip, ThemedXAxis, ThemedYAxis } from "./ChartPrimitives";
 
@@ -37,7 +38,9 @@ const dayLetter = (iso: string): string => {
  * Stacked stapel per dag som visar hur veckan fördelas mellan kategorier.
  * Legend som färgade pills under diagrammet — samma stil som QuickLogPills.
  */
-export const StackedRecovery = ({ data, height = chartHeights.standard }: Props) => {
+export const StackedRecovery = ({ data, height }: Props) => {
+  const heights = useChartHeight();
+  const resolvedHeight = height ?? heights.standard;
   const chartData = useMemo(
     () =>
       data.map((d) => ({
@@ -60,7 +63,7 @@ export const StackedRecovery = ({ data, height = chartHeights.standard }: Props)
   return (
     <AnimatedChart signature={sig}>
       <div role="img" aria-label={ariaLabel}>
-        <div style={{ height }}>
+        <div style={{ height: resolvedHeight }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={chartMargins.bars} barCategoryGap={chartBarLayout.categoryGap}>
               <ThemedXAxis />

@@ -469,6 +469,13 @@ const Week = () => {
         subtitle="Vad veckan visar — på en skärm."
       />
 
+      {/*
+       * Mobile: vertical stack (unchanged).
+       * Desktop (≥lg): two-column masonry so cards/sections share the wide
+       * canvas without losing reading order. Children opt in to
+       * `lg:break-inside-avoid` only where they're risky to split.
+       */}
+      <div className="lg:[column-count:2] lg:[column-gap:2.5rem] lg:[&>*]:break-inside-avoid">
       <button
         onClick={() => navigate("/analys")}
         className="w-full mb-6 ui-card-list flex items-center gap-3 press-soft text-left animate-pop-in"
@@ -1047,6 +1054,7 @@ const Week = () => {
         </div>
         <ChevronRight size={20} className="shrink-0 text-text-secondary" />
       </button>
+      </div>
     </AppShell>
   );
 };

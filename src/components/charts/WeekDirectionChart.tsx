@@ -3,11 +3,11 @@ import { LineChart, Line, ResponsiveContainer } from "recharts";
 import { chartTokens, toneHsl } from "@/lib/chartColors";
 import {
   chartAnimation,
-  chartHeights,
   chartLineActiveDot,
   chartLineDot,
   chartMargins,
 } from "@/lib/chartTheme";
+import { useChartHeight } from "@/lib/useChartHeight";
 import { AnimatedChart, buildChartSignature } from "./AnimatedChart";
 import { ThemedGrid, ThemedTooltip, ThemedXAxis, ThemedYAxis } from "./ChartPrimitives";
 
@@ -46,7 +46,9 @@ const fmtDate = (iso: string): string => {
  * 7-dagars linjediagram för veckans Riktning (0–100).
  * Använder samma tema-tokens som övriga ChartCard-diagram.
  */
-export const WeekDirectionChart = ({ data, height = chartHeights.expanded }: Props) => {
+export const WeekDirectionChart = ({ data, height }: Props) => {
+  const heights = useChartHeight();
+  const resolvedHeight = height ?? heights.expanded;
   const rows = useMemo(() => data.map((p) => ({ ...p, label: dayLetter(p.date) })), [data]);
   const stroke = toneHsl("green");
   const sig = buildChartSignature(data);
@@ -60,7 +62,7 @@ export const WeekDirectionChart = ({ data, height = chartHeights.expanded }: Pro
     if (payload?.value == null) {
       const x = cx ?? 0;
       // Recharts ger ingen cy för null-värden — fall tillbaka till nedre kanten.
-      const y = Number.isFinite(cy) && (cy as number) > 0 ? (cy as number) : height - 24;
+      const y = Number.isFinite(cy) && (cy as number) > 0 ? (cy as number) : resolvedHeight - 24;
       return (
         <g key={key} aria-hidden>
           <circle
@@ -91,7 +93,7 @@ export const WeekDirectionChart = ({ data, height = chartHeights.expanded }: Pro
 
   return (
     <AnimatedChart signature={sig}>
-      <div style={{ height }} role="img" aria-label="Veckans riktning, sju dagar">
+      <div style={{ height: resolvedHeight }} role="img" aria-label="Veckans riktning, sju dagar">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={rows} margin={chartMargins.lineWithY}>
             <defs>

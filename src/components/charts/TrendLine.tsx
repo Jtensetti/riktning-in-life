@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
 import { toneHsl, type ChartTone } from "@/lib/chartColors";
-import { chartAnimation, chartHeights, chartLineActiveDot, chartMargins } from "@/lib/chartTheme";
+import { chartAnimation, chartLineActiveDot, chartMargins } from "@/lib/chartTheme";
+import { useChartHeight } from "@/lib/useChartHeight";
 import { AnimatedChart } from "./AnimatedChart";
 import { ThemedGrid, ThemedTooltip, ThemedXAxis, ThemedYAxis } from "./ChartPrimitives";
 
@@ -39,7 +40,9 @@ const fmtTooltipDate = (iso: string): string => {
  * Mjuk monotone-area med tunna linjer i kategorifärger.
  * Visar 1–3 serier samtidigt utan att bli rörig.
  */
-export const TrendLine = ({ dates, series, showAxis = true, height = chartHeights.standard }: Props) => {
+export const TrendLine = ({ dates, series, showAxis = true, height }: Props) => {
+  const heights = useChartHeight();
+  const resolvedHeight = height ?? heights.standard;
   const data = useMemo(() => {
     return dates.map((iso, i) => {
       const row: Record<string, string | number | null> = { date: iso, label: dayLetter(iso) };
@@ -56,7 +59,7 @@ export const TrendLine = ({ dates, series, showAxis = true, height = chartHeight
 
   return (
     <AnimatedChart signature={sig}>
-      <div style={{ height }} role="img" aria-label={`Trend för ${series.map((s) => s.label).join(", ")}`}>
+      <div style={{ height: resolvedHeight }} role="img" aria-label={`Trend för ${series.map((s) => s.label).join(", ")}`}>
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={chartMargins.area}>
             <defs>

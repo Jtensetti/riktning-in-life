@@ -984,7 +984,7 @@ const Today = () => {
   };
 
   return (
-    <AppShell>
+    <AppShell wide>
       <ScreenHeader
         screen="today"
         subtitle={greet.headline}
@@ -1029,12 +1029,26 @@ const Today = () => {
         <ChevronRight size={18} className="opacity-60 shrink-0" />
       </button>
 
-      {decision.modules
-        .filter((id) => id !== "reportShortcut" && id !== "learn")
-        .map((id) => {
-          const node = MODULES[id]?.();
-          return node ?? null;
-        })}
+      {/*
+       * Mobile: vertical stack of modules (unchanged).
+       * Desktop (≥lg): masonry-style two columns via CSS columns. Each
+       * module is rendered as a column-break-inside-avoid block so cards
+       * don't split across columns. This gives Today a real desktop
+       * disposition without coupling layout to specific module IDs.
+       */}
+      <div className="lg:[column-count:2] lg:[column-gap:2.5rem]">
+        {decision.modules
+          .filter((id) => id !== "reportShortcut" && id !== "learn")
+          .map((id) => {
+            const node = MODULES[id]?.();
+            if (!node) return null;
+            return (
+              <div key={id} className="lg:break-inside-avoid lg:[break-inside:avoid]">
+                {node}
+              </div>
+            );
+          })}
+      </div>
 
       <ActivityPicker open={pickerOpen} onOpenChange={setPickerOpen} onAdd={handleQuickAdd} />
     </AppShell>

@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { BarChart, Bar, ResponsiveContainer, Cell } from "recharts";
 import { toneHsl, chartTokens } from "@/lib/chartColors";
-import { chartAnimation, chartBarLayout, chartHeights, chartMargins } from "@/lib/chartTheme";
+import { chartAnimation, chartBarLayout, chartMargins } from "@/lib/chartTheme";
+import { useChartHeight } from "@/lib/useChartHeight";
 import { AnimatedChart, buildChartSignature } from "./AnimatedChart";
 import { ThemedTooltip, ThemedXAxis, ThemedYAxis } from "./ChartPrimitives";
 
@@ -31,7 +32,9 @@ const dayLetter = (iso: string): string => {
  * Stapeldiagram för aktiv tid per dag. Varje stapel färgas efter dominant aktivitet,
  * tomma dagar visas som ljus border-soft-stapel så raden känns balanserad.
  */
-export const ActivityBars = ({ data, height = chartHeights.compact, emptyMin = 4, label = "Aktivitet" }: Props) => {
+export const ActivityBars = ({ data, height, emptyMin = 4, label = "Aktivitet" }: Props) => {
+  const heights = useChartHeight();
+  const resolvedHeight = height ?? heights.compact;
   const chartData = useMemo(
     () =>
       data.map((d) => ({
@@ -51,7 +54,7 @@ export const ActivityBars = ({ data, height = chartHeights.compact, emptyMin = 4
 
   return (
     <AnimatedChart signature={sig}>
-      <div style={{ height }} role="img" aria-label={`${label} per dag senaste veckan`}>
+      <div style={{ height: resolvedHeight }} role="img" aria-label={`${label} per dag senaste veckan`}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={chartMargins.bars} barCategoryGap={chartBarLayout.categoryGap}>
             <ThemedXAxis />

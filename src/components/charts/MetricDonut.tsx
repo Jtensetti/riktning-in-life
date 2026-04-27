@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { toneHsl, toneSoftBg, type ChartTone } from "@/lib/chartColors";
-import { chartAnimation, chartHeights } from "@/lib/chartTheme";
+import { chartAnimation } from "@/lib/chartTheme";
+import { useChartHeight } from "@/lib/useChartHeight";
 import { AnimatedChart, buildChartSignature } from "./AnimatedChart";
 import { ThemedTooltip } from "./ChartPrimitives";
 
@@ -32,21 +33,23 @@ interface DonutProps {
  */
 export const MetricDonut = ({
   data,
-  size = chartHeights.standard,
+  size,
   innerPct = 62,
   centerValue,
   centerSubtitle,
   valueFormatter = (v) => `${v}`,
 }: DonutProps) => {
-  const inner = (size / 2) * (innerPct / 100);
-  const outer = size / 2 - 2;
+  const heights = useChartHeight();
+  const resolvedSize = size ?? heights.standard;
+  const inner = (resolvedSize / 2) * (innerPct / 100);
+  const outer = resolvedSize / 2 - 2;
 
   const total = useMemo(() => data.reduce((s, d) => s + d.value, 0), [data]);
   const sig = buildChartSignature(data, `${size}-${innerPct}`);
 
   return (
     <AnimatedChart signature={sig} className="relative">
-      <div className="relative" style={{ width: size, height: size }} role="img" aria-label="Fördelning">
+      <div className="relative" style={{ width: resolvedSize, height: resolvedSize }} role="img" aria-label="Fördelning">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <ThemedTooltip
