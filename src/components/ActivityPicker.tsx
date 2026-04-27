@@ -454,6 +454,55 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
               ))}
             </div>
 
+            {selected.semantic_kind === "rorelse" && (
+              <>
+                <p className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-2">Intensitet (valfri)</p>
+                <div className="flex gap-2 mb-6">
+                  {([
+                    { v: "latt", label: "Lätt" },
+                    { v: "medel", label: "Medel" },
+                    { v: "hard", label: "Hård" },
+                  ] as { v: Intensity; label: string }[]).map((opt) => (
+                    <button
+                      key={opt.v}
+                      onClick={() => setIntensity(intensity === opt.v ? null : opt.v)}
+                      className={`flex-1 rounded-2xl px-3 py-2.5 text-sm font-extrabold border-2 press-soft ${
+                        intensity === opt.v ? "bg-foreground text-background border-foreground" : "bg-surface text-foreground border-border-soft"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {selected.semantic_kind === "socialt" && (
+              <>
+                <p className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-2">Med vem? (valfri)</p>
+                <div className="flex gap-2 mb-6 flex-wrap">
+                  {([
+                    { v: "ensam", label: "Ensam" },
+                    { v: "partner", label: "Partner" },
+                    { v: "barn", label: "Barn" },
+                    { v: "van", label: "Vän" },
+                    { v: "kollega", label: "Kollega" },
+                    { v: "annan", label: "Annan" },
+                  ] as { v: WithWho; label: string }[]).map((opt) => (
+                    <button
+                      key={opt.v}
+                      onClick={() => setWithWho(withWho === opt.v ? null : opt.v)}
+                      className={`rounded-full px-4 py-2 text-sm font-extrabold border-2 press-soft ${
+                        withWho === opt.v ? "bg-foreground text-background border-foreground" : "bg-surface text-foreground border-border-soft"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
             <div className="flex gap-2">
               <Button
                 onClick={() => setSelected(null)}
