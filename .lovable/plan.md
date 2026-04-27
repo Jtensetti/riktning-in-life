@@ -1,55 +1,39 @@
-## What's already in place
+## 1. Fix: "Mående +1" visas rött
 
-I checked each of the 10 polish points against the current code. Most landed in the previous round:
+**Buggen:** I `Senaste aktivitet`-listan på Idag-sidan markeras Mående med "lägre = bättre"-logik, samma som Ångest. Det betyder att Mående +1 (förbättring) får varningston (röd) istället för positiv ton (grön).
 
-- **Vård** — crisis card prominent; PHQ-9 / GAD-7 / WHO-5 are cream rows with small colored icon tiles; blue export card kept.
-- **Exercise spacing** — hero uses `pt-8 pb-10 rounded-b-[40px]`, content wrapper uses `pt-10`. No collision.
-- **Slider copy** — `ExerciseDetail.tsx` line 248 already says "Reglagen börjar där du var innan…".
-- **Today badges** — already render full labels ("Mående +1", "Ångest -1", "Energi +1"), capped at 2 with `+ N fler` overflow.
-- **Learn-articles** — DB titles now read "Rörelse som stöd", "Sömn och återhämtning", "Oro börjar ofta i kroppen", "Låg ribba fungerar" with cautious excerpts ("kan hjälpa", "för många", "över tid").
-- **Activity picker** — "Senast använda" section above categories, "Dina favoriter" visually separate, consistent icon tiles.
-- **Today screen hierarchy** — `decideTodayLayout` already caps secondary modules.
-- **Weather** — large permission card only renders until granted/dismissed; otherwise `WeatherChip` sits as small header pill.
+**Fix:** En rad i `src/pages/Today.tsx` (rad 935):
+- Ändra `pushDelta("Mående", s.mood_before, s.mood_after, true)` → `false` (högre mående = bättre, precis som Energi).
 
-## What still needs work
+Resultat: Mående +1 blir grön, Mående -1 blir röd. Ångest och Energi rörs inte.
 
-### 1. Week — split "active time" into proper categories (point 6)
+## 2. Aktivitetsberoende kontextfält i loggning
 
-`src/pages/Week.tsx` still has a single `activeTime` filter that lumps every logged activity together. Now that `activity_logs.semantic_kind` exists, surface it.
+Idag visar `ActivityPicker` redan två villkorliga fält efter `semantic_kind`:
+- `rorelse` → Intensitet (Lätt/Medel/Hård)
+- `socialt` → Med vem (Ensam/Partner/Barn/Vän/Kollega/Annan)
 
-Changes in `Week.tsx`:
+Förslag: lägg till **bara två till**, där det ger tydligt kliniskt värde utan att skapa rörighet. Allt valfritt, samma visuella mönster (chip-rad, "valfri"-etikett).
 
-- Replace the `historyFilter` union with: `"all" | "checkins" | "exercises" | "rorelse" | "aterhamtning" | "socialt" | "fokus" | "vardag" | "somn" | "journal"`.
-- Filter pills: keep "Allt", "Check-ins", "Övningar", then add a horizontally-scrollable row of the 7 semantic-kind pills (only show a pill if at least one log in the 7-day window has that kind, to avoid empty filters).
-- `minutesFor(d)`: for a semantic-kind filter, sum `d.acts.filter(a => a.semantic_kind === key).reduce(...)`. Sleep filter uses checkin sleep_hours (existing behaviour stays).
-- Chart title/subtitle/total label maps: per-kind copy
-  - rörelse → "Rörelse", "Minuter rörelse", `${n} min rörelse`
-  - återhämtning → "Återhämtning", "Tid för återhämtning", `${n} min`
-  - socialt → "Socialt", "Tid med andra", `${n} min`
-  - fokus → "Fokus", "Tid i fokus", `${n} min`
-  - vardag → "Vardag", "Vardagliga rutiner", `${n} min`
-  - sömn → "Sömn", "Loggad sömn", `${n} min`
-  - journal → "Journal", "Tid i journal", `${n} min`
-- Tone/color per kind matches the design tokens already used (green for rörelse, purple for sömn, pink for socialt, blue for fokus, yellow for journal, orange for återhämtning, green for vardag).
-- Per-day list filter logic (`showActs` / empty-state CTA): show acts whose `semantic_kind` matches; empty state → "Ingen [kategori]nktivitet" + "Logga aktivitet" CTA to `/snabblogg`.
-- Chart aria-label / tooltip in `ActivityBars` and `MetricBars` "Aktiv tid" → pass through the `title` prop instead of hardcoding (already supports it; just stop hardcoding "Aktiv tid" in the tooltip formatter).
+**a) `somn` → Sömnkvalitet (valfri)**
+Chips: `Dålig` · `Okej` · `Bra`
+*Varför:* Sömn loggas redan separat i check-in, men när användaren snabbloggar t.ex. "Tupplur" eller "Sov om" är upplevd kvalitet det enda som verkligen tillför något till mönsteranalysen.
 
-### 2. Tiny consistency sweeps
+**b) `aterhamtning` → Plats (valfri)**
+Chips: `Inne` · `Ute`
+*Varför:* "Ute"-återhämtning (promenad utan träningssyfte, sitta i parken) korrelerar tydligt annorlunda mot mående än inne. Två val, inga fler — en boolean-känsla, inte en formulär.
 
-- `src/components/charts/ActivityBars.tsx` — replace hardcoded "Aktiv tid" in tooltip/aria with a `label` prop (defaults to "Aktivitet") so Week can pass the current filter's label.
-- `src/components/charts/MetricBars.tsx` — comment-only mention of "Aktiv tid" can stay (it's a code comment, not visible UI).
+**Vi gör inte (för att undvika kaos):**
+- `fokus`, `vardag`, `journal` får inga extra fält. Dessa är redan självförklarande och extra metadata skulle bara fördröja loggningen.
+- Inga humörsspecifika frågor, inga fritextfält, inga "varför"-rutor.
 
-### 3. No DB migration required
+### Datamodell
+- Återanvänd befintliga kolumner där möjligt. `intensity` används idag bara av rörelse — vi kan återanvända den för sömnkvalitet (`latt`=dålig, `medel`=okej, `hard`=bra) **eller** lägga till ett nytt nullable `quality`-fält. Rekommendation: nytt fält `sleep_quality` + `location` (text, nullable) i `activity_logs`, för att hålla semantiken ren. Migration skriver bara nya nullable-kolumner — påverkar ingen befintlig data.
 
-`semantic_kind` already exists on `activity_logs` and is being written by `ActivityPicker`. Backfill ran for the catalog. No new SQL needed.
+### Filer som ändras
+- `src/pages/Today.tsx` — en rad (bugfix punkt 1)
+- `src/components/ActivityPicker.tsx` — två nya villkorliga block efter rad 517, plus state + insert-payload
+- `supabase/migrations/...sql` — `ALTER TABLE activity_logs ADD COLUMN sleep_quality text, ADD COLUMN location text;`
+- `src/integrations/supabase/types.ts` — regenereras automatiskt
 
-## Out of scope (intentionally)
-
-- No changes to Vård, Today badges, ExerciseDetail spacing, slider copy, learn-article copy, weather pill behaviour, picker structure — all confirmed correct in the current code.
-- No new modules on Today.
-- No visual redesign.
-
-## Files touched
-
-- `src/pages/Week.tsx` — filter union, pill row, per-kind copy + colors, filter logic.
-- `src/components/charts/ActivityBars.tsx` — accept label prop for aria/tooltip.
+Om du tycker att även (a) eller (b) är överflödigt — säg till så hoppar vi det och kör bara bugfixen.
