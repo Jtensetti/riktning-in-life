@@ -203,7 +203,7 @@ const Journal = () => {
   }
 
   return (
-    <AppShell>
+    <AppShell wide>
       <ScreenHeader
         screen="journal"
         title="Journal"

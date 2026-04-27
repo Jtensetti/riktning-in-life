@@ -9,7 +9,7 @@ const More = () => {
   const navigate = useNavigate();
 
   return (
-    <AppShell>
+    <AppShell wide>
       <ScreenHeader
         screen="more"
         title="Mer"

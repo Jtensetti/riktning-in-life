@@ -53,7 +53,7 @@ const Learn = () => {
   }, [user]);
 
   return (
-    <AppShell>
+    <AppShell wide>
       <ScreenHeader
         screen="explore"
         title="Lär dig"
@@ -68,7 +68,7 @@ const Learn = () => {
         }
       />
 
-      <div className="space-y-3">
+      <div className="space-y-3 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-4">
         {items.map((a, i) => (
           <button
             key={a.id}
