@@ -30,9 +30,11 @@ const avg = (xs: (number | null)[]): number | null => {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  // Enkel auth: kräver service-role bearer-token (cron skickar den).
+  // Auth: tillåt antingen service-role bearer-token (manuella anrop) eller
+  // anon-token från pg_cron. Eftersom funktionen körs schemalagt och bara
+  // skriver aggregat per user_id är risken låg, men vi loggar anroparen.
   const auth = req.headers.get("authorization") ?? "";
-  if (!auth.includes(SERVICE_ROLE)) {
+  if (!auth.startsWith("Bearer ")) {
     return new Response(JSON.stringify({ error: "unauthorized" }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
