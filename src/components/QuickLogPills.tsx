@@ -187,7 +187,7 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
     }
     const picked = MOOD_OPTIONS.find(o => o.delta === editSheet.mood);
     toast.success("Sparat", {
-      description: `${editSheet.minutes} min${picked ? ` · ${picked.emoji} ${picked.text}` : ""}`,
+      description: `${editSheet.minutes} min${picked ? ` · ${picked.text}` : ""}`,
     });
     setEditSheet(null);
     onLogged?.();
