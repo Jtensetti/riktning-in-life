@@ -240,7 +240,8 @@ const Today = () => {
   const [featuredArticle, setFeaturedArticle] = useState<{ slug: string; title: string; excerpt: string; color: string; read_minutes: number } | null>(null);
   const [todayRoutine, setTodayRoutine] = useState<{ slug: string; title: string; description: string; color: string; ids: string[] } | null>(null);
   const [fetching, setFetching] = useState(true);
-  const [time, setTime] = useState<TimeContext>(() => getTimeContext());
+  const tick = useAppTick();
+  const time: TimeContext = tick.ctx;
   const { weather, status: weatherStatus, requestLocation } = useWeather(true);
   const [permissionDismissed, setPermissionDismissed] = useState(() => isWeatherPermissionDismissed());
   const [permissionExiting, setPermissionExiting] = useState(false);
@@ -252,11 +253,20 @@ const Today = () => {
   // Kontinuitet: kommer ihåg när användaren senast var här. Skrivs vid mount.
   const [lastSeen] = useState<LastSeen>(() => readAndUpdateLastSeen());
 
-  // Refresh time context every minute so partOfDay stays accurate without reload.
+  // Realtime: när loggar förändras (t.ex. på en annan enhet) — bumpa reload.
+  const live = useLiveData();
   useEffect(() => {
-    const id = setInterval(() => setTime(getTimeContext()), 60_000);
-    return () => clearInterval(id);
-  }, []);
+    if (live.version === 0) return;
+    setStreakReloadKey((k) => k + 1);
+  }, [live.version]);
+
+  // Återbesök i appen → debounced refetch så data är färsk när man kommer tillbaka.
+  useEffect(() => {
+    if (!tick.justBecameVisible) return;
+    const t = setTimeout(() => setStreakReloadKey((k) => k + 1), 500);
+    return () => clearTimeout(t);
+  }, [tick.justBecameVisible]);
+
 
   useEffect(() => {
     if (loading) return;
