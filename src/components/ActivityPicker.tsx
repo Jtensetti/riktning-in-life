@@ -228,6 +228,8 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
     setMood(1);
     setIntensity(null);
     setWithWho(null);
+    setSleepQuality(null);
+    setLocation(null);
   };
 
   const confirm = () => {
