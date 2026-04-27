@@ -56,6 +56,7 @@ type SessionLite = {
   created_at: string;
   exercises: { title: string; category: string; duration_minutes: number; color: string } | null;
 };
+type SemanticKind = "rorelse" | "aterhamtning" | "socialt" | "fokus" | "vardag" | "somn" | "journal";
 type ActivityLite = {
   id: string;
   date: string;
@@ -64,6 +65,17 @@ type ActivityLite = {
   color: string;
   duration_minutes: number | null;
   mood_delta: number | null;
+  semantic_kind: SemanticKind | null;
+};
+
+const KIND_META: Record<SemanticKind, { label: string; tone: "green" | "purple" | "blue" | "orange" | "pink" | "yellow"; emptyText: string; subtitle: string; totalSuffix: string }> = {
+  rorelse:      { label: "Rörelse",       tone: "green",  emptyText: "Ingen rörelse",       subtitle: "Minuter rörelse",          totalSuffix: "min rörelse" },
+  aterhamtning: { label: "Återhämtning",  tone: "orange", emptyText: "Ingen återhämtning",  subtitle: "Tid för återhämtning",     totalSuffix: "min återhämtning" },
+  socialt:      { label: "Socialt",       tone: "pink",   emptyText: "Inget socialt loggat",subtitle: "Tid med andra",            totalSuffix: "min socialt" },
+  fokus:        { label: "Fokus",         tone: "blue",   emptyText: "Ingen fokustid",      subtitle: "Tid i fokus",              totalSuffix: "min fokus" },
+  vardag:       { label: "Vardag",        tone: "green",  emptyText: "Inga vardagsrutiner", subtitle: "Vardagliga rutiner",       totalSuffix: "min vardag" },
+  somn:         { label: "Sömn",          tone: "purple", emptyText: "Ingen sömn loggad",   subtitle: "Loggad sömn",              totalSuffix: "min sömn" },
+  journal:      { label: "Journal",       tone: "yellow", emptyText: "Ingen journal",       subtitle: "Tid i journal",            totalSuffix: "min journal" },
 };
 
 const colorBg = (color: string): string => {
