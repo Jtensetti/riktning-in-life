@@ -29,6 +29,8 @@ export type SemanticKind =
 
 export type Intensity = "latt" | "medel" | "hard";
 export type WithWho = "ensam" | "partner" | "barn" | "van" | "kollega" | "annan";
+export type SleepQuality = "dalig" | "okej" | "bra";
+export type Location = "inne" | "ute";
 
 export type ActivityDraft = {
   slug: string;
@@ -41,6 +43,8 @@ export type ActivityDraft = {
   semantic_kind?: SemanticKind | null;
   intensity?: Intensity | null;
   with_who?: WithWho | null;
+  sleep_quality?: SleepQuality | null;
+  location?: Location | null;
 };
 
 const colorBg = (color: string): string => {
