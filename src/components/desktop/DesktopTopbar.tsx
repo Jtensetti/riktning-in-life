@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,47 +40,118 @@ const formatToday = (now: Date): string => {
   return `${wd} ${day} ${month} · v.${isoWeek(now)}`;
 };
 
+/** Lokal YYYY-MM-DD (inte UTC — undviker att "idag" hoppar runt midnatt). */
+const localISODate = (d: Date): string => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
+
+/** ms kvar till nästa lokala midnatt + 1s marginal. */
+const msUntilMidnight = (now: Date): number => {
+  const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 1, 0);
+  return next.getTime() - now.getTime();
+};
+
 export const DesktopTopbar = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [needsCheckin, setNeedsCheckin] = useState(false);
   const [today, setToday] = useState(() => formatToday(new Date()));
+  // Spåra senaste utvärderade datum så vi inte gör DB-anrop när bara fokus återgår
+  // inom samma dygn. Sätts när vi (a) hämtat från DB eller (b) sett "done"-event.
+  const lastEvaluatedDateRef = useRef<string | null>(null);
 
-  // Uppdatera datumetikett vid midnatt utan att gissa på timer-precision —
-  // re-evaluera på 'visibilitychange' (vanligaste återbesöket) + var 5:e minut.
+  // Datumetikett: schemalägg exakt timer till nästa midnatt (re-armas efter varje tick).
+  // Plus visibilitychange/focus/pageshow så att en uppvakning från sleep/bfcache
+  // direkt korrigerar etiketten om vi sov förbi midnatt.
   useEffect(() => {
-    const tick = () => setToday(formatToday(new Date()));
-    document.addEventListener("visibilitychange", tick);
-    const id = window.setInterval(tick, 5 * 60_000);
+    let timeoutId: number | undefined;
+    const tick = () => {
+      setToday(formatToday(new Date()));
+      // re-arma till nästa midnatt
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(tick, msUntilMidnight(new Date()));
+    };
+    // initial timer
+    timeoutId = window.setTimeout(tick, msUntilMidnight(new Date()));
+
+    const onWake = () => {
+      if (document.visibilityState === "visible") tick();
+    };
+    document.addEventListener("visibilitychange", onWake);
+    window.addEventListener("focus", onWake);
+    window.addEventListener("pageshow", onWake);
     return () => {
-      document.removeEventListener("visibilitychange", tick);
-      window.clearInterval(id);
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+      document.removeEventListener("visibilitychange", onWake);
+      window.removeEventListener("focus", onWake);
+      window.removeEventListener("pageshow", onWake);
     };
   }, []);
 
-  // Kolla om dagens check-in saknas. Cachas i sessionStorage av Today-flödet
-  // när den genomförts, så vi slipper en DB-roundtrip i 99 % av fallen.
+  // Check-in-status: utvärdera vid mount, vid datumbyte (efter midnatt-väckning),
+  // och när en check-in just genomförts (custom event från checkin-flödet).
+  // En enkel cache i sessionStorage hindrar onödiga DB-roundtrips inom samma dygn.
   useEffect(() => {
     if (!user) {
       setNeedsCheckin(false);
+      lastEvaluatedDateRef.current = null;
       return;
     }
-    const todayISO = new Date().toISOString().split("T")[0];
-    const cached = sessionStorage.getItem("riktning:lastCheckinDate");
-    if (cached === todayISO) {
-      setNeedsCheckin(false);
-      return;
-    }
+
     let cancelled = false;
-    (async () => {
+
+    const evaluate = async (force = false) => {
+      const todayISO = localISODate(new Date());
+      const cached = sessionStorage.getItem("riktning:lastCheckinDate");
+      if (cached === todayISO) {
+        lastEvaluatedDateRef.current = todayISO;
+        if (!cancelled) setNeedsCheckin(false);
+        return;
+      }
+      // Skippa DB-anrop om vi redan utvärderat detta datum och inget tvingar omkörning.
+      if (!force && lastEvaluatedDateRef.current === todayISO) return;
+
       const { count } = await supabase
         .from("daily_checkins")
         .select("id", { count: "exact", head: true })
         .eq("user_id", user.id)
         .eq("date", todayISO);
-      if (!cancelled) setNeedsCheckin((count ?? 0) === 0);
-    })();
-    return () => { cancelled = true; };
+      if (cancelled) return;
+      lastEvaluatedDateRef.current = todayISO;
+      const missing = (count ?? 0) === 0;
+      setNeedsCheckin(missing);
+      if (!missing) sessionStorage.setItem("riktning:lastCheckinDate", todayISO);
+    };
+
+    evaluate();
+
+    // Re-utvärdera vid uppvaknande — billig om datumet inte ändrats (cache/ref).
+    const onWake = () => {
+      if (document.visibilityState === "visible") evaluate();
+    };
+    // Direkt-signal från checkin-flödet — pillen försvinner utan extra DB-anrop.
+    const onDone = () => {
+      const todayISO = localISODate(new Date());
+      sessionStorage.setItem("riktning:lastCheckinDate", todayISO);
+      lastEvaluatedDateRef.current = todayISO;
+      setNeedsCheckin(false);
+    };
+
+    document.addEventListener("visibilitychange", onWake);
+    window.addEventListener("focus", onWake);
+    window.addEventListener("pageshow", onWake);
+    window.addEventListener("riktning:checkin-done", onDone);
+
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onWake);
+      window.removeEventListener("focus", onWake);
+      window.removeEventListener("pageshow", onWake);
+      window.removeEventListener("riktning:checkin-done", onDone);
+    };
   }, [user]);
 
   const signOut = async () => {
