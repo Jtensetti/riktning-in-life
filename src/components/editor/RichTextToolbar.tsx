@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import type { Editor } from "@tiptap/react";
 import { Button } from "@/components/ui/button";
 import {
   Bold, Italic, Strikethrough, Link as LinkIcon, Quote,
-  List, ListOrdered, Undo2, ChevronDown, Type, Plus,
+  List, ListOrdered, Undo2, Redo2, ChevronDown, Type, Plus,
+  Heading1, Heading2, Heading3, Minus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -11,15 +13,17 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 /**
  * RichTextToolbar — context-aware toolbar for the journal editor.
  *
- * Selection mode shows formatting tools; otherwise insertion tools.
- * Trimmed from the source: image actions removed, Swedish copy throughout.
+ * Mobile keeps its compact, popover-driven layout (selection vs default).
+ * Desktop uses a stable, always-visible toolbar with direct buttons and
+ * active-state highlighting — selection formatting on desktop happens via
+ * the floating BubbleMenu instead of toolbar state-switching.
  */
 
 export type ToolbarAction =
   | "bold" | "italic" | "strikethrough"
   | "heading-1" | "heading-2" | "heading-3" | "normal"
   | "link" | "bullet-list" | "numbered-list" | "quote" | "divider"
-  | "undo" | "hide-keyboard";
+  | "undo" | "redo" | "hide-keyboard";
 
 interface RichTextToolbarProps {
   hasSelection: boolean;
@@ -27,9 +31,13 @@ interface RichTextToolbarProps {
   isMobile: boolean;
   className?: string;
   onHideKeyboard?: () => void;
+  /** Required for desktop active-state lookups. */
+  editor?: Editor | null;
 }
 
 const preventBlur = (e: React.MouseEvent | React.TouchEvent) => e.preventDefault();
+
+/* ------------------------------ MOBILE (unchanged) ------------------------------ */
 
 const SelectionToolbar = ({
   onAction, isMobile,
@@ -98,17 +106,16 @@ const SelectionToolbar = ({
   );
 };
 
-const DefaultToolbar = ({
-  onAction, onHideKeyboard, isMobile,
+const MobileDefaultToolbar = ({
+  onAction, onHideKeyboard,
 }: {
   onAction: (a: ToolbarAction) => void;
   onHideKeyboard?: () => void;
-  isMobile: boolean;
 }) => {
   const [insertOpen, setInsertOpen] = useState(false);
   const [listOpen, setListOpen] = useState(false);
-  const iconSize = isMobile ? "h-5 w-5" : "h-4 w-4";
-  const buttonSize = isMobile ? "h-11 w-11" : "h-9 w-9";
+  const iconSize = "h-5 w-5";
+  const buttonSize = "h-11 w-11";
 
   return (
     <div className="flex items-center justify-center gap-0.5 flex-wrap">
@@ -168,7 +175,7 @@ const DefaultToolbar = ({
         <Undo2 className={iconSize} />
       </Button>
 
-      {isMobile && onHideKeyboard && (
+      {onHideKeyboard && (
         <Button type="button" variant="ghost" size="sm" onClick={onHideKeyboard}
           className={cn(buttonSize, "p-0 shrink-0")} aria-label="Stäng tangentbord">
           <ChevronDown className={iconSize} />
@@ -178,15 +185,125 @@ const DefaultToolbar = ({
   );
 };
 
-export function RichTextToolbar({
-  hasSelection, onAction, isMobile, className, onHideKeyboard,
-}: RichTextToolbarProps) {
+/* ------------------------------ DESKTOP ------------------------------ */
+
+interface DesktopBtnProps {
+  label: string;
+  active?: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+  shortcut?: string;
+  children: React.ReactNode;
+}
+
+const DesktopBtn = ({ label, active, disabled, onClick, shortcut, children }: DesktopBtnProps) => (
+  <Button
+    type="button"
+    variant="ghost"
+    size="sm"
+    disabled={disabled}
+    onMouseDown={preventBlur}
+    onTouchStart={preventBlur}
+    onClick={onClick}
+    title={shortcut ? `${label} (${shortcut})` : label}
+    aria-label={label}
+    aria-pressed={active}
+    className={cn(
+      "h-9 w-9 p-0 shrink-0 text-text-secondary hover:text-foreground hover:bg-surface-alt",
+      active && "bg-surface-alt text-foreground",
+      disabled && "opacity-40",
+    )}
+  >
+    {children}
+  </Button>
+);
+
+const Divider = () => <div className="w-px h-5 bg-border-soft mx-1" />;
+
+const DesktopToolbar = ({
+  editor, onAction,
+}: { editor: Editor | null; onAction: (a: ToolbarAction) => void }) => {
+  const isActive = (name: string, attrs?: Record<string, unknown>) =>
+    editor?.isActive(name, attrs) ?? false;
+  const canUndo = editor?.can().undo() ?? false;
+  const canRedo = editor?.can().redo() ?? false;
+  const mod = typeof navigator !== "undefined" && navigator.platform.toLowerCase().includes("mac") ? "⌘" : "Ctrl";
+
   return (
-    <div className={cn(
-      "flex items-center justify-center py-2 px-3",
-      !isMobile && "bg-surface-alt/60 border-t border-border-soft",
-      className,
-    )}>
+    <div className="flex items-center gap-0.5 flex-wrap">
+      <DesktopBtn label="Fet" shortcut={`${mod}+B`} active={isActive("bold")} onClick={() => onAction("bold")}>
+        <Bold className="h-4 w-4" strokeWidth={2.5} />
+      </DesktopBtn>
+      <DesktopBtn label="Kursiv" shortcut={`${mod}+I`} active={isActive("italic")} onClick={() => onAction("italic")}>
+        <Italic className="h-4 w-4" />
+      </DesktopBtn>
+
+      <Divider />
+
+      <DesktopBtn label="Rubrik 1" active={isActive("heading", { level: 1 })} onClick={() => onAction("heading-1")}>
+        <Heading1 className="h-4 w-4" />
+      </DesktopBtn>
+      <DesktopBtn label="Rubrik 2" active={isActive("heading", { level: 2 })} onClick={() => onAction("heading-2")}>
+        <Heading2 className="h-4 w-4" />
+      </DesktopBtn>
+      <DesktopBtn label="Rubrik 3" active={isActive("heading", { level: 3 })} onClick={() => onAction("heading-3")}>
+        <Heading3 className="h-4 w-4" />
+      </DesktopBtn>
+
+      <Divider />
+
+      <DesktopBtn label="Punktlista" active={isActive("bulletList")} onClick={() => onAction("bullet-list")}>
+        <List className="h-4 w-4" />
+      </DesktopBtn>
+      <DesktopBtn label="Numrerad lista" active={isActive("orderedList")} onClick={() => onAction("numbered-list")}>
+        <ListOrdered className="h-4 w-4" />
+      </DesktopBtn>
+      <DesktopBtn label="Citat" active={isActive("blockquote")} onClick={() => onAction("quote")}>
+        <Quote className="h-4 w-4" />
+      </DesktopBtn>
+
+      <Divider />
+
+      <DesktopBtn label="Länk" shortcut={`${mod}+K`} active={isActive("link")} onClick={() => onAction("link")}>
+        <LinkIcon className="h-4 w-4" />
+      </DesktopBtn>
+      <DesktopBtn label="Avdelare" onClick={() => onAction("divider")}>
+        <Minus className="h-4 w-4" />
+      </DesktopBtn>
+
+      <Divider />
+
+      <DesktopBtn label="Ångra" shortcut={`${mod}+Z`} disabled={!canUndo} onClick={() => onAction("undo")}>
+        <Undo2 className="h-4 w-4" />
+      </DesktopBtn>
+      <DesktopBtn label="Gör om" shortcut={`${mod}+⇧+Z`} disabled={!canRedo} onClick={() => onAction("redo")}>
+        <Redo2 className="h-4 w-4" />
+      </DesktopBtn>
+    </div>
+  );
+};
+
+export function RichTextToolbar({
+  hasSelection, onAction, isMobile, className, onHideKeyboard, editor,
+}: RichTextToolbarProps) {
+  // Desktop: stable toolbar, no mode-switching.
+  if (!isMobile) {
+    return (
+      <div
+        className={cn(
+          "flex items-center py-1.5 px-2",
+          "bg-surface-alt/60 border-b border-border-soft",
+          className,
+        )}
+      >
+        <DesktopToolbar editor={editor ?? null} onAction={onAction} />
+      </div>
+    );
+  }
+
+  // Mobile: keep the previous animated default/selection split.
+  return (
+    <div className={cn("flex items-center justify-center py-2 px-3", className)}>
       <AnimatePresence mode="wait">
         <motion.div
           key={hasSelection ? "selection" : "default"}
@@ -196,8 +313,8 @@ export function RichTextToolbar({
           transition={{ duration: 0.1 }}
         >
           {hasSelection
-            ? <SelectionToolbar onAction={onAction} isMobile={isMobile} />
-            : <DefaultToolbar onAction={onAction} onHideKeyboard={onHideKeyboard} isMobile={isMobile} />}
+            ? <SelectionToolbar onAction={onAction} isMobile />
+            : <MobileDefaultToolbar onAction={onAction} onHideKeyboard={onHideKeyboard} />}
         </motion.div>
       </AnimatePresence>
     </div>

@@ -1,18 +1,24 @@
 import { useState, useCallback, useRef, useEffect } from "react";
+import type { Editor } from "@tiptap/react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { RichTextToolbar, type ToolbarAction } from "./RichTextToolbar";
 import { TipTapEditor, type TipTapEditorHandle } from "./TipTapEditor";
 import { LinkInsertSheet } from "./LinkInsertSheet";
+import { EditorBubbleMenu } from "./EditorBubbleMenu";
 import { cn } from "@/lib/utils";
 
 /**
  * RichTextEditor — orchestrates TipTap + toolbar + link sheet for Riktning.
  *
- * - No image upload (Riktning has no storage bucket for journal images).
- * - On mobile the toolbar floats fixed at viewport bottom while focused;
- *   on desktop it sits statically beneath the editor.
- * - Cmd/Ctrl+Enter triggers the optional `onSubmit` callback so parents
- *   can wire up "save".
+ * Desktop:
+ *   - Stable toolbar at the TOP with direct buttons and active states.
+ *   - Floating BubbleMenu shows formatting actions over selections, and
+ *     open/edit/remove actions when the cursor sits inside a link.
+ *   - Cmd/Ctrl+K opens the link popover; Cmd/Ctrl+Enter submits.
+ *
+ * Mobile (unchanged):
+ *   - Compact toolbar fixed to the viewport bottom while focused, with the
+ *     same default/selection mode-switch as before.
  */
 
 interface RichTextEditorProps {
@@ -30,10 +36,14 @@ export function RichTextEditor({
   const [hasSelection, setHasSelection] = useState(false);
   const [showLinkSheet, setShowLinkSheet] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [, forceTick] = useState(0);
   const isMobile = useIsMobile();
   const editorRef = useRef<TipTapEditorHandle>(null);
+  const editorInstanceRef = useRef<Editor | null>(null);
 
   const getEditor = useCallback(() => editorRef.current, []);
+
+  const openLinkEditor = useCallback(() => setShowLinkSheet(true), []);
 
   const handleAction = useCallback((action: ToolbarAction) => {
     const editor = getEditor();
@@ -46,18 +56,19 @@ export function RichTextEditor({
       case "heading-1": editor.setHeading(1); break;
       case "heading-2": editor.setHeading(2); break;
       case "heading-3": editor.setHeading(3); break;
-      case "link": setShowLinkSheet(true); break;
+      case "link": openLinkEditor(); break;
       case "quote": editor.toggleBlockquote(); break;
       case "bullet-list": editor.toggleBulletList(); break;
       case "numbered-list": editor.toggleOrderedList(); break;
       case "divider": editor.insertHorizontalRule(); break;
       case "undo": editor.undo(); break;
+      case "redo": editor.redo(); break;
       case "hide-keyboard": editor.hideKeyboard(); break;
     }
-  }, [getEditor]);
+  }, [getEditor, openLinkEditor]);
 
-  const handleLinkInsert = useCallback((url: string) => {
-    getEditor()?.setLink(url);
+  const handleLinkInsert = useCallback((url: string, text?: string) => {
+    getEditor()?.setLink(url, text);
     setShowLinkSheet(false);
   }, [getEditor]);
 
@@ -76,14 +87,27 @@ export function RichTextEditor({
   const handleHideKeyboard = useCallback(() => getEditor()?.hideKeyboard(), [getEditor]);
   const getSelectedText = useCallback(() => getEditor()?.getSelectedText() || "", [getEditor]);
 
+  // Re-render toolbar on every editor transaction so active states stay live.
+  const handleTransaction = useCallback(() => forceTick(t => (t + 1) % 1_000_000), []);
+  const handleEditorReady = useCallback((editor: Editor) => {
+    editorInstanceRef.current = editor;
+    forceTick(t => (t + 1) % 1_000_000);
+  }, []);
+
   const onKeyDown: React.KeyboardEventHandler = e => {
-    if (onSubmit && (e.metaKey || e.ctrlKey) && e.key === "Enter") {
+    const mod = e.metaKey || e.ctrlKey;
+    if (mod && e.key === "Enter" && onSubmit) {
       e.preventDefault();
       onSubmit();
+      return;
+    }
+    if (mod && (e.key === "k" || e.key === "K")) {
+      e.preventDefault();
+      openLinkEditor();
     }
   };
 
-  const showToolbar = isMobile ? isFocused : true;
+  const showMobileToolbar = isMobile && isFocused;
 
   return (
     <div
@@ -93,6 +117,16 @@ export function RichTextEditor({
       )}
       onKeyDown={onKeyDown}
     >
+      {/* Desktop: toolbar on top. */}
+      {!isMobile && (
+        <RichTextToolbar
+          hasSelection={hasSelection}
+          onAction={handleAction}
+          isMobile={false}
+          editor={editorInstanceRef.current}
+        />
+      )}
+
       <TipTapEditor
         ref={editorRef}
         value={value}
@@ -102,10 +136,21 @@ export function RichTextEditor({
         onFocus={handleFocus}
         onBlur={handleBlur}
         onSelectionChange={handleSelectionChange}
-        className={cn(isMobile && showToolbar && "pb-16")}
+        onTransaction={handleTransaction}
+        onEditorReady={handleEditorReady}
+        className={cn(showMobileToolbar && "pb-16")}
       />
 
-      {isMobile && showToolbar && (
+      {/* Desktop bubble menu over selections / links. */}
+      {!isMobile && (
+        <EditorBubbleMenu
+          editor={editorInstanceRef.current}
+          onEditLink={openLinkEditor}
+        />
+      )}
+
+      {/* Mobile: floating bottom toolbar while focused. */}
+      {showMobileToolbar && (
         <div
           className="fixed left-0 right-0 bottom-0 z-50 bg-background/98 backdrop-blur-md border-t border-border-soft shadow-[0_-2px_10px_rgba(0,0,0,0.10)]"
           style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
@@ -117,15 +162,6 @@ export function RichTextEditor({
             onHideKeyboard={handleHideKeyboard}
           />
         </div>
-      )}
-
-      {!isMobile && (
-        <RichTextToolbar
-          hasSelection={hasSelection}
-          onAction={handleAction}
-          isMobile={false}
-          onHideKeyboard={handleHideKeyboard}
-        />
       )}
 
       <LinkInsertSheet
