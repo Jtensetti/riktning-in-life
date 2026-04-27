@@ -528,6 +528,51 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
               </>
             )}
 
+            {selected.semantic_kind === "somn" && (
+              <>
+                <p className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-2">Sömnkvalitet (valfri)</p>
+                <div className="flex gap-2 mb-6">
+                  {([
+                    { v: "dalig", label: "Dålig" },
+                    { v: "okej", label: "Okej" },
+                    { v: "bra", label: "Bra" },
+                  ] as { v: SleepQuality; label: string }[]).map((opt) => (
+                    <button
+                      key={opt.v}
+                      onClick={() => setSleepQuality(sleepQuality === opt.v ? null : opt.v)}
+                      className={`flex-1 rounded-2xl px-3 py-2.5 text-sm font-extrabold border-2 press-soft ${
+                        sleepQuality === opt.v ? "bg-foreground text-background border-foreground" : "bg-surface text-foreground border-border-soft"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {selected.semantic_kind === "aterhamtning" && (
+              <>
+                <p className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-2">Plats (valfri)</p>
+                <div className="flex gap-2 mb-6">
+                  {([
+                    { v: "inne", label: "Inne" },
+                    { v: "ute", label: "Ute" },
+                  ] as { v: Location; label: string }[]).map((opt) => (
+                    <button
+                      key={opt.v}
+                      onClick={() => setLocation(location === opt.v ? null : opt.v)}
+                      className={`flex-1 rounded-2xl px-3 py-2.5 text-sm font-extrabold border-2 press-soft ${
+                        location === opt.v ? "bg-foreground text-background border-foreground" : "bg-surface text-foreground border-border-soft"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
             <div className="flex gap-2">
               <Button
                 onClick={() => setSelected(null)}
