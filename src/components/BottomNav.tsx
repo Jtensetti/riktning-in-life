@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { useLocation, NavLink, useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AbstractIcon, type IconName } from "./AbstractIcon";
 import { ActivityPicker, type ActivityDraft } from "./ActivityPicker";
-import { toast } from "sonner";
+import { insertActivityLog } from "@/lib/activityLog";
 
 /**
  * Bottom navigation — locked specs (per design contract):
@@ -51,28 +50,7 @@ export const BottomNav = () => {
 
   const handleAdd = async (a: ActivityDraft) => {
     if (!user) return;
-    if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.(10);
-    const { error } = await supabase.from("activity_logs").insert({
-      user_id: user.id,
-      date: new Date().toISOString().split("T")[0],
-      activity_slug: a.slug,
-      label: a.label,
-      category: a.category,
-      icon: a.icon,
-      color: a.color,
-      duration_minutes: a.duration_minutes,
-      mood_delta: a.mood_delta,
-      semantic_kind: a.semantic_kind ?? null,
-      intensity: a.intensity ?? null,
-      with_who: a.with_who ?? null,
-      sleep_quality: a.sleep_quality ?? null,
-      location: a.location ?? null,
-    } as any);
-    if (error) {
-      toast.error("Kunde inte logga. Försök igen.");
-      return;
-    }
-    toast.success(`${a.label} loggad`);
+    await insertActivityLog(user.id, a);
   };
 
   /**
