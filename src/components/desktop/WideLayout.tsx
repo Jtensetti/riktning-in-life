@@ -3,41 +3,35 @@ import type { ReactNode } from "react";
 /**
  * WideLayout — opt-in two-column layout for "workspace" pages on desktop.
  *
- * On mobile (and tablet): renders as a vertical stack — `left` first, then
- * `right`. Visually identical to today's vertical mobile layout.
+ * Mobile (and tablet, < lg): renders as a vertical stack — `left` first,
+ * then `right`. Visually identical to today's vertical mobile layout.
  *
- * On desktop (≥lg): renders side-by-side. Default split is 1.4fr / 1fr,
- * giving the primary column a bit more room while keeping both readable.
+ * Desktop (≥ lg): renders side-by-side with a generous 40px gap. The
+ * default split is 1.4fr / 1fr so the primary column has slightly more
+ * room while keeping both readable.
  *
- * Pages decide for themselves when to use this. "Calm stream" pages
- * (Today, CrisisPlan, wizards, readers) don't — they keep the centered
- * 448px column on every breakpoint.
- *
- * Gap is generous (40px) so the two columns feel like distinct surfaces,
- * not a dense dashboard.
+ * Pages must also pass `wide` to <AppShell> so the surrounding column is
+ * widened from 448px to ~1100px. Without `wide`, this layout still works
+ * but each column will be cramped.
  */
 export interface WideLayoutProps {
   left: ReactNode;
   right: ReactNode;
-  /** Override the default 1.4/1 split. Pass any valid grid-template-columns. */
-  columns?: string;
+  /** Override the default 1.4/1 split. */
+  split?: "balanced" | "primary-heavy" | "even";
 }
 
-export const WideLayout = ({ left, right, columns = "1.4fr 1fr" }: WideLayoutProps) => {
+const SPLIT_TO_GRID: Record<NonNullable<WideLayoutProps["split"]>, string> = {
+  balanced: "lg:grid-cols-[1.4fr_1fr]",
+  "primary-heavy": "lg:grid-cols-[1.7fr_1fr]",
+  even: "lg:grid-cols-2",
+};
+
+export const WideLayout = ({ left, right, split = "balanced" }: WideLayoutProps) => {
   return (
-    <div
-      className="lg:grid lg:gap-10"
-      style={{ gridTemplateColumns: undefined }}
-    >
-      <style>{`
-        @media (min-width: 1024px) {
-          .riktning-wide { grid-template-columns: ${columns}; }
-        }
-      `}</style>
-      <div className="lg:contents">
-        <div className="riktning-wide-left">{left}</div>
-        <div className="riktning-wide-right mt-7 lg:mt-0">{right}</div>
-      </div>
+    <div className={`lg:grid lg:gap-10 ${SPLIT_TO_GRID[split]}`}>
+      <div className="min-w-0">{left}</div>
+      <div className="mt-7 lg:mt-0 min-w-0">{right}</div>
     </div>
   );
 };

@@ -6,6 +6,15 @@ import { DesktopTopbar } from "./desktop/DesktopTopbar";
 
 interface AppShellProps {
   children: ReactNode;
+  /**
+   * On desktop (≥lg), opt this page out of the centered 448px column and
+   * give it the full ~1100px content area. Use this for pages that lay
+   * their own sections out side-by-side (Insikter, Vård, Utforska, etc.).
+   *
+   * Mobile is unaffected by this prop — the column is always max-w-md
+   * on small screens.
+   */
+  wide?: boolean;
 }
 
 /**
@@ -14,20 +23,20 @@ interface AppShellProps {
  * On mobile (< lg): unchanged from before.
  *   - Cream background, max-w-md centered <main>, fixed BottomNav.
  *
- * On desktop (>= lg): introduces a 3-zone layout:
+ * On desktop (≥ lg): introduces a 3-zone layout:
  *   - Top: thin DesktopTopbar (56px) with wordmark + sign-out.
- *   - Left: SideNav (240px sticky) replaces BottomNav (which is hidden).
- *   - Right: the page content. Pages choose their own width:
- *       * "Calm stream" pages keep <main className="max-w-md mx-auto …">,
- *         which on desktop becomes a centered 448px column with cream
- *         space around it (a focused reading surface).
- *       * "Workspace" pages internally use <WideLayout left right>
- *         to lay out their own sections side-by-side up to ~1100px.
+ *   - Left: SideNav (240px sticky) replaces BottomNav (which hides).
+ *   - Right: the page content. Two modes:
+ *       * Default (calm stream): keeps the 448px column centered in the
+ *         remaining space. Cream around it. Used for Today, Krisplan,
+ *         readers, wizards — focused single-column reading.
+ *       * `wide`: opens up to ~1100px for "workspace" pages that arrange
+ *         their own sections in a two-column grid via <WideLayout>.
  *
- * The mobile DOM is preserved exactly — the desktop chrome only renders
+ * The mobile DOM is preserved exactly — desktop chrome only renders
  * on `lg:` so under that breakpoint nothing visible changes.
  */
-export const AppShell = ({ children }: AppShellProps) => {
+export const AppShell = ({ children, wide = false }: AppShellProps) => {
   const location = useLocation();
   return (
     <div className="min-h-screen bg-background">
@@ -36,12 +45,18 @@ export const AppShell = ({ children }: AppShellProps) => {
         <SideNav />
         <main
           key={location.pathname}
-          className="max-w-md mx-auto px-6 pt-5 safe-bottom animate-fade-in-up lg:max-w-none lg:flex-1 lg:px-12 lg:pt-10 lg:min-w-0"
+          className={[
+            "px-6 pt-5 safe-bottom animate-fade-in-up mx-auto",
+            // Mobile (default): tight 448px column, exactly as before.
+            // Desktop calm stream: same 448px column centered in the wider area.
+            "max-w-md",
+            // Desktop layout: take the remaining flex space + add room.
+            "lg:flex-1 lg:min-w-0 lg:pt-10 lg:px-10",
+            // Wide pages override the max-w-md cap on desktop only.
+            wide ? "lg:!max-w-[1100px]" : "",
+          ].join(" ")}
         >
-          {/* Inner constraint preserves the mobile reading column on desktop
-              for pages that don't opt into a wide layout. Pages that DO opt
-              in (via WideLayout) explicitly stretch beyond this. */}
-          <div className="lg:max-w-[1100px] lg:mx-auto">{children}</div>
+          {children}
         </main>
       </div>
       <BottomNav />
