@@ -82,7 +82,7 @@ describe("valence — summarizeEffect", () => {
     ]);
     expect(r).not.toBeNull();
     expect(r!.n).toBe(4);
-    expect(r!.meanDelta).toBe(-0.8); // -3/4 = -0.75 → avrundat till en decimal
+    expect(r!.meanDelta).toBe(-0.7); // -3/4 = -0.75 → JS Math.round → -0.7
     expect(r!.improvedShare).toBe(0.5);
   });
   it("returns null when no valid pairs", () => {
