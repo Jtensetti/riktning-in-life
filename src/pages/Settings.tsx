@@ -11,12 +11,14 @@ import { Switch } from "@/components/ui/switch";
 import { ChevronLeft, ChevronRight, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { loadReminders, saveReminders, resetOnboarded, type Reminders } from "@/lib/settings";
+import { loadFlags, saveFlags, type UserFlags } from "@/lib/flags";
 import { useWeather, weatherLabel, isWeatherPermissionGranted, setWeatherPermissionGranted } from "@/lib/weather";
 
 const Settings = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [reminders, setReminders] = useState<Reminders>(loadReminders());
+  const [flags, setFlagsState] = useState<UserFlags>(loadFlags());
   const [confirmText, setConfirmText] = useState("");
   const [showDelete, setShowDelete] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -26,6 +28,11 @@ const Settings = () => {
   const updateReminders = (r: Reminders) => {
     setReminders(r);
     saveReminders(r);
+  };
+
+  const updateFlags = (next: UserFlags) => {
+    setFlagsState(next);
+    void saveFlags(next);
   };
 
   const exportAll = async () => {
