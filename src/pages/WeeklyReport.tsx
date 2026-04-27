@@ -643,6 +643,8 @@ const WeeklyReport = () => {
       >
         <FileDown size={16} className="mr-1" /> Skapa PDF
       </Button>
+        </div>
+      </div>
     </AppShell>
   );
 };
