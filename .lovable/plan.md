@@ -1,45 +1,56 @@
-## Mål
-Sänka headern (känns för hög just nu) och skapa mer "andningsrum" mellan kort, utan att tappa den färgglada/lekfulla Headspace-känslan.
+## Vad jag fixar
 
-## Ändringar
+### 1. Inga emojis i aktivitetsflödet — `src/components/ActivityPicker.tsx`
+Skattningen "Hur kändes det efteråt?" använder idag 😔🙁😐🙂😊. Byter till **rena text-pillar** (tonas med färg + vikt så det fortfarande känns lekigt, inte kliniskt):
+- Sämre · Lite sämre · Som vanligt · Lite bättre · Mycket bättre
+- Aktiv pill = mörk fyllning (som idag), inaktiv = surface med border-soft.
+- Tar också bort den lilla `Star`-fyllda emoji-känslan? Nej — `Star` är en lucide-ikon, inte emoji, den får vara kvar (du bad oss göra den mindre, det är gjort).
 
-### 1. Headerhöjd & ikon — `src/index.css` + `src/components/ui-kit/ScreenHeader.tsx`
-- `--header-h-min`: 150px → **118px**
-- `--header-h-max`: 190px → **150px**
-- `--header-curve`: 36px → **40px** (något mjukare båge när headern är lägre — bevarar lekfullheten)
-- `ScreenHeader`:
-  - Ikonstorlek 56 → **44**
-  - `paddingTop`: `max(28px, env(safe-area-inset-top))` → `max(16px, env(safe-area-inset-top))`
-  - `paddingBottom`: 20 → **16**
-  - Gap mellan ikon och titel `gap-3` → **`gap-2`**
-  - Behåll färgad bakgrund, kurva och centrerad abstrakt ikon — bara mer kompakt.
+### 2. Aktivitetskort utan ellips — `PickerCard` i `ActivityPicker.tsx`
+Nu: fast `height: 88px` + `line-clamp-2` → långa namn ("Skicka ett meddelande till …", "Lyssna på musik som …") trunkeras.
+Ändring:
+- Ta bort fast höjd. Sätt `minHeight: 88px` istället så kortet växer.
+- Ta bort `line-clamp-2`. Texten får wrappa till 3 rader vid behov.
+- Behåll padding 14/18 och radius 24 — visuellt likvärdigt för korta namn, men långa namn syns helt.
+- Stjärnan ligger redan absolut top-right; rätt-padding (`paddingRight: 40`) räcker när texten wrappar.
 
-### 2. Mer luft i layout — `src/components/AppShell.tsx`
-- `pt-8` → **`pt-5`** (headern hanterar sin egen topp-padding nu)
-- `mb-6` på header → **`mb-8`** (mer separation mot första kortet)
+### 3. "Frun" → könsneutralt — seed-data
+Två rader i `supabase/migrations/20260426133127_…sql` har "frun":
+- `('date-fru', 'Date-kväll med frun', …)`
+- `('film-med-frun', 'Titta på en film med frun', …)`
 
-### 3. Vertikal rytm mellan kort
-Uppdatera lista-spacing från `space-y-3` (12px) → **`space-y-4`** (16px) på:
-- `src/pages/Today.tsx`
-- `src/pages/Vard.tsx`
-- `src/pages/Sequences.tsx`
-- `src/pages/Exercises.tsx`
-- `src/pages/Explore.tsx`
-- `src/pages/Week.tsx`
-- `src/pages/Health.tsx`
-- `src/pages/Journal.tsx`
-- `src/pages/More.tsx`
+Skapar **ny migration** som uppdaterar befintliga rader (UPDATE på `activity_catalog`):
+- "Date-kväll med frun" → **"Date-kväll med partner"**
+- "Titta på en film med frun" → **"Titta på en film med partner"**
 
-### 4. Sektionsrubriker
-Justera marginal under H2/sektionstitlar från `mb-3`/`mb-4` → **`mb-5`** för tydligare gruppering. Söks och uppdateras endast där det är sektionsrubriker (inte korttitlar).
+(Slugs behålls för att inte tappa historik/favoriter.)
 
-## Visuell QA
-Efter ändringarna kollar jag Today, Vård, Rutiner och Övningar i preview för att bekräfta att:
-- Headern känns lättare men fortfarande färgstark.
-- Kort har tydligt luftutrymme utan att sidan känns gles.
-- Inget kort hamnar bakom safe-area eller bottennav.
+### 4. Vård-knappar — enhetlig färg, ingen 3D-accent — `src/pages/Vard.tsx`
+Idag: vita kort med en `borderLeft: 4px solid <color>` accent som ser ut som en 3D-flik bredvid kortet.
+
+Ändring (samma språk som ActionCard / Today): **hela kortet får tonen**, mjukt och färgglatt.
+- Veckoskattningar (PHQ-9 / GAD-7 / WHO-5):
+  - Bakgrund = `--yellow-journal` / `--pink-move` / `--green-recovery` (samma toner som idag, men hela ytan, ~85-100% mättnad).
+  - Ikon-tile = vit/22 % opacitet (som ActionCard).
+  - Text = vit på pink/green, mörk på yellow (samma `isLightTone`-regel som ActionCard).
+  - Tar bort `borderLeft`-accenten helt.
+- "Läkemedel & biverkningar":
+  - Bakgrund = `--pink-move` (eller `--orange-start` för värme — jag väljer pink för att hålla läkemedels-pillerikonen tydlig).
+  - Vit ikon-tile + vit text.
+  - Tar bort `borderLeft`.
+- "Min krisplan" lämnas i sin lugna röd-tinted-cream-stil — den är tänkt att vara dämpad, inte signal-röd.
+- "Rapport"-kortet (blå gradient med illustration) lämnas — det är redan enhetligt med appens språk.
+
+Resultat: Vård-listan får samma färgglada Headspace-känsla som Idag/Utforska, utan att tappa identitet.
 
 ## Vad som INTE ändras
-- Färgpalett, kurvor, ikoner och animation behålls — fortfarande Headspace-lekfullt.
-- Inga komponenter tas bort eller döps om.
-- Ingen påverkan på data/migrationer.
+- Ingen ändring i mood-emojis i `QuickLogPills` eller `QuickLog.tsx` (du sa "aktivitet ska inte ha emojis" — det gäller aktivitetspickern). Säg till om du vill ta bort dem där också.
+- Ingen ändring i datamodell, navigering, eller header.
+- Stjärn-favorit-ikonen (lucide `Star`) behålls — det är en ikon, inte emoji.
+
+## QA
+Efter ändringen kollar jag i preview:
+- Aktivitetspicker: långa labels visas helt utan "…".
+- Skattningssteget visar text-pillar istället för emojis.
+- "Date-kväll med partner" / "Titta på en film med partner" finns i listan.
+- Vård-sidan: alla tre skattningskort + läkemedelskortet är fullfärgade utan 3D-accent.

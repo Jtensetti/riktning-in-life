@@ -114,35 +114,43 @@ const Vard = () => {
             const f = FORMS[t];
             const last = latest(t);
             const final = last && f.toFinal ? f.toFinal(last.total_score) : last?.total_score;
-            // Varma toner per skattning — bryter den kliniska känslan utan att tappa Vårds blå identitet (header + Rapport).
+            // Varma toner per skattning — hela kortet får färgen, inget border-accent.
             const tone =
               t === "phq9"
-                ? { tile: "bg-yellow-journal/20", icon: "hsl(var(--yellow-journal))", edge: "hsl(var(--yellow-journal))" }
+                ? { bg: "hsl(var(--yellow-journal))", light: true }
                 : t === "gad7"
-                ? { tile: "bg-pink-move/20", icon: "hsl(var(--pink-move))", edge: "hsl(var(--pink-move))" }
-                : { tile: "bg-green-recovery/20", icon: "hsl(var(--green-recovery))", edge: "hsl(var(--green-recovery))" };
+                ? { bg: "hsl(var(--pink-move))", light: false }
+                : { bg: "hsl(var(--green-recovery))", light: false };
+            const fg = tone.light ? "text-foreground" : "text-white";
+            const metaFg = tone.light ? "text-foreground/70" : "text-white/85";
+            const tileBg = tone.light ? "hsl(var(--foreground) / 0.08)" : "hsl(0 0% 100% / 0.22)";
+            const iconColor = tone.light ? "hsl(var(--foreground))" : "hsl(var(--surface))";
             return (
               <button
                 key={t}
                 onClick={() => { setActiveForm(t); setView("form"); }}
-                className="w-full card-soft p-4 flex items-center gap-3 text-left press-soft animate-fade-in-up overflow-hidden relative"
+                className={`ui-card-action w-full flex items-center gap-3 text-left press-soft animate-fade-in-up ${fg}`}
                 style={{
+                  background: tone.bg,
                   animationDelay: `var(--stagger-${Math.min(i, 4)})`,
-                  borderLeft: `4px solid ${tone.edge}`,
                 }}
               >
-                <div className={`w-11 h-11 rounded-2xl ${tone.tile} grid place-items-center`}>
-                  <AbstractIcon name="bookmark-soft" size={20} color={tone.icon} />
+                <div
+                  className="shrink-0 grid place-items-center"
+                  style={{ width: 44, height: 44, borderRadius: "var(--icon-tile-radius)", background: tileBg }}
+                  aria-hidden
+                >
+                  <AbstractIcon name="bookmark-soft" size={22} color={iconColor} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-[15px] font-extrabold">{f.title}</div>
-                  <div className="text-xs text-text-secondary">
+                  <div className={`text-xs ${metaFg}`}>
                     {last
                       ? `Senast: ${final}${f.toFinal ? "/100" : `/${f.maxRaw}`} · ${f.scoreLabel(last.total_score)}`
                       : "Aldrig genomförd"}
                   </div>
                 </div>
-                <ChevronRight size={18} className="text-text-secondary" />
+                <ChevronRight size={18} className={tone.light ? "text-foreground/60" : "text-white/80"} />
               </button>
             );
           })}
@@ -153,17 +161,21 @@ const Vard = () => {
         <h2 className="text-lg font-extrabold mb-3">Läkemedel</h2>
         <button
           onClick={() => setView("meds")}
-          className="w-full card-soft p-4 flex items-center gap-3 text-left press-soft animate-fade-in-up"
-          style={{ borderLeft: "4px solid hsl(var(--pink-move))" }}
+          className="ui-card-action w-full flex items-center gap-3 text-left press-soft animate-fade-in-up text-white"
+          style={{ background: "hsl(var(--pink-move))" }}
         >
-          <div className="w-11 h-11 rounded-2xl bg-pink-move grid place-items-center shadow-sm">
+          <div
+            className="shrink-0 grid place-items-center"
+            style={{ width: 44, height: 44, borderRadius: "var(--icon-tile-radius)", background: "hsl(0 0% 100% / 0.22)" }}
+            aria-hidden
+          >
             <AbstractIcon name="pill-bottle" size={22} color="hsl(var(--surface))" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-[15px] font-extrabold">Läkemedel & biverkningar</div>
-            <div className="text-xs text-text-secondary">{meds.filter(m => m.active).length} aktiva · {meds.length} totalt</div>
+            <div className="text-xs text-white/85">{meds.filter(m => m.active).length} aktiva · {meds.length} totalt</div>
           </div>
-          <ChevronRight size={18} className="text-text-secondary" />
+          <ChevronRight size={18} className="text-white/80" />
         </button>
       </section>
 

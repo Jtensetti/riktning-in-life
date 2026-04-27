@@ -41,12 +41,12 @@ const colorBg = (color: string): string => {
   }
 };
 
-const moodFaces: { value: number; label: string; emoji: string }[] = [
-  { value: -2, label: "Sämre", emoji: "😔" },
-  { value: -1, label: "Lite sämre", emoji: "🙁" },
-  { value: 0, label: "Som vanligt", emoji: "😐" },
-  { value: 1, label: "Lite bättre", emoji: "🙂" },
-  { value: 2, label: "Mycket bättre", emoji: "😊" },
+const moodFaces: { value: number; label: string }[] = [
+  { value: -2, label: "Sämre" },
+  { value: -1, label: "Lite sämre" },
+  { value: 0, label: "Som vanligt" },
+  { value: 1, label: "Lite bättre" },
+  { value: 2, label: "Mycket bättre" },
 ];
 
 const durationPresets = [15, 30, 60, 90];
@@ -75,16 +75,16 @@ const PickerCard = ({
     className={`relative shadow-card animate-fade-in-up ${colorBg(item.color)}`}
     style={{
       borderRadius: 24,
-      height: 88,
+      minHeight: 88,
       animationDelay: delayMs ? `${delayMs}ms` : undefined,
     }}
   >
     <button
       onClick={onPick}
-      className="w-full h-full text-left press-soft flex items-center justify-start"
-      style={{ padding: "14px 18px", paddingRight: 40 }}
+      className="w-full text-left press-soft flex items-center justify-start"
+      style={{ padding: "16px 18px", paddingRight: 44, minHeight: 88 }}
     >
-      <span className="font-extrabold text-[16px] leading-[20px] line-clamp-2">
+      <span className="font-extrabold text-[16px] leading-[20px]">
         {item.label}
       </span>
     </button>
@@ -419,12 +419,11 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
                 <button
                   key={f.value}
                   onClick={() => setMood(f.value)}
-                  className={`rounded-2xl p-2 flex flex-col items-center gap-1 border-2 press-soft ${
+                  className={`rounded-2xl px-1 py-3 flex items-center justify-center border-2 press-soft min-h-[56px] ${
                     mood === f.value ? "bg-foreground text-background border-foreground" : "bg-surface text-foreground border-border-soft"
                   }`}
                 >
-                  <span className="text-2xl leading-none">{f.emoji}</span>
-                  <span className="text-[9px] font-extrabold leading-tight text-center">{f.label}</span>
+                  <span className="text-[11px] font-extrabold leading-tight text-center">{f.label}</span>
                 </button>
               ))}
             </div>
