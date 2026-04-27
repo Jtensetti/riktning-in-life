@@ -323,7 +323,7 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
       )}
 
       <Drawer open={!!editSheet} onOpenChange={(o) => !o && !savingEdit && !deleting && setEditSheet(null)}>
-        <DrawerContent className="bg-cream-bg">
+        <DrawerContent className="bg-background">
           <DrawerHeader className="text-left">
             <DrawerTitle className="text-xl font-extrabold">
               Ändra {editSheet?.label.toLowerCase()}
