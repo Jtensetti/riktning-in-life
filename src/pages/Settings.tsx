@@ -228,6 +228,20 @@ const Settings = () => {
         </div>
       </section>
 
+      <section className="mb-7">
+        <h2 className="text-lg font-extrabold mb-3">Automatik</h2>
+        <div className="space-y-3">
+          <ToggleRow
+            label="Skapa journal automatiskt från övningar och aktiviteter"
+            checked={flags.auto_journal}
+            onChange={(v) => updateFlags({ ...flags, auto_journal: v })}
+          />
+        </div>
+        <p className="text-xs text-text-secondary mt-2 px-1">
+          Korta noteringar med före/efter-värden sparas i din journal när du loggar något.
+        </p>
+      </section>
+
 
       <section className="mb-7">
         <h2 className="text-lg font-extrabold mb-3">Din data</h2>
