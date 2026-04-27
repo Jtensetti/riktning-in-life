@@ -8,6 +8,7 @@
 
 import type { TimeContext } from "./timeContext";
 import { isOutdoorFriendly, type Weather } from "./weather";
+import { improvementSign } from "./valence";
 
 export type Exercise = {
   id: string;
@@ -48,14 +49,19 @@ export type RecentSession = {
 
 /**
  * Personlig effekt-historik: hur en specifik övning eller kategori brukar
- * påverka dig. Värden i grova skalsteg (positivt = lyfter, negativt = drar ner).
+ * påverka dig. Värden i grova skalsteg.
+ *
+ * `metric` (valfri, default "mood") talar om vilken dimension `avgDelta`
+ * mäter — så valens-modulen kan avgöra om en negativ siffra är en *bra*
+ * sak (t.ex. `metric: "anxiety"` där avgDelta = -1.5 betyder "sänker oro").
  * Optional — fungerar som mjuk bias och bryter ingen befintlig logik.
  */
+export type EffectStat = { avgDelta: number; count: number; metric?: string };
 export type EffectHistory = {
   /** key = exercise.id eller exercise.title — vi försöker båda. */
-  byExerciseId?: Record<string, { avgDelta: number; count: number }>;
-  byExerciseTitle?: Record<string, { avgDelta: number; count: number }>;
-  byCategory?: Record<string, { avgDelta: number; count: number }>;
+  byExerciseId?: Record<string, EffectStat>;
+  byExerciseTitle?: Record<string, EffectStat>;
+  byCategory?: Record<string, EffectStat>;
 };
 
 /** Forecast-signal för riktad rekommendation (t.ex. tvinga calm vid morgon-oro). */
