@@ -62,7 +62,7 @@ export const WeekDirectionChart = ({ data, height }: Props) => {
     if (payload?.value == null) {
       const x = cx ?? 0;
       // Recharts ger ingen cy för null-värden — fall tillbaka till nedre kanten.
-      const y = Number.isFinite(cy) && (cy as number) > 0 ? (cy as number) : height - 24;
+      const y = Number.isFinite(cy) && (cy as number) > 0 ? (cy as number) : resolvedHeight - 24;
       return (
         <g key={key} aria-hidden>
           <circle
@@ -93,7 +93,7 @@ export const WeekDirectionChart = ({ data, height }: Props) => {
 
   return (
     <AnimatedChart signature={sig}>
-      <div style={{ height }} role="img" aria-label="Veckans riktning, sju dagar">
+      <div style={{ height: resolvedHeight }} role="img" aria-label="Veckans riktning, sju dagar">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={rows} margin={chartMargins.lineWithY}>
             <defs>
