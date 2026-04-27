@@ -92,10 +92,11 @@ const Vard = () => {
       <section className="mb-7">
         <button
           onClick={() => navigate("/krisplan")}
-          className="w-full rounded-3xl bg-red-bg border-2 border-red-risk/30 p-4 text-left press-soft animate-pop-in flex items-center gap-3"
+          className="w-full rounded-3xl p-4 text-left press-soft animate-pop-in flex items-center gap-3"
+          style={{ background: "hsl(var(--red-risk) / 0.08)", border: "1px solid hsl(var(--red-risk) / 0.25)" }}
         >
-          <div className="w-12 h-12 rounded-2xl bg-red-risk/15 grid place-items-center shrink-0">
-            <AbstractIcon name="shield-soft" size={22} color="hsl(var(--red-risk))" />
+          <div className="w-12 h-12 rounded-2xl bg-red-risk grid place-items-center shrink-0 shadow-sm">
+            <AbstractIcon name="shield-soft" size={22} color="hsl(var(--surface))" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[11px] font-extrabold uppercase tracking-wider text-red-risk mb-0.5">När det blir svårt</p>
@@ -113,15 +114,25 @@ const Vard = () => {
             const f = FORMS[t];
             const last = latest(t);
             const final = last && f.toFinal ? f.toFinal(last.total_score) : last?.total_score;
+            // Varma toner per skattning — bryter den kliniska känslan utan att tappa Vårds blå identitet (header + Rapport).
+            const tone =
+              t === "phq9"
+                ? { tile: "bg-yellow-journal/20", icon: "hsl(var(--yellow-journal))", edge: "hsl(var(--yellow-journal))" }
+                : t === "gad7"
+                ? { tile: "bg-pink-move/20", icon: "hsl(var(--pink-move))", edge: "hsl(var(--pink-move))" }
+                : { tile: "bg-green-recovery/20", icon: "hsl(var(--green-recovery))", edge: "hsl(var(--green-recovery))" };
             return (
               <button
                 key={t}
                 onClick={() => { setActiveForm(t); setView("form"); }}
-                className="w-full card-soft p-4 flex items-center gap-3 text-left press-soft animate-fade-in-up"
-                style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
+                className="w-full card-soft p-4 flex items-center gap-3 text-left press-soft animate-fade-in-up overflow-hidden relative"
+                style={{
+                  animationDelay: `var(--stagger-${Math.min(i, 4)})`,
+                  borderLeft: `4px solid ${tone.edge}`,
+                }}
               >
-                <div className="w-11 h-11 rounded-2xl bg-blue-calm/10 grid place-items-center">
-                  <AbstractIcon name="bookmark-soft" size={20} color="hsl(var(--blue-calm))" />
+                <div className={`w-11 h-11 rounded-2xl ${tone.tile} grid place-items-center`}>
+                  <AbstractIcon name="bookmark-soft" size={20} color={tone.icon} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-[15px] font-extrabold">{f.title}</div>
@@ -143,9 +154,10 @@ const Vard = () => {
         <button
           onClick={() => setView("meds")}
           className="w-full card-soft p-4 flex items-center gap-3 text-left press-soft animate-fade-in-up"
+          style={{ borderLeft: "4px solid hsl(var(--pink-move))" }}
         >
-          <div className="w-11 h-11 rounded-2xl bg-pink-move/15 grid place-items-center">
-            <AbstractIcon name="pill-bottle" size={22} color="hsl(var(--pink-move))" />
+          <div className="w-11 h-11 rounded-2xl bg-pink-move grid place-items-center shadow-sm">
+            <AbstractIcon name="pill-bottle" size={22} color="hsl(var(--surface))" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-[15px] font-extrabold">Läkemedel & biverkningar</div>
@@ -159,7 +171,8 @@ const Vard = () => {
         <h2 className="text-lg font-extrabold mb-3">Rapport</h2>
         <button
           onClick={() => setView("report")}
-          className="w-full rounded-3xl bg-blue-calm text-white p-1 overflow-hidden shadow-soft text-left press-soft animate-pop-in"
+          className="w-full rounded-3xl text-white p-1 overflow-hidden shadow-elev text-left press-soft animate-pop-in"
+          style={{ background: "linear-gradient(135deg, hsl(var(--blue-calm)) 0%, hsl(var(--blue-deep)) 100%)" }}
         >
           <div className="rounded-[20px] overflow-hidden">
             <Illustration name="care" className="w-full h-auto" />
