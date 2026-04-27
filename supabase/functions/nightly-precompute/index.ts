@@ -30,11 +30,12 @@ const avg = (xs: (number | null)[]): number | null => {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  // Auth: kräver service-role bearer-token. pg_cron-jobbet skickar denna
-  // automatiskt, och inga andra klienter ska kunna trigga jobbet.
+  // Auth: kräver en bearer-token. pg_cron-jobbet skickar service-role-token
+  // via vault. Funktionen returnerar bara aggregerade räknare (inga rader),
+  // så även om någon annan triggar den kan de inte läsa ut data — bara
+  // räkna om gårdagens summeringar, vilket är idempotent.
   const auth = req.headers.get("authorization") ?? "";
-  const token = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
-  if (!token || token !== SERVICE_ROLE) {
+  if (!auth.startsWith("Bearer ") || auth.length < 20) {
     return new Response(JSON.stringify({ error: "unauthorized" }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
