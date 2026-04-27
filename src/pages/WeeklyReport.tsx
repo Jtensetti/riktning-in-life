@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { WeeklyAIInsight } from "@/components/WeeklyAIInsight";
 import { burdenScore, functionScore, recoveryScore, stabilityScore, splitWeeks, type Checkin, type WeeklyFormScore } from "@/lib/metrics";
 import { formatDelta, improvementSign } from "@/lib/valence";
+import { htmlToPreviewText } from "@/lib/htmlText";
 import {
   PDF_COLORS,
   drawReportHeader,
