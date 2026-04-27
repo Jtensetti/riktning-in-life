@@ -27,23 +27,51 @@ const avg = (xs: (number | null)[]): number | null => {
   return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
 };
 
+// Cachar förväntad token i minnet mellan invokationer i samma instans.
+let cachedToken: string | null = null;
+
+// deno-lint-ignore no-explicit-any
+const loadExpectedToken = async (admin: any): Promise<string | null> => {
+  if (cachedToken) return cachedToken;
+  const { data, error } = await admin
+    .schema("vault" as never)
+    .from("decrypted_secrets")
+    .select("decrypted_secret")
+    .eq("name", "nightly_precompute_token")
+    .maybeSingle();
+  if (error || !data) return null;
+  const secret = (data as { decrypted_secret?: string }).decrypted_secret;
+  if (!secret) return null;
+  cachedToken = secret;
+  return cachedToken;
+};
+
+// Konstant-tids-jämförelse så vi inte läcker info via timing-attacker.
+const safeEqual = (a: string, b: string): boolean => {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  // Auth: tillåt antingen service-role bearer-token (manuella anrop) eller
-  // anon-token från pg_cron. Eftersom funktionen körs schemalagt och bara
-  // skriver aggregat per user_id är risken låg, men vi loggar anroparen.
+  const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
+    auth: { persistSession: false },
+  });
+
+  // Auth: jämför bearer-token mot en delad hemlighet i Vault. Endast pg_cron
+  // (som läser samma hemlighet) kan trigga funktionen.
   const auth = req.headers.get("authorization") ?? "";
-  if (!auth.startsWith("Bearer ")) {
+  const token = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
+  const expected = await loadExpectedToken(admin);
+  if (!expected || !token || !safeEqual(token, expected)) {
     return new Response(JSON.stringify({ error: "unauthorized" }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-
-  const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
-    auth: { persistSession: false },
-  });
 
   const date = yesterdayISO();
 
