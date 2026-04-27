@@ -300,7 +300,9 @@ const Journal = () => {
                               </span>
                             </div>
                             <p className="text-xs text-text-secondary line-clamp-2">
-                              {e.free_text ?? Object.values(e.body_json ?? {}).filter(Boolean).join(" · ")}
+                              {e.free_text
+                                ? htmlToPreviewText(e.free_text, 180)
+                                : Object.values(e.body_json ?? {}).filter(Boolean).join(" · ")}
                             </p>
                           </li>
                         );
