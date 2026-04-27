@@ -120,9 +120,40 @@ export const drawReportHeader = (
 ): number => {
   const pageW = doc.internal.pageSize.getWidth();
   const hasMetrics = !!opts.metrics?.length;
-  const h = hasMetrics ? 124 : 92;
 
-  // Cream-band
+  // --- Mät meta-bredd så titeln vet hur mycket utrymme den har ---
+  let metaWidth = 0;
+  if (opts.meta) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    metaWidth = doc.getTextWidth(opts.meta);
+  }
+
+  // --- Radbryt titel istället för att skala ned (designkrav) ---
+  // Tillgänglig titel-bredd = sidbredd minus marginaler minus meta-bredd minus
+  // ett synligt mellanrum (16 pt). Ingen nedskalning av fontstorleken — om
+  // rubriken är lång radbryts den, vilket bevarar typografisk hierarki.
+  const TITLE_FONT = 22;
+  const TITLE_LINE_HEIGHT = 26; // pt — generös för 22pt bold
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(TITLE_FONT);
+  const titleAvail = Math.max(120, pageW - margin * 2 - metaWidth - 16);
+  const titleLines: string[] = doc.splitTextToSize(opts.title, titleAvail);
+
+  // Höjden växer dynamiskt. Baslayout (cream-band):
+  //   topp 14 pt → wordmark (8pt) på y=26
+  //   y=50      → första titelraden (baseline)
+  //   ev. fler rader: +TITLE_LINE_HEIGHT vardera
+  //   +12 pt    → subtitel (om den finns) på y=titleEndY + 16
+  //   +30 pt    → KPI-band (om det finns)
+  //   +14 pt    → vit luft under
+  const titleStartY = 50;
+  const titleEndY = titleStartY + (titleLines.length - 1) * TITLE_LINE_HEIGHT;
+  const subtitleY = opts.subtitle ? titleEndY + 16 : titleEndY;
+  const contentBottom = hasMetrics ? subtitleY + 42 : subtitleY + 16;
+  const h = Math.max(92, contentBottom);
+
+  // --- Cream-band (höjd nu känd) ---
   setFill(doc, PDF_COLORS.cream);
   doc.rect(0, 0, pageW, h, "F");
 
@@ -136,21 +167,23 @@ export const drawReportHeader = (
   setFill(doc, PDF_COLORS.orange);
   doc.circle(margin + doc.getTextWidth("RIKTNING") + 6, 23, 1.6, "F");
 
-  // Titel
+  // Titel — radbruten, alltid 22pt
   setText(doc, PDF_COLORS.ink);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(22);
-  doc.text(opts.title, margin, 50);
+  doc.setFontSize(TITLE_FONT);
+  titleLines.forEach((line, i) => {
+    doc.text(line, margin, titleStartY + i * TITLE_LINE_HEIGHT);
+  });
 
   // Subtitel
   if (opts.subtitle) {
     setText(doc, PDF_COLORS.inkSoft);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
-    doc.text(opts.subtitle, margin, 66);
+    doc.text(opts.subtitle, margin, subtitleY);
   }
 
-  // Meta (höger)
+  // Meta (höger) — toppjusterad mot wordmark
   if (opts.meta) {
     setText(doc, PDF_COLORS.inkMuted);
     doc.setFont("helvetica", "normal");
@@ -158,13 +191,12 @@ export const drawReportHeader = (
     doc.text(opts.meta, pageW - margin, 26, { align: "right" });
   }
 
-  // KPI-rad
+  // KPI-rad — placeras alltid en bit under titel/subtitel
   if (hasMetrics) {
     const slotW = (pageW - margin * 2) / opts.metrics!.length;
-    const baseY = 88;
+    const baseY = subtitleY + 22;
     opts.metrics!.forEach((m, i) => {
       const x = margin + slotW * i;
-      // Liten accentprick före etikett
       setFill(doc, PDF_COLORS.blue);
       doc.circle(x + 2, baseY - 2, 1.2, "F");
 
