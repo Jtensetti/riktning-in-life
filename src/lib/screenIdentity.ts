@@ -42,17 +42,20 @@ export interface ScreenIdentity {
 
 /**
  * Returns the time-of-day tone for the Idag tab.
- *  morning   05–10 → orange/yellow
- *  day       10–17 → green/yellow
- *  evening   17–22 → purple/orange
- *  night     22–05 → purple/blue
+ * Lila är reserverat för faktiska sömn/insomningsmoduler — inte för
+ * hela kvälls/natt-headern. Kvällen får en varm landning, natten en
+ * lugn blå.
+ *  morning   05–10 → orange-start (start av dagen)
+ *  day       10–17 → green-recovery (återhämtning, stabilitet)
+ *  evening   17–22 → orange-deep (varm landning)
+ *  night     22–05 → blue-calm (lugn, men inte sömn-lila)
  */
 export const todayToneVar = (date = new Date()): string => {
   const h = date.getHours();
   if (h >= 5 && h < 10) return "--orange-start";
   if (h >= 10 && h < 17) return "--green-recovery";
-  if (h >= 17 && h < 22) return "--purple-sleep";
-  return "--purple-sleep";
+  if (h >= 17 && h < 22) return "--orange-deep";
+  return "--blue-calm";
 };
 
 const BASE: Record<ScreenKey, ScreenIdentity> = {

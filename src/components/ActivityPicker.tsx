@@ -35,7 +35,9 @@ const colorBg = (color: string): string => {
     case "purple": return "bg-purple-sleep text-white";
     case "pink": return "bg-pink-move text-white";
     case "green": return "bg-green-recovery text-white";
-    default: return "bg-cream-card text-foreground";
+    // Default: lugn blåton i stället för cream/lila — undviker
+    // att aktiviteter utan explicit färg ärver något grått eller lila.
+    default: return "bg-blue-calm/15 text-foreground";
   }
 };
 
@@ -50,11 +52,11 @@ const moodFaces: { value: number; label: string; emoji: string }[] = [
 const durationPresets = [15, 30, 60, 90];
 
 /**
- * PickerCard — locked spec per design plan:
- *  - 96px h, radius 24, padding 16
- *  - IconTile 44 in left
- *  - title 18–20/800, max 2 rader, ellipsis
- *  - star 28px, opacity 0.55 inactive, full opacity active
+ * PickerCard — minimal variant.
+ *  - 88px h, radius 24, padding 18
+ *  - INGEN ikon (titeln säger redan vad det är)
+ *  - title 16/20/800, line-clamp-2 → ingen ellipsis på "Långpromenad"
+ *  - star 22px, opacity 0.4 inactive, full opacity active
  */
 const PickerCard = ({
   item,
@@ -73,28 +75,16 @@ const PickerCard = ({
     className={`relative shadow-card animate-fade-in-up ${colorBg(item.color)}`}
     style={{
       borderRadius: 24,
-      height: 96,
+      height: 88,
       animationDelay: delayMs ? `${delayMs}ms` : undefined,
     }}
   >
     <button
       onClick={onPick}
-      className="w-full h-full text-left press-soft flex items-center gap-3"
-      style={{ padding: 16 }}
+      className="w-full h-full text-left press-soft flex items-center justify-start"
+      style={{ padding: "14px 18px", paddingRight: 40 }}
     >
-      <div
-        className="shrink-0 grid place-items-center"
-        style={{
-          width: 44,
-          height: 44,
-          borderRadius: "var(--icon-tile-radius)",
-          background: "hsl(0 0% 100% / 0.22)",
-        }}
-        aria-hidden
-      >
-        <AbstractIcon name={item.icon as IconName} size={26} color="currentColor" inline />
-      </div>
-      <span className="font-extrabold text-[18px] leading-[22px] pr-7 line-clamp-2">
+      <span className="font-extrabold text-[16px] leading-[20px] line-clamp-2">
         {item.label}
       </span>
     </button>
@@ -105,10 +95,10 @@ const PickerCard = ({
       style={{
         width: 32,
         height: 32,
-        opacity: isFav ? 1 : 0.55,
+        opacity: isFav ? 1 : 0.4,
       }}
     >
-      <Star size={28} className={isFav ? "fill-current" : ""} strokeWidth={2.2} />
+      <Star size={22} className={isFav ? "fill-current" : ""} strokeWidth={2.2} />
     </button>
   </div>
 );
