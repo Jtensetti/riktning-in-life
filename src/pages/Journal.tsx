@@ -167,12 +167,12 @@ const Journal = () => {
         {active === "free" ? (
           <div>
             <label className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-1.5 block">Skriv fritt</label>
-            <Textarea
+            <RichTextEditor
               value={free}
-              onChange={e => setFree(e.target.value)}
-              onKeyDown={compact ? undefined : onEditorKeyDown}
+              onChange={setFree}
               placeholder="Tankar, känslor, dagen…"
-              className={`rounded-2xl bg-surface text-base ${compact ? "min-h-[200px]" : "min-h-[420px]"}`}
+              minHeight={compact ? 220 : 420}
+              onSubmit={compact ? undefined : save}
             />
           </div>
         ) : (
