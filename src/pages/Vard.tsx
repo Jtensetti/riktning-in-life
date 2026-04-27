@@ -108,32 +108,26 @@ const Vard = () => {
       </section>
 
       <section className="mb-7">
-        <h2 className="text-lg font-extrabold mb-3">Veckoskattningar</h2>
-        <div className="space-y-4">
+        <h2 className="text-lg font-extrabold mb-1">Veckoskattningar</h2>
+        <p className="text-xs text-text-secondary mb-3">Görs en gång i veckan — håller riktningen i sikte.</p>
+        <div className="space-y-3">
           {(["phq9", "gad7", "who5"] as FormType[]).map((t, i) => {
             const f = FORMS[t];
             const last = latest(t);
             const final = last && f.toFinal ? f.toFinal(last.total_score) : last?.total_score;
-            // Varma toner per skattning — hela kortet får färgen, inget border-accent.
-            const tone =
-              t === "phq9"
-                ? { bg: "hsl(var(--yellow-journal))", light: true }
-                : t === "gad7"
-                ? { bg: "hsl(var(--pink-move))", light: false }
-                : { bg: "hsl(var(--green-recovery))", light: false };
-            const fg = tone.light ? "text-foreground" : "text-white";
-            const metaFg = tone.light ? "text-foreground/70" : "text-white/85";
-            const tileBg = tone.light ? "hsl(var(--foreground) / 0.08)" : "hsl(0 0% 100% / 0.22)";
-            const iconColor = tone.light ? "hsl(var(--foreground))" : "hsl(var(--surface))";
+            // Neutral cream-yta — färgen lever bara i ikonbrickan.
+            const tileTone =
+              t === "phq9" ? "yellow-journal"
+                : t === "gad7" ? "pink-move"
+                  : "green-recovery";
+            const tileBg = `hsl(var(--${tileTone}) / 0.14)`;
+            const iconColor = `hsl(var(--${tileTone}))`;
             return (
               <button
                 key={t}
                 onClick={() => { setActiveForm(t); setView("form"); }}
-                className={`ui-card-action w-full flex items-center gap-3 text-left press-soft animate-fade-in-up ${fg}`}
-                style={{
-                  background: tone.bg,
-                  animationDelay: `var(--stagger-${Math.min(i, 4)})`,
-                }}
+                className="w-full flex items-center gap-3 text-left press-soft animate-fade-in-up rounded-3xl bg-surface border border-border-soft px-4 py-4 shadow-card"
+                style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
               >
                 <div
                   className="shrink-0 grid place-items-center"
@@ -143,14 +137,14 @@ const Vard = () => {
                   <AbstractIcon name="bookmark-soft" size={22} color={iconColor} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[15px] font-extrabold">{f.title}</div>
-                  <div className={`text-xs ${metaFg}`}>
+                  <div className="text-[15px] font-extrabold text-foreground">{f.title}</div>
+                  <div className="text-xs text-text-secondary">
                     {last
                       ? `Senast: ${final}${f.toFinal ? "/100" : `/${f.maxRaw}`} · ${f.scoreLabel(last.total_score)}`
                       : "Aldrig genomförd"}
                   </div>
                 </div>
-                <ChevronRight size={18} className={tone.light ? "text-foreground/60" : "text-white/80"} />
+                <ChevronRight size={18} className="text-text-secondary" />
               </button>
             );
           })}
@@ -161,21 +155,20 @@ const Vard = () => {
         <h2 className="text-lg font-extrabold mb-3">Läkemedel</h2>
         <button
           onClick={() => setView("meds")}
-          className="ui-card-action w-full flex items-center gap-3 text-left press-soft animate-fade-in-up text-white"
-          style={{ background: "hsl(var(--pink-move))" }}
+          className="w-full flex items-center gap-3 text-left press-soft animate-fade-in-up rounded-3xl bg-surface border border-border-soft px-4 py-4 shadow-card"
         >
           <div
             className="shrink-0 grid place-items-center"
-            style={{ width: 44, height: 44, borderRadius: "var(--icon-tile-radius)", background: "hsl(0 0% 100% / 0.22)" }}
+            style={{ width: 44, height: 44, borderRadius: "var(--icon-tile-radius)", background: "hsl(var(--pink-move) / 0.14)" }}
             aria-hidden
           >
-            <AbstractIcon name="pill-bottle" size={22} color="hsl(var(--surface))" />
+            <AbstractIcon name="pill-bottle" size={22} color="hsl(var(--pink-move))" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-[15px] font-extrabold">Läkemedel & biverkningar</div>
-            <div className="text-xs text-white/85">{meds.filter(m => m.active).length} aktiva · {meds.length} totalt</div>
+            <div className="text-[15px] font-extrabold text-foreground">Läkemedel & biverkningar</div>
+            <div className="text-xs text-text-secondary">{meds.filter(m => m.active).length} aktiva · {meds.length} totalt</div>
           </div>
-          <ChevronRight size={18} className="text-white/80" />
+          <ChevronRight size={18} className="text-text-secondary" />
         </button>
       </section>
 
