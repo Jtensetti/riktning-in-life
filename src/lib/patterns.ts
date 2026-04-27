@@ -283,6 +283,7 @@ const detectDelayedLift = (
           ? `I snitt ${m.toFixed(1)} skalsteg lättare nästa morgon (över ${b.deltas.length} gånger).`
           : `I snitt ${Math.abs(m).toFixed(1)} skalsteg tyngre nästa morgon (över ${b.deltas.length} gånger).`,
       direction: m > 0 ? "positive" : "negative",
+      metric: "burden",
       sample: b.deltas.length,
       strength: Math.abs(m),
     });
