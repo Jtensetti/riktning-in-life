@@ -78,22 +78,34 @@ describe("design system guards", () => {
     expect(offenders, `Arbitrary text sizes in: ${offenders.join(", ")}`).toEqual([]);
   });
 
-  it("blocked tone phrases do not appear in user-facing source", () => {
+  it("blocked tone phrases do not appear in user-facing copy", () => {
+    // Only scan string literals — identifiers like `StreakRing` or
+    // `streaks.ts` are internal code, not Swedish user copy.
     const skip = new Set<string>([
       "src/lib/tone.ts",
       "src/test/design-system.test.ts",
     ]);
-    const offenders: { file: string; phrase: string }[] = [];
+    const stringLiteral = /(["'`])((?:\\.|(?!\1).)*?)\1/g;
+    const offenders: { file: string; phrase: string; snippet: string }[] = [];
     for (const file of walk(SRC_DIR)) {
       if (skip.has(file) || file.includes("/test/")) continue;
-      const src = readFileSync(file, "utf8").toLowerCase();
-      for (const phrase of BLOCKED_PHRASES) {
-        if (src.includes(phrase)) offenders.push({ file, phrase });
+      const src = readFileSync(file, "utf8");
+      for (const match of src.matchAll(stringLiteral)) {
+        const literal = match[2].toLowerCase();
+        // Skip imports/asset paths/CSS class names — not user copy.
+        if (/^[./@\w-]+$/.test(literal)) continue;
+        for (const phrase of BLOCKED_PHRASES) {
+          if (literal.includes(phrase)) {
+            offenders.push({ file, phrase, snippet: match[2].slice(0, 60) });
+          }
+        }
       }
     }
     expect(
       offenders,
-      `Blocked phrases found: ${offenders.map((o) => `${o.phrase} in ${o.file}`).join(", ")}`,
+      `Blocked phrases in user copy: ${offenders
+        .map((o) => `"${o.snippet}" (${o.phrase}) in ${o.file}`)
+        .join("; ")}`,
     ).toEqual([]);
   });
 });
