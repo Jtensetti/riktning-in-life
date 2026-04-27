@@ -1007,6 +1007,28 @@ const Today = () => {
         )}
       </header>
 
+      {/* Desktop-only reflection prompt — invisible on mobile (hidden lg:block). */}
+      <button
+        onClick={() => navigate("/journal")}
+        className="hidden lg:flex w-full items-center gap-3 mb-5 p-4 rounded-3xl press-soft text-left animate-fade-in-up"
+        style={{
+          background: "hsl(var(--yellow-journal))",
+          color: "hsl(var(--foreground))",
+        }}
+      >
+        <span
+          className="w-10 h-10 rounded-full grid place-items-center shrink-0"
+          style={{ background: "hsl(var(--foreground) / 0.08)" }}
+        >
+          <AbstractIcon name="pencil-soft" size={20} color="hsl(var(--orange-start))" inline />
+        </span>
+        <div className="flex-1 min-w-0">
+          <div className="text-[14px] font-extrabold leading-tight">Tre rader idag?</div>
+          <div className="text-[12px] opacity-80 leading-snug mt-0.5">30 sekunder att fånga dagen i journalen.</div>
+        </div>
+        <ChevronRight size={18} className="opacity-60 shrink-0" />
+      </button>
+
       {decision.modules
         .filter((id) => id !== "reportShortcut" && id !== "learn")
         .map((id) => {
