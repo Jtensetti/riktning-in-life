@@ -35,6 +35,8 @@ import { getToneFor, phrasebookFor } from "@/lib/tone";
 import { decideTodayLayout, type ModuleId, type TodayContext } from "@/lib/todayLayout";
 import { quickStartsFor } from "@/lib/quickStarts";
 import { BASELINE_MIN_DAYS } from "@/lib/baseline";
+import { useAppTick } from "@/hooks/useAppTick";
+import { useLiveData } from "@/hooks/useLiveData";
 
 type Checkin = {
   id: string;
