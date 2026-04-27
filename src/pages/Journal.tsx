@@ -377,7 +377,9 @@ const Journal = () => {
         <ul className="space-y-4">
           {entries.map((e, i) => {
             const t = TEMPLATES[e.template_type as TemplateKey];
-            const preview = e.free_text ?? Object.values(e.body_json ?? {}).filter(Boolean).join(" · ");
+            const preview = e.free_text
+              ? htmlToPreviewText(e.free_text, 240)
+              : Object.values(e.body_json ?? {}).filter(Boolean).join(" · ");
             const toggleReport = async () => {
               await supabase.from("journal_entries").update({ include_in_report: !e.include_in_report }).eq("id", e.id);
               load();
