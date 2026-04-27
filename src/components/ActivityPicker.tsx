@@ -41,12 +41,12 @@ const colorBg = (color: string): string => {
   }
 };
 
-const moodFaces: { value: number; label: string; emoji: string }[] = [
-  { value: -2, label: "Sämre", emoji: "😔" },
-  { value: -1, label: "Lite sämre", emoji: "🙁" },
-  { value: 0, label: "Som vanligt", emoji: "😐" },
-  { value: 1, label: "Lite bättre", emoji: "🙂" },
-  { value: 2, label: "Mycket bättre", emoji: "😊" },
+const moodFaces: { value: number; label: string }[] = [
+  { value: -2, label: "Sämre" },
+  { value: -1, label: "Lite sämre" },
+  { value: 0, label: "Som vanligt" },
+  { value: 1, label: "Lite bättre" },
+  { value: 2, label: "Mycket bättre" },
 ];
 
 const durationPresets = [15, 30, 60, 90];
