@@ -29,6 +29,7 @@ import {
   sevenDayLabels,
   sevenDayDates,
   seriesFor,
+  PDF_PAGE,
 } from "@/lib/pdfWidgets";
 import { patchUserSettings, SETTINGS_HYDRATED_EVENT } from "@/lib/userSettingsSync";
 
