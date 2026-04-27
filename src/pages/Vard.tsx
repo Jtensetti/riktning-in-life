@@ -516,6 +516,17 @@ const ReportView = ({ onBack }: { onBack: () => void }) => {
   const [report, setReport] = useState<string | null>(null);
   const [doctorEmail, setDoctorEmail] = useState<string>(() => localStorage.getItem("riktning_doctor_email") || "");
 
+  // Cross-device-sync: när serverdata kommer in (ny enhet/första inloggning)
+  // hydreras lokal cache av userSettingsSync. Plocka upp doctor_email därifrån.
+  useEffect(() => {
+    const onHydrated = () => {
+      const fromCache = localStorage.getItem("riktning_doctor_email") || "";
+      setDoctorEmail((current) => current || fromCache);
+    };
+    window.addEventListener(SETTINGS_HYDRATED_EVENT, onHydrated);
+    return () => window.removeEventListener(SETTINGS_HYDRATED_EVENT, onHydrated);
+  }, []);
+
   useEffect(() => {
     if (!user) return;
     const since = new Date(Date.now() - days * 86400000).toISOString().split("T")[0];
