@@ -31,6 +31,8 @@ export const PDF_COLORS = {
   purple: [86, 51, 158] as const,       // --purple-sleep ljusare för läsbarhet
   pink: [198, 83, 154] as const,        // --pink-move
   orange: [255, 107, 26] as const,      // --orange-start — aktivitet
+  /** @deprecated Använd `purple` (stabilitet visualiseras som lugn). Behållen för bakåtkompat. */
+  slate: [86, 51, 158] as const,
   // Mjuka tonade fyllningar (för area under sparklines)
   blueSoft: [225, 236, 253] as const,
   greenSoft: [220, 240, 230] as const,
