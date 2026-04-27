@@ -1,116 +1,74 @@
-## Desktop-flöde — genomtänkt, ärligt mot varje sida
+## Premiss (icke förhandlingsbar)
 
-**Premiss:** Mobilen rörs inte. Allt nedan aktiveras endast vid `lg:` (≥1024px). Under det breakpointet är appen pixel-identisk med idag.
+**Mobilvyn rörs inte.** BottomNav, FAB, Journal-mallväljaren, ActivityPicker-drawers, Today-layouten — allt under `lg:`-breakpoint (1024px) är frusen. Varje ändring nedan är inhägnad bakom `hidden lg:…` eller `lg:`-prefix i Tailwind, eller villkor på viewport. Mobilanvändare ska se exakt samma pixlar efter som före.
 
-### Designfilosofin bakom valet
+## Insikt
 
-Jag övervägde fyra olika riktningar (fast sidebar+kontextpanel, master-detail, parallella handlingar, eller en *adaptiv* layout per sida). Den som faktiskt respekterar både Riktnings karaktär *och* desktop som medium är den fjärde — för en enkel anledning:
+Mobil = i farten, tummen, 5–20 sekunder → snabblogg vinner.
+Desktop = sittande, tangentbord, längre stunder (kväll, terapiförberedelse) → skrivande och läsa tillbaka vinner.
 
-> **Vissa sidor i Riktning blir bättre när de får luft. Andra blir sämre.**
+Idag är desktop-navigationen en uppförstorad mobil. Det missar poängen med desktop.
 
-Idag och Krisplan är *rofyllda läs-strömmar* — designade för att man ska andas mellan korten. Att tvinga in dem i en bred grid skulle förstöra rytmen. Insikter och Vård är däremot *översikter med flera lager* — de tjänar verkligen på att visa graf och lista samtidigt, eller skattningar och mediciner sida vid sida.
+## Tre desktop-only justeringar
 
-Så istället för en universal layout som behandlar alla sidor lika, gör vi det här:
+### 1. SideNav (desktop): byt huvud-CTA till "Skriv i journalen"
+
+Den orange "Logga aktivitet"-knappen i sidomenyn ersätts av en gul/journal-färgad **"✎ Skriv i journalen"** som primär CTA (öppnar `/journal`).
+
+Snabbloggning försvinner inte — den blir en kompakt **chip-rad ovanför** CTA:n med fyra ikon-knappar (Sömn, Kropp, Mående, Medicin) som öppnar samma `ActivityPicker`-drawer som mobilens FAB använder.
 
 ```text
-┌──────────────────────────────────────────────────────────────────┐
-│ Riktning                                       [konto] [logga ut]│  topbar 56px
-├──────────┬───────────────────────────────────────────────────────┤
-│          │                                                       │
-│ SIDEBAR  │   INNEHÅLL  (varierar per sida — se nedan)            │
-│ 240px    │                                                       │
-│          │                                                       │
-│ Idag     │                                                       │
-│ Utforska │                                                       │
-│ ⊕ Logga  │                                                       │
-│ Insikter │                                                       │
-│ Vård     │                                                       │
-│ ─────    │                                                       │
-│ Journal  │                                                       │
-│ Krisplan │                                                       │
-│ Inställ. │                                                       │
-└──────────┴───────────────────────────────────────────────────────┘
+┌──────────────────┐
+│ Idag             │
+│ Utforska         │
+│ ─────────────    │
+│ [😴][🚶][🙂][💊]  ← snabblogg-chips (desktop-only)
+│                  │
+│ ┃ ✎ Skriv i      │  ← primär CTA (yellow-journal)
+│ ┃   journalen    │
+│                  │
+│ Insikter         │
+│ Vård             │
+│ ─────────────    │
+│ Krisplan         │
+│ Inställningar    │
+└──────────────────┘
 ```
 
-### Två innehållslägen — sidan väljer själv
+Berör endast `src/components/desktop/SideNav.tsx` — filen är redan `hidden lg:flex`, så ingen mobilrisk.
 
-**Läge 1: "Lugn ström" (max-w-md, centrerad)**
-Sidan renderas exakt som på mobil — 448px-kolumn, samma kort, samma rytm. Bara centrerad i det tillgängliga utrymmet med generös cream-bakgrund runt.
+### 2. Journal: split-pane på desktop (`lg:` only)
 
-Används för: **Idag, Krisplan, Journal-editor, Checkin (wizard), Onboarding, Auth, ExerciseDetail (övningsspelare), LearnArticle.**
+Journal-sidan får en grenad render:
 
-Varför: Dessa är *fokustillstånd*. När du gör en check-in eller läser en artikel ska resten av världen falla bort. På desktop blir det en lugn, läsbar bok mitt på skärmen — inte ett dashboard.
+- **Under `lg`**: 100% identisk med dagens flöde (mall-grid → full-page editor). Oförändrat.
+- **Från `lg` och uppåt**: två-kolumns split-pane.
+  - **Vänster (huvudkolumn, ~640px)**: skrivytan. Aktiv mall öppnas inline här istället för att ta över hela skärmen. Stor textyta. Cmd/Ctrl+Enter sparar.
+  - **Höger (sidokolumn, ~320px)**: mall-väljare som vertikal lista + historik med sökfält. Klick på historikpost öppnar den read-only i vänsterkolumnen.
 
-**Läge 2: "Arbetsyta" (bred, två-kolumns inom sidan)**
-Sidan får använda hela bredden (max ~1200px). Vänster kolumn = primärt innehåll (graf/översikt). Höger kolumn = sekundärt (lista/detaljer). Båda kolumnerna är fortfarande *sidans egna sektioner* — vi flyttar inte in fjärrinnehåll.
+Implementeras genom att extrahera nuvarande editor-JSX till en intern `<JournalEditor>`-komponent och rendera olika layouter via `lg:`-klasser. Mobilgrenen är ren copy-paste av nuvarande markup.
 
-Används för: **Insikter, Vård, Utforska, Övningar (lista), Sequences (lista), Learn (lista), Mer.**
+### 3. Today: desktop-only reflektionsprompt
 
-Varför: Dessa sidor består redan av flera oberoende sektioner som staplas vertikalt på mobil. På desktop är det slöseri — sektionerna kan stå sida vid sida.
+I `Today.tsx` läggs ett litet kort med `className="hidden lg:block"` i höger-kolumnen (som tillkommer i den redan godkända WideLayout-planen): *"Tre rader — 30 sekunder att fånga dagen"* → länkar till `/journal` med mallen `three_lines` förvald.
 
-### Konkret per sida
+Mobilen ser aldrig detta kort.
 
-| Sida | Desktop-läge | Vad ändras inuti |
-|------|--------------|------------------|
-| **Idag** | Lugn ström | Inget. Samma flöde, centrerat. |
-| **Utforska** | Arbetsyta | Vänster: hjälte-kort + kategorier. Höger: "Senast" + "Föreslaget för dig". |
-| **Insikter (Week)** | Arbetsyta | Vänster: trender + chart. Höger: prio-kort + senaste loggar. |
-| **Vård** | Arbetsyta | Vänster: krisplan-kort + skattningar. Höger: läkemedel + rapport-export. |
-| **Krisplan** | Lugn ström | Inget. Centrerad. |
-| **Journal (lista)** | Arbetsyta | Vänster: mallar. Höger: tidigare anteckningar. |
-| **Journal (editor)** | Lugn ström | Inget. Skrivande = fokus. |
-| **Övningar / Sequences / Learn** | Arbetsyta | Vänster: sök + kategorier. Höger: lista. |
-| **ExerciseDetail / LearnArticle** | Lugn ström | Inget. Läsa = fokus. |
-| **Checkin (wizard)** | Lugn ström | Inget. Fyll i = fokus. |
-| **Inställningar / Mer** | Arbetsyta | Vänster: sektioner. Höger: konto/data. |
-| **Auth / Onboarding** | Lugn ström | Centrerad, mjuk bakgrund. |
+## Vad som INTE ändras
 
-### Sidebar i detalj
+- BottomNav, FAB, ActivityPicker triggers på mobil.
+- Journals nuvarande mall-grid och full-page editor under `lg`.
+- Today-layouten under `lg`.
+- Inga routes, inga datamodeller, inga drawers, inga sparflöden.
 
-- 240px bred, fast vänster, full höjd, cream-bakgrund med tunn border höger.
-- 8 rader: Idag, Utforska, **Logga (orange knapp, sticker ut)**, Insikter, Vård · separator · Journal, Krisplan, Inställningar.
-- Aktiv rad får färgad vänsterkant + bakgrund i tabbens identitet (samma `screenIdentity`-färg som mobil-tabben har).
-- "Logga"-knappen öppnar samma `ActivityPicker` som FAB:en.
-- **Ingen kollaps.** Riktning är inte ett produktivitetsverktyg där man behöver dölja navigation. Lugn och förutsägbar.
+## Filer som påverkas
 
-### Topbar i detalj
+- `src/components/desktop/SideNav.tsx` — byt CTA, lägg till chip-rad. (Filen är redan desktop-isolerad.)
+- `src/pages/Journal.tsx` — lägg till `lg:`-grenad layout runt befintlig JSX. Mobilgren oförändrad.
+- `src/pages/Today.tsx` — lägg till `<aside className="hidden lg:block">`-kort i höger-kolumnen.
 
-- 56px hög, full bredd, samma cream som resten.
-- Vänster: ordmärket "Riktning" (text, ingen ny logo-fil).
-- Höger: e-post + en liten utloggningsikon. Det är allt.
-- Ingen sökruta, ingen avisering, ingen notifikations-bjällra. Inte den sortens app.
+## Teknisk detalj
 
-### Vad jag medvetet INTE gör
-
-- **Ingen kontextpanel som visar "annan info".** Alla data på en sida hör hemma på den sidan. Vi blandar inte.
-- **Ingen modal-stack eller flytande paneler.** Lugnt, statiskt, förutsägbart.
-- **Inga nya komponenter för datapresentation.** Återanvänder `InsightCard`, `ListCard`, `ActionCard`, `ColorCard` rakt av — bara i grid istället för stack.
-- **Ingen "förstoring" av mobilkort.** Korten har samma storlek på desktop som mobil. Vi sätter bara två bredvid varandra istället för en under en.
-- **Inga route-ändringar.** Samma URL:er, samma djuplänkar, samma back-knappar.
-
-### Implementationen i kod
-
-**Nya filer:**
-- `src/components/desktop/DesktopShell.tsx` — wrappar `AppShell`s innehåll på `lg:`. Innehåller sidebar + topbar + slot för sidans innehåll.
-- `src/components/desktop/SideNav.tsx` — 8-radig sidebar med screenIdentity-färger.
-- `src/components/desktop/DesktopTopbar.tsx` — 56px topbar.
-- `src/components/desktop/WideLayout.tsx` — enkel wrapper: `<WideLayout left={...} right={...} />`. Renderar two-column på `lg:`, stack på mobil. Sidor som vill ha "arbetsyta" använder den.
-
-**Ändrade filer:**
-- `src/components/AppShell.tsx` — på `lg:` rendera `DesktopShell` runt `<main>`. Mobil-rendering oförändrad (samma `max-w-md`).
-- `src/components/BottomNav.tsx` — `lg:hidden`.
-- `src/pages/Week.tsx`, `Vard.tsx`, `Explore.tsx`, `Exercises.tsx`, `Sequences.tsx`, `Learn.tsx`, `Journal.tsx`, `More.tsx`, `Settings.tsx` — wrappa innehållssektionerna i `<WideLayout left right>`. På mobil renderas `WideLayout` som vanlig stack — så ingen visuell förändring där.
-- `src/pages/Auth.tsx`, `Onboarding.tsx`, `Checkin.tsx`, `ExerciseDetail.tsx`, `LearnArticle.tsx` — ingen ändring i innehållet, bara en `lg:`-bakgrund som säkerställer att det centrerade `max-w-md`-innehållet ser lugnt ut på en stor skärm.
-
-**Alla ändringar är `lg:`-prefixade eller villkorade på breakpoint.** På mobil = noll diff i renderat DOM-träd.
-
-### Resultat — för riktiga användare
-
-- **På mobil:** Inget har hänt. Pixel-identiskt.
-- **På laptop (1366×768) eller större:**
-  - Ingen bottom-nav, en lugn vänster-sidebar istället. Logga-knappen är direkt synlig.
-  - Idag, Krisplan och alla wizards/läs-vyer känns som en boksida mitt på skärmen — inbjudande, inte tomma.
-  - Insikter, Vård, Utforska blir riktiga översikter där du ser allt på en skärm utan att scrolla — *utan att informationen ändras*.
-  - Riktnings karaktär (cream, runda hörn, bokstavstung typografi, en handling i taget) är intakt. Det känns inte som en mobilapp i en ram, men inte heller som en främmande dashboard.
-
-Inga schema-ändringar. Inga nya beroenden. Endast en ny `lg:`-lager ovanpå nuvarande kod.
+- `ActivityPicker` får (om det inte redan finns) en `initialTemplate?: TemplateKey`-prop så chip-raden kan öppna rätt drawer direkt. Default-beteendet är oförändrat → mobilens FAB påverkas inte.
+- Journal-extraktionen görs så att mobilgrenen renderar exakt samma JSX-träd som idag (inga nya wrappers, inga nya CSS-klasser på mobil).
+- En enkel viewport-test (Playwright eller manuell) på 390px efter implementation för att verifiera pixel-paritet.
