@@ -635,7 +635,7 @@ const Week = () => {
             { key: "all", label: "Allt" },
             { key: "checkins", label: "Check-ins" },
             { key: "exercises", label: "Övningar" },
-            { key: "activeTime", label: "Aktiv tid" },
+            { key: "activeTime", label: "Rörelse + återhämtning" },
           ] as const).map((f) => {
             const active = historyFilter === f.key;
             return (
@@ -698,7 +698,7 @@ const Week = () => {
           return (
             <>
               <ChartCard
-                title="Aktiv tid"
+                title="Rörelse + återhämtning"
                 subtitle={subtitleByFilter[historyFilter]}
                 tone={toneByFilter[historyFilter]}
                 index={0}
