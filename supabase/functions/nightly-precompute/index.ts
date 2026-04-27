@@ -30,9 +30,8 @@ const avg = (xs: (number | null)[]): number | null => {
 // Cachar förväntad token i minnet mellan invokationer i samma instans.
 let cachedToken: string | null = null;
 
-const loadExpectedToken = async (
-  admin: ReturnType<typeof createClient<never, never, never>>,
-): Promise<string | null> => {
+// deno-lint-ignore no-explicit-any
+const loadExpectedToken = async (admin: any): Promise<string | null> => {
   if (cachedToken) return cachedToken;
   const { data, error } = await admin
     .schema("vault" as never)
