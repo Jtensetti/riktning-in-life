@@ -570,6 +570,8 @@ const WeeklyReport = () => {
 
         <div className="space-y-0">
       <div className="card-cream p-4 mb-5">
+        <label className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-2 block">
+          Frågor du vill ställa till läkaren
         </label>
         <p className="text-xs text-text-secondary mb-3">
           Sparas lokalt och inkluderas i PDF:en.
