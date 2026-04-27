@@ -132,7 +132,7 @@ const Settings = () => {
   };
 
   return (
-    <AppShell>
+    <AppShell wide>
       <ScreenHeader
         screen="more"
         title="Inställningar"

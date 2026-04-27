@@ -90,7 +90,7 @@ const Exercises = () => {
   }, [list, q, active, weather, time]);
 
   return (
-    <AppShell>
+    <AppShell wide>
       <ScreenHeader
         screen="explore"
         title="Övningar"

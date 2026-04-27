@@ -67,7 +67,7 @@ const Sequences = () => {
   }, [user]);
 
   return (
-    <AppShell>
+    <AppShell wide>
       <ScreenHeader
         screen="explore"
         title="Rutiner"

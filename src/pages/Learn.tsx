@@ -53,7 +53,7 @@ const Learn = () => {
   }, [user]);
 
   return (
-    <AppShell>
+    <AppShell wide>
       <ScreenHeader
         screen="explore"
         title="Lär dig"
