@@ -28,8 +28,9 @@ export const useLiveData = (): { version: number } => {
     if (!user) return;
     const channel = supabase.channel(`live-${user.id}`);
     TABLES.forEach((table) => {
-      channel.on(
-        // @ts-expect-error postgres_changes saknar narrow types
+      (channel as unknown as {
+        on: (type: string, opts: Record<string, string>, cb: () => void) => void;
+      }).on(
         "postgres_changes",
         { event: "*", schema: "public", table, filter: `user_id=eq.${user.id}` },
         () => setVersion((v) => v + 1),
