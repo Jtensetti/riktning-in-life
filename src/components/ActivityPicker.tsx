@@ -29,6 +29,8 @@ export type SemanticKind =
 
 export type Intensity = "latt" | "medel" | "hard";
 export type WithWho = "ensam" | "partner" | "barn" | "van" | "kollega" | "annan";
+export type SleepQuality = "dalig" | "okej" | "bra";
+export type Location = "inne" | "ute";
 
 export type ActivityDraft = {
   slug: string;
@@ -41,6 +43,8 @@ export type ActivityDraft = {
   semantic_kind?: SemanticKind | null;
   intensity?: Intensity | null;
   with_who?: WithWho | null;
+  sleep_quality?: SleepQuality | null;
+  location?: Location | null;
 };
 
 const colorBg = (color: string): string => {
@@ -135,6 +139,8 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
   const [mood, setMood] = useState(1);
   const [intensity, setIntensity] = useState<Intensity | null>(null);
   const [withWho, setWithWho] = useState<WithWho | null>(null);
+  const [sleepQuality, setSleepQuality] = useState<SleepQuality | null>(null);
+  const [location, setLocation] = useState<Location | null>(null);
   const [customLabel, setCustomLabel] = useState("");
   const recentSlugs = useRecentActivities(4);
 
@@ -182,6 +188,8 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
       setMood(1);
       setIntensity(null);
       setWithWho(null);
+      setSleepQuality(null);
+      setLocation(null);
     }
   }, [open]);
 
@@ -220,6 +228,8 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
     setMood(1);
     setIntensity(null);
     setWithWho(null);
+    setSleepQuality(null);
+    setLocation(null);
   };
 
   const confirm = () => {
@@ -235,6 +245,8 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
       semantic_kind: selected.semantic_kind ?? null,
       intensity: selected.semantic_kind === "rorelse" ? intensity : null,
       with_who: selected.semantic_kind === "socialt" ? withWho : null,
+      sleep_quality: selected.semantic_kind === "somn" ? sleepQuality : null,
+      location: selected.semantic_kind === "aterhamtning" ? location : null,
     });
     onOpenChange(false);
   };
@@ -507,6 +519,51 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
                       onClick={() => setWithWho(withWho === opt.v ? null : opt.v)}
                       className={`rounded-full px-4 py-2 text-sm font-extrabold border-2 press-soft ${
                         withWho === opt.v ? "bg-foreground text-background border-foreground" : "bg-surface text-foreground border-border-soft"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {selected.semantic_kind === "somn" && (
+              <>
+                <p className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-2">Sömnkvalitet (valfri)</p>
+                <div className="flex gap-2 mb-6">
+                  {([
+                    { v: "dalig", label: "Dålig" },
+                    { v: "okej", label: "Okej" },
+                    { v: "bra", label: "Bra" },
+                  ] as { v: SleepQuality; label: string }[]).map((opt) => (
+                    <button
+                      key={opt.v}
+                      onClick={() => setSleepQuality(sleepQuality === opt.v ? null : opt.v)}
+                      className={`flex-1 rounded-2xl px-3 py-2.5 text-sm font-extrabold border-2 press-soft ${
+                        sleepQuality === opt.v ? "bg-foreground text-background border-foreground" : "bg-surface text-foreground border-border-soft"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {selected.semantic_kind === "aterhamtning" && (
+              <>
+                <p className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-2">Plats (valfri)</p>
+                <div className="flex gap-2 mb-6">
+                  {([
+                    { v: "inne", label: "Inne" },
+                    { v: "ute", label: "Ute" },
+                  ] as { v: Location; label: string }[]).map((opt) => (
+                    <button
+                      key={opt.v}
+                      onClick={() => setLocation(location === opt.v ? null : opt.v)}
+                      className={`flex-1 rounded-2xl px-3 py-2.5 text-sm font-extrabold border-2 press-soft ${
+                        location === opt.v ? "bg-foreground text-background border-foreground" : "bg-surface text-foreground border-border-soft"
                       }`}
                     >
                       {opt.label}

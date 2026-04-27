@@ -92,11 +92,13 @@ export type Database = {
           id: string
           intensity: string | null
           label: string
+          location: string | null
           mood_after: number | null
           mood_before: number | null
           mood_delta: number | null
           note: string | null
           semantic_kind: string | null
+          sleep_quality: string | null
           user_id: string
           with_who: string | null
         }
@@ -114,11 +116,13 @@ export type Database = {
           id?: string
           intensity?: string | null
           label: string
+          location?: string | null
           mood_after?: number | null
           mood_before?: number | null
           mood_delta?: number | null
           note?: string | null
           semantic_kind?: string | null
+          sleep_quality?: string | null
           user_id: string
           with_who?: string | null
         }
@@ -136,11 +140,13 @@ export type Database = {
           id?: string
           intensity?: string | null
           label?: string
+          location?: string | null
           mood_after?: number | null
           mood_before?: number | null
           mood_delta?: number | null
           note?: string | null
           semantic_kind?: string | null
+          sleep_quality?: string | null
           user_id?: string
           with_who?: string | null
         }
