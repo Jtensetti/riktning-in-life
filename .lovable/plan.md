@@ -1,64 +1,68 @@
+# Polera WYSIWYG-editorn (endast desktop)
+
+Mobilvyn lämnas helt orörd — all logik bakom `isMobile` behålls som den är. Endast desktop-grenarna ändras.
+
 ## Mål
+Få editorn att kännas lika självklar som Notion/Linear/Medium: verktyg där man förväntar sig dem, tydliga active-states, flytande bubble-menu vid markering, och de kortkommandon man räknar med.
 
-Importera den TipTap-baserade WYSIWYG-editorn från `fediverse-career-newest` till Riktning och använd den för **Journals "Fri text"-mall** — både mobil och desktop. Strukturerade mallar (Tre rader, Tankeloop, Kropp först, Bevislogg) behåller sina enkla `Textarea`-fält. Inga bilder i denna runda.
+## Ändringar
 
-## Vad som hämtas över (i trimmad form)
+### 1. Flytta toolbar till TOPPEN av editorn (desktop)
+Konventionen är verktyg ovanför innehållet. `border-t` blir `border-b`, toolbar renderas före `<TipTapEditor>` i desktop-grenen. Mobilens fixed-bottom-toolbar är oförändrad.
 
-Editorn delas upp i fyra filer i `src/components/editor/`:
+### 2. Vänsterställ desktop-toolbaren
+Byt `justify-center` → `justify-start` med lite padding. Knapparna slutar "hoppa" när toolbar växlar läge.
 
-- **`TipTapEditor.tsx`** — TipTap-kärnan: StarterKit, Link, Placeholder. Image-extension utelämnad. Headings begränsade till H1–H3 (passar Riktnings tonläge bättre än 5 nivåer). Använder Riktnings tokens (`text-text-secondary`, `bg-surface`).
-- **`RichTextToolbar.tsx`** — kontextuell toolbar: visar formaterings-tools när text är markerad, infogningsverktyg annars. Bild-knappar borttagna. Svensk copy ("Brödtext", "Rubrik 1", "Punktlista"…).
-- **`LinkInsertSheet.tsx`** — bottom-sheet på mobil / popover på desktop för länkinsättning. `react-i18next` ersatt med ren svensk text (Riktning har ingen i18n).
-- **`RichTextEditor.tsx`** — orkestrerare. Bilduppladdning och `useKeyboardHeight` borttagna. Mobiltoolbaren ligger `position: fixed` längst ner med `env(safe-area-inset-bottom)`-padding så den följer fokus-läget utan att kräva visualViewport-mätning. Stöd för `onSubmit` (Cmd/Ctrl+Enter sparar).
+### 3. Visa direktknappar istället för popovers (desktop)
+På desktop finns gott om plats. Default-toolbaren får direktknappar:
 
-## Beroenden (redan installerade)
+```text
+[B] [I] [S]  |  [H1] [H2] [H3]  |  [• lista] [1. lista] [" citat]  |  [🔗 länk] [— hr]  |  [↶ ångra] [↷ gör om]
+```
 
-`@tiptap/react`, `@tiptap/starter-kit`, `@tiptap/extension-link`, `@tiptap/extension-placeholder`, `dompurify`. Versioner: TipTap 3.22.4.
+Popoverna för "Infoga", "Listor" och "Textstil" tas bort på desktop (mobilen behåller dem för plats).
 
-## Integration i Journal
+### 4. Active-states på alla knappar
+Varje toolbar-knapp läser `editor.isActive('bold')`, `editor.isActive('heading', { level: 2 })` osv och får `bg-surface-alt` + tydligare ikonfärg när aktiv. Detta är den viktigaste WYSIWYG-signalen — användaren ser var markören står.
 
-I `src/pages/Journal.tsx`, i renderingen av "Fri text"-mallen (det `active === "free"`-grenen i editor-bodyn):
+För att toolbaren ska re-rendra vid varje selektion exporteras `editor`-instansen via en ny `getActiveStates()` på `TipTapEditorHandle`, eller (renare) toolbaren tar emot `editor`-objektet direkt i desktop-läget.
 
-- Mobilgrenen (lg:hidden): `<Textarea value={free}…>` byts ut mot `<RichTextEditor value={free} onChange={setFree} placeholder="Tankar, känslor, dagen…" minHeight={220} onSubmit={save} />`.
-- Desktopgrenen (lg:block): samma byte, `minHeight={420}`. Cmd+Enter-tipset i UI:t fungerar fortsatt; `onSubmit={save}` triggar samma path.
+### 5. Bubble-menu vid markering (desktop)
+Lägg till `@tiptap/extension-bubble-menu`. När text markeras visas en flytande mini-toolbar ovanför markeringen med: **B / I / S / länk / H2 / citat**. Detta är desktop-konventionen och ersätter den fula växlingen i den fasta toolbaren.
 
-Övriga mallars `<Textarea>`-fält rörs inte.
+Den fasta topptoolbaren behåller alltid sina default-knappar (växlar inte längre läge på desktop) — så layouten blir stabil.
 
-## Säker rendering vid uppspelning
+### 6. Redo-knapp + Cmd+K-genväg
+- Lägg till "Gör om" (`redo`) bredvid "Ångra". `Cmd/Ctrl+Shift+Z` finns redan inbyggt i TipTap.
+- Globalt `Cmd/Ctrl+K` öppnar `LinkInsertSheet` (popover på desktop) — branschstandard.
 
-Editorn lagrar `free_text` som **HTML**. Det är säkert att skriva — det är användarens egen data — men måste renderas defensivt vid läsning. Två platser:
+### 7. Länkredigering
+När markören står i en länk visar bubble-menun istället: **[öppna ↗] [redigera] [ta bort]**. Implementeras genom att läsa `editor.isActive('link')` och få attributen via `editor.getAttributes('link').href`. "Ta bort"-knappen anropar `unsetLink()`.
 
-1. **Historik-preview i Journal** (rad ~280): nuvarande `e.free_text` är råtext men kommer nu innehålla `<p>…</p>`. Ny helper `htmlToPreviewText(html, maxLen=160)` strippar taggar via DOMParser → `textContent`. Används endast för preview.
+### 8. Fixa `setLink` att respektera `text`-argumentet
+`TipTapEditor.setLink(url, text?)`: om `text` skickas och ingen markering finns, infoga `<a href="url">text</a>` via `insertContent`. Idag tappas argumentet helt.
 
-2. **Veckorapport / liknande** som visar `free_text`: söker upp förekomster (`rg "free_text" src`) och avgör per fall — om fältet visas som rik text ska `dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }}` användas på en `<div className="ProseMirror">`. Om bara textsammanfattning visas: `htmlToPreviewText`.
+### 9. Småjusteringar
+- Placeholder-opacity 60 → 80 för läsbarhet.
+- Ta bort `onHideKeyboard`-prop på desktop-grenen (dead code).
+- Strikethrough flyttas till bubble-menu only (sällan använd vid skrivande, finns när man behöver redigera).
+- Editorns ytterdiv: `rounded-2xl` behålls, men toolbar i toppen får `rounded-t-2xl` och innehållet sömlös övergång.
 
-## CSS
+## Tekniska detaljer
 
-Lägg till TipTap-stilar (`.ProseMirror` och `.article-content` block med blockquote, listor, headings, länkar, hr) i `src/index.css`, anpassat till Riktnings tokens — länkar i `hsl(var(--orange-start))`, blockquote-border i `hsl(var(--border))`, ingen mörkt-läge-specifik regel (Riktning är ljus-tema).
+**Filer att redigera:**
+- `src/components/editor/RichTextEditor.tsx` — desktop-grenen byggs om: toolbar i toppen, bubble-menu monteras, Cmd+K-handler.
+- `src/components/editor/RichTextToolbar.tsx` — ny `DesktopDefaultToolbar` med direktknappar + active-state-stöd. Mobilens `DefaultToolbar`/`SelectionToolbar` behålls oförändrade.
+- `src/components/editor/TipTapEditor.tsx` — exponera `editor`-instansen via ref (för `isActive`-läsning), fixa `setLink(url, text)`, registrera `BubbleMenu`-extension.
+- `src/components/editor/BubbleMenu.tsx` — **ny** liten komponent som renderar bubble-menu-innehåll (text-läge vs länk-läge).
 
-Bakåtkompatibilitet: gamla `free_text`-poster som är ren text fungerar utan migration — TipTap accepterar plain text som content och visar det som ett `<p>`. Vid spara konverteras allt till HTML; ingen retroaktiv ändring.
+**Beroenden att lägga till:**
+- `@tiptap/extension-bubble-menu`
 
-## Filer
+**Inga DB-ändringar, inga RLS-ändringar, inga edge functions.**
+**Mobilkomponenter och mobilflöden är inte i scope.**
 
-Nya:
-- `src/components/editor/TipTapEditor.tsx`
-- `src/components/editor/RichTextToolbar.tsx`
-- `src/components/editor/LinkInsertSheet.tsx`
-- `src/components/editor/RichTextEditor.tsx`
-- `src/lib/htmlText.ts` — `htmlToPreviewText(html, maxLen)` + `sanitizeJournalHtml(html)` (DOMPurify-wrapper).
-
-Modifierade:
-- `src/pages/Journal.tsx` — byter `<Textarea>` mot `<RichTextEditor>` i `active === "free"`-grenen (mobil + desktop), använder `htmlToPreviewText` i historik-preview.
-- `src/index.css` — TipTap content-stilar.
-
-## Vad som INTE ändras
-
-- Strukturerade mall-fält (Tre rader, Tankeloop, Kropp först, Bevislogg).
-- Spara-flödet (samma `journal_entries.free_text`-kolumn).
-- Mobilens FAB, BottomNav, ActivityPicker.
-- Inga schemaändringar, inga edge functions.
-
-## Risker
-
-- **Mobiltoolbar-positionering**: editor-versionen i källprojektet använder `useKeyboardHeight` för exakt placering över virtual keyboard. Vi förenklar med `position: fixed; bottom: 0` + `env(safe-area-inset-bottom)`. På iOS Safari kan tangentbordet täcka toolbaren delvis. Om det blir problem: porta `useKeyboardHeight`-hooken (visualViewport API) i en uppföljning.
-- **HTML i existerande free_text**: Inga befintliga poster har HTML, så ingen migration behövs. Nya poster skrivs som HTML från och med nu.
+## Out of scope
+- Bilduppladdning (medvetet uteslutet tidigare).
+- Kodblock, tabeller, slash-meny — kan komma som steg 2 om du vill.
+- Mobilvyn — orörd.
