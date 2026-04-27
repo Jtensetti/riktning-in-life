@@ -54,12 +54,12 @@ const whyReason = (f: { lastLoggedDays: number | null; logCount30d: number; cate
   return { text: "Favorit du brukar återvända till.", icon: "info" };
 };
 
-const MOOD_OPTIONS: { delta: number; emoji: string; text: string; tone: string }[] = [
-  { delta: -2, emoji: "😔", text: "Sämre", tone: "bg-purple-sleep/15 text-purple-sleep" },
-  { delta: -1, emoji: "🙁", text: "Lite sämre", tone: "bg-blue-calm/15 text-blue-calm" },
-  { delta: 0, emoji: "😐", text: "Som vanligt", tone: "bg-cream-card text-foreground" },
-  { delta: 1, emoji: "🙂", text: "Lite bättre", tone: "bg-yellow-journal/30 text-foreground" },
-  { delta: 2, emoji: "😊", text: "Mycket bättre", tone: "bg-green-recovery/20 text-green-recovery" },
+const MOOD_OPTIONS: { delta: number; text: string; tone: string }[] = [
+  { delta: -2, text: "Sämre", tone: "bg-cream-card text-foreground" },
+  { delta: -1, text: "Lite sämre", tone: "bg-cream-card text-foreground" },
+  { delta: 0, text: "Som vanligt", tone: "bg-cream-card text-foreground" },
+  { delta: 1, text: "Lite bättre", tone: "bg-cream-card text-foreground" },
+  { delta: 2, text: "Mycket bättre", tone: "bg-cream-card text-foreground" },
 ];
 
 interface Props {
