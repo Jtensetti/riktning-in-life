@@ -88,6 +88,14 @@ const Analysis = () => {
         screen="explore"
         title="Analys"
         subtitle="Vad rör sig åt rätt håll just nu?"
+        topLeft={
+          <button
+            onClick={() => navigate("/insikter")}
+            className="inline-flex items-center gap-1 text-sm font-bold opacity-90 press-soft"
+          >
+            <ArrowLeft size={18} /> Insikter
+          </button>
+        }
       />
 
       <InsightCard
