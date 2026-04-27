@@ -387,7 +387,10 @@ const Today = () => {
       color: a.color,
       duration_minutes: a.duration_minutes,
       mood_delta: a.mood_delta,
-    });
+      semantic_kind: a.semantic_kind ?? null,
+      intensity: a.intensity ?? null,
+      with_who: a.with_who ?? null,
+    } as any);
     if (error) {
       toast.error("Kunde inte logga. Försök igen.");
       return;
@@ -438,7 +441,7 @@ const Today = () => {
       toast.error("Kunde inte spara kvällsmålet.");
       return;
     }
-    toast.success("Kvällsmål sparat 🌙", { description: "En liten sak räknas. Sov gott." });
+    toast.success("Kvällsmål sparat", { description: "En liten sak räknas. Sov gott." });
     setStreakReloadKey((k) => k + 1);
   };
 
@@ -921,17 +924,22 @@ const Today = () => {
               }
             })();
             const dateStr = new Date(s.created_at).toLocaleDateString("sv-SE", { day: "numeric", month: "short" });
-            const deltas: { letter: string; delta: number; tone: "good" | "warn" }[] = [];
-            const pushDelta = (letter: string, before: number | null, after: number | null, goodWhenLower: boolean) => {
+            const deltas: { label: string; delta: number; tone: "good" | "warn" }[] = [];
+            const pushDelta = (label: string, before: number | null, after: number | null, goodWhenLower: boolean) => {
               if (before == null || after == null) return;
               const d = after - before;
               if (d === 0) return;
               const improved = goodWhenLower ? d < 0 : d > 0;
-              deltas.push({ letter, delta: d, tone: improved ? "good" : "warn" });
+              deltas.push({ label, delta: d, tone: improved ? "good" : "warn" });
             };
-            pushDelta("M", s.mood_before, s.mood_after, true);
-            pushDelta("Å", s.anxiety_before, s.anxiety_after, true);
-            pushDelta("E", s.energy_before, s.energy_after, false);
+            pushDelta("Mående", s.mood_before, s.mood_after, true);
+            pushDelta("Ångest", s.anxiety_before, s.anxiety_after, true);
+            pushDelta("Energi", s.energy_before, s.energy_after, false);
+            const visibleDeltas = deltas.slice(0, 2);
+            const overflow = deltas.length - visibleDeltas.length;
+            const fullTitle = deltas
+              .map((d) => `${d.label} ${d.delta > 0 ? "+" : ""}${d.delta}`)
+              .join(", ");
             return (
               <li key={s.id} className="relative animate-fade-in-up" style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}>
                 <span className="absolute -left-[22px] top-1/2 -translate-y-1/2" aria-hidden>
@@ -940,22 +948,27 @@ const Today = () => {
                 <button
                   onClick={() => navigate("/ovningar")}
                   className="w-full text-left rounded-2xl bg-surface border border-border-soft py-2.5 px-3 flex items-center gap-2 shadow-card press-soft"
+                  title={fullTitle || undefined}
                 >
                   <span className="text-[11px] font-extrabold text-text-secondary tabular-nums shrink-0 w-12">{dateStr}</span>
                   <span className="text-sm font-extrabold truncate flex-1 min-w-0">{ex.title}</span>
-                  {deltas.length > 0 && (
+                  {visibleDeltas.length > 0 && (
                     <span className="flex items-center gap-1 shrink-0">
-                      {deltas.map(d => (
+                      {visibleDeltas.map(d => (
                         <span
-                          key={d.letter}
-                          className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full tabular-nums ${
+                          key={d.label}
+                          className={`text-[11px] font-extrabold px-2 py-0.5 rounded-full tabular-nums whitespace-nowrap ${
                             d.tone === "good" ? "bg-green-recovery/15 text-green-recovery" : "bg-red-bg text-red-risk"
                           }`}
-                          title={`${d.letter}: ${d.delta > 0 ? "+" : ""}${d.delta}`}
                         >
-                          {d.letter}{d.delta > 0 ? "+" : ""}{d.delta}
+                          {d.label} {d.delta > 0 ? "+" : ""}{d.delta}
                         </span>
                       ))}
+                      {overflow > 0 && (
+                        <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-surface-alt text-text-secondary whitespace-nowrap">
+                          + fler
+                        </span>
+                      )}
                     </span>
                   )}
                   <ChevronRight size={16} className="text-text-secondary shrink-0" />

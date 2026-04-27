@@ -15,7 +15,20 @@ export type CatalogItem = {
   color: string;
   default_minutes: number;
   tags_json: string[];
+  semantic_kind: SemanticKind | null;
 };
+
+export type SemanticKind =
+  | "rorelse"
+  | "aterhamtning"
+  | "socialt"
+  | "fokus"
+  | "vardag"
+  | "somn"
+  | "journal";
+
+export type Intensity = "latt" | "medel" | "hard";
+export type WithWho = "ensam" | "partner" | "barn" | "van" | "kollega" | "annan";
 
 export type ActivityDraft = {
   slug: string;
@@ -25,6 +38,9 @@ export type ActivityDraft = {
   color: string;
   duration_minutes: number;
   mood_delta: number; // -2..+2
+  semantic_kind?: SemanticKind | null;
+  intensity?: Intensity | null;
+  with_who?: WithWho | null;
 };
 
 const colorBg = (color: string): string => {
@@ -117,6 +133,8 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
   const [selected, setSelected] = useState<CatalogItem | null>(null);
   const [duration, setDuration] = useState(30);
   const [mood, setMood] = useState(1);
+  const [intensity, setIntensity] = useState<Intensity | null>(null);
+  const [withWho, setWithWho] = useState<WithWho | null>(null);
   const [customLabel, setCustomLabel] = useState("");
   const recentSlugs = useRecentActivities(4);
 
@@ -124,7 +142,7 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
     if (!open) return;
     supabase
       .from("activity_catalog")
-      .select("slug,label,category,icon,color,default_minutes,tags_json")
+      .select("slug,label,category,icon,color,default_minutes,tags_json,semantic_kind")
       .order("sort_order")
       .then(({ data }) => {
         if (data) setCatalog(data as any);
@@ -162,6 +180,8 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
       setActiveCat(null);
       setCustomLabel("");
       setMood(1);
+      setIntensity(null);
+      setWithWho(null);
     }
   }, [open]);
 
@@ -198,6 +218,8 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
     setSelected(item);
     setDuration(item.default_minutes);
     setMood(1);
+    setIntensity(null);
+    setWithWho(null);
   };
 
   const confirm = () => {
@@ -210,6 +232,9 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
       color: selected.color,
       duration_minutes: duration,
       mood_delta: mood,
+      semantic_kind: selected.semantic_kind ?? null,
+      intensity: selected.semantic_kind === "rorelse" ? intensity : null,
+      with_who: selected.semantic_kind === "socialt" ? withWho : null,
     });
     onOpenChange(false);
   };
@@ -225,6 +250,7 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
       color: "yellow",
       duration_minutes: 30,
       mood_delta: 1,
+      semantic_kind: null,
     });
     onOpenChange(false);
   };
@@ -373,13 +399,26 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
 
         {selected && (
           <div className="px-6 pb-6 overflow-y-auto">
-            <div className={`rounded-3xl p-4 mb-5 flex items-center gap-3 shadow-card ${colorBg(selected.color)}`}>
-              <div className="shrink-0 w-12 h-12 rounded-full bg-white/25 grid place-items-center">
-                <AbstractIcon name={selected.icon as IconName} size={28} color="currentColor" />
+            <div className="rounded-3xl p-4 mb-5 flex items-center gap-3 shadow-card bg-surface border border-border-soft">
+              <div
+                className="shrink-0 grid place-items-center"
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: "var(--icon-tile-radius)",
+                  background: `hsl(var(--${selected.color === "yellow" ? "yellow-journal" : selected.color === "blue" ? "blue-calm" : selected.color === "purple" ? "purple-sleep" : selected.color === "pink" ? "pink-move" : selected.color === "green" ? "green-recovery" : "orange-start"}) / 0.14)`,
+                }}
+                aria-hidden
+              >
+                <AbstractIcon
+                  name={selected.icon as IconName}
+                  size={26}
+                  color={`hsl(var(--${selected.color === "yellow" ? "yellow-journal" : selected.color === "blue" ? "blue-calm" : selected.color === "purple" ? "purple-sleep" : selected.color === "pink" ? "pink-move" : selected.color === "green" ? "green-recovery" : "orange-start"}))`}
+                />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-extrabold text-[17px] leading-tight">{selected.label}</h3>
-                <p className="text-xs opacity-90">{selected.category}</p>
+                <h3 className="font-extrabold text-[17px] leading-tight text-foreground">{selected.label}</h3>
+                <p className="text-xs text-text-secondary">{selected.category}</p>
               </div>
             </div>
 
@@ -427,6 +466,55 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
                 </button>
               ))}
             </div>
+
+            {selected.semantic_kind === "rorelse" && (
+              <>
+                <p className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-2">Intensitet (valfri)</p>
+                <div className="flex gap-2 mb-6">
+                  {([
+                    { v: "latt", label: "Lätt" },
+                    { v: "medel", label: "Medel" },
+                    { v: "hard", label: "Hård" },
+                  ] as { v: Intensity; label: string }[]).map((opt) => (
+                    <button
+                      key={opt.v}
+                      onClick={() => setIntensity(intensity === opt.v ? null : opt.v)}
+                      className={`flex-1 rounded-2xl px-3 py-2.5 text-sm font-extrabold border-2 press-soft ${
+                        intensity === opt.v ? "bg-foreground text-background border-foreground" : "bg-surface text-foreground border-border-soft"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {selected.semantic_kind === "socialt" && (
+              <>
+                <p className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-2">Med vem? (valfri)</p>
+                <div className="flex gap-2 mb-6 flex-wrap">
+                  {([
+                    { v: "ensam", label: "Ensam" },
+                    { v: "partner", label: "Partner" },
+                    { v: "barn", label: "Barn" },
+                    { v: "van", label: "Vän" },
+                    { v: "kollega", label: "Kollega" },
+                    { v: "annan", label: "Annan" },
+                  ] as { v: WithWho; label: string }[]).map((opt) => (
+                    <button
+                      key={opt.v}
+                      onClick={() => setWithWho(withWho === opt.v ? null : opt.v)}
+                      className={`rounded-full px-4 py-2 text-sm font-extrabold border-2 press-soft ${
+                        withWho === opt.v ? "bg-foreground text-background border-foreground" : "bg-surface text-foreground border-border-soft"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
 
             <div className="flex gap-2">
               <Button

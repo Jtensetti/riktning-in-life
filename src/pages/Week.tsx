@@ -635,7 +635,7 @@ const Week = () => {
             { key: "all", label: "Allt" },
             { key: "checkins", label: "Check-ins" },
             { key: "exercises", label: "Övningar" },
-            { key: "activeTime", label: "Aktiv tid" },
+            { key: "activeTime", label: "Rörelse + återhämtning" },
           ] as const).map((f) => {
             const active = historyFilter === f.key;
             return (
@@ -678,7 +678,7 @@ const Week = () => {
             all: `${totalMin} min totalt`,
             checkins: `${Math.round(totalMin / 60)} h sömn totalt`,
             exercises: `${totalMin} min övning`,
-            activeTime: `${totalMin} min aktiv tid`,
+            activeTime: `${totalMin} min rörelse + återhämtning`,
           };
 
           const toneByFilter: Record<typeof historyFilter, "green" | "purple" | "blue" | "orange"> = {
@@ -698,7 +698,7 @@ const Week = () => {
           return (
             <>
               <ChartCard
-                title="Aktiv tid"
+                title="Rörelse + återhämtning"
                 subtitle={subtitleByFilter[historyFilter]}
                 tone={toneByFilter[historyFilter]}
                 index={0}
@@ -824,7 +824,7 @@ const Week = () => {
 
               const emptyText = historyFilter === "checkins" ? "Ingen check-in"
                 : historyFilter === "exercises" ? "Ingen övning"
-                : historyFilter === "activeTime" ? "Ingen aktiv tid"
+                : historyFilter === "activeTime" ? "Ingen rörelse eller återhämtning"
                 : "Ingen aktivitet loggad";
 
               return (

@@ -169,7 +169,7 @@ const ExerciseDetail = () => {
         <p className="text-sm opacity-90">{ex.type} · {ex.duration_minutes} min</p>
       </div>
 
-      <div className="max-w-md mx-auto px-6 -mt-6">
+      <div className="max-w-md mx-auto px-6 pt-10">
         {phase === "intro" && (
           <>
             <div className="card-soft p-5 mb-4">
@@ -200,7 +200,7 @@ const ExerciseDetail = () => {
 
         {phase === "before" && (
           <div className="animate-fade-in-up">
-            <h3 className="text-xl mb-3 mt-2">Hur är det innan?</h3>
+            <h3 className="text-xl mb-3">Hur är det innan?</h3>
             <SliderRow label="Oro" value={before.anxiety} onChange={(v) => setBefore(b => ({ ...b, anxiety: v }))} />
             <SliderRow label="Energi" value={before.energy} onChange={(v) => setBefore(b => ({ ...b, energy: v }))} />
             <SliderRow label="Mående" value={before.mood} onChange={(v) => setBefore(b => ({ ...b, mood: v }))} />
@@ -243,9 +243,9 @@ const ExerciseDetail = () => {
 
         {phase === "after" && (
           <div className="animate-fade-in-up">
-            <h3 className="text-xl mb-3 mt-2">Hur är det nu?</h3>
-            <p className="text-sm text-text-secondary mb-4 -mt-1">
-              Slidrarna börjar där du var innan. Dra dit du är nu.
+            <h3 className="text-xl mb-3">Hur är det nu?</h3>
+            <p className="text-sm text-text-secondary mb-4">
+              Reglagen börjar där du var innan. Dra dit du är nu.
             </p>
             <SliderRow label="Oro" metric="anxiety" value={after.anxiety} before={before.anxiety} onChange={(v) => setAfter(a => ({ ...a, anxiety: v }))} />
             <SliderRow label="Energi" metric="energy" value={after.energy} before={before.energy} onChange={(v) => setAfter(a => ({ ...a, energy: v }))} />
