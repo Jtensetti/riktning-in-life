@@ -54,12 +54,12 @@ const whyReason = (f: { lastLoggedDays: number | null; logCount30d: number; cate
   return { text: "Favorit du brukar återvända till.", icon: "info" };
 };
 
-const MOOD_OPTIONS: { delta: number; emoji: string; text: string; tone: string }[] = [
-  { delta: -2, emoji: "😔", text: "Sämre", tone: "bg-purple-sleep/15 text-purple-sleep" },
-  { delta: -1, emoji: "🙁", text: "Lite sämre", tone: "bg-blue-calm/15 text-blue-calm" },
-  { delta: 0, emoji: "😐", text: "Som vanligt", tone: "bg-cream-card text-foreground" },
-  { delta: 1, emoji: "🙂", text: "Lite bättre", tone: "bg-yellow-journal/30 text-foreground" },
-  { delta: 2, emoji: "😊", text: "Mycket bättre", tone: "bg-green-recovery/20 text-green-recovery" },
+const MOOD_OPTIONS: { delta: number; text: string; tone: string }[] = [
+  { delta: -2, text: "Sämre", tone: "bg-cream-card text-foreground" },
+  { delta: -1, text: "Lite sämre", tone: "bg-cream-card text-foreground" },
+  { delta: 0, text: "Som vanligt", tone: "bg-cream-card text-foreground" },
+  { delta: 1, text: "Lite bättre", tone: "bg-cream-card text-foreground" },
+  { delta: 2, text: "Mycket bättre", tone: "bg-cream-card text-foreground" },
 ];
 
 interface Props {
@@ -164,7 +164,7 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
     onLogged?.();
 
     toast.success(`${item.label} loggad`, {
-      description: `${item.default_minutes} min · 🙂 lite bättre`,
+      description: `${item.default_minutes} min · lite bättre`,
       action: {
         label: "Ändra",
         onClick: () => setEditSheet({ id: inserted.id, label: item.label, mood: 1, minutes: item.default_minutes }),
@@ -187,7 +187,7 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
     }
     const picked = MOOD_OPTIONS.find(o => o.delta === editSheet.mood);
     toast.success("Sparat", {
-      description: `${editSheet.minutes} min${picked ? ` · ${picked.emoji} ${picked.text}` : ""}`,
+      description: `${editSheet.minutes} min${picked ? ` · ${picked.text}` : ""}`,
     });
     setEditSheet(null);
     onLogged?.();
@@ -323,7 +323,7 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
       )}
 
       <Drawer open={!!editSheet} onOpenChange={(o) => !o && !savingEdit && !deleting && setEditSheet(null)}>
-        <DrawerContent className="bg-cream-bg">
+        <DrawerContent className="bg-background">
           <DrawerHeader className="text-left">
             <DrawerTitle className="text-xl font-extrabold">
               Ändra {editSheet?.label.toLowerCase()}
@@ -377,7 +377,6 @@ export const QuickLogPills = ({ onOpenPicker, onLogged }: Props) => {
                       } ${o.tone}`}
                       style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
                     >
-                      <span className="text-2xl leading-none">{o.emoji}</span>
                       <span className="flex-1 text-left font-extrabold text-[14px]">{o.text}</span>
                       {active && <span className="text-[10px] font-extrabold uppercase tracking-wider opacity-70">Vald</span>}
                     </button>
