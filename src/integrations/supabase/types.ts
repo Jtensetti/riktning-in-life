@@ -77,42 +77,57 @@ export type Database = {
       activity_logs: {
         Row: {
           activity_slug: string
+          actual_duration_minutes: number | null
           category: string
           color: string
           created_at: string
           date: string
           duration_minutes: number | null
+          energy_after: number | null
+          energy_before: number | null
           icon: string
           id: string
           label: string
+          mood_after: number | null
+          mood_before: number | null
           mood_delta: number | null
           note: string | null
           user_id: string
         }
         Insert: {
           activity_slug: string
+          actual_duration_minutes?: number | null
           category: string
           color?: string
           created_at?: string
           date?: string
           duration_minutes?: number | null
+          energy_after?: number | null
+          energy_before?: number | null
           icon?: string
           id?: string
           label: string
+          mood_after?: number | null
+          mood_before?: number | null
           mood_delta?: number | null
           note?: string | null
           user_id: string
         }
         Update: {
           activity_slug?: string
+          actual_duration_minutes?: number | null
           category?: string
           color?: string
           created_at?: string
           date?: string
           duration_minutes?: number | null
+          energy_after?: number | null
+          energy_before?: number | null
           icon?: string
           id?: string
           label?: string
+          mood_after?: number | null
+          mood_before?: number | null
           mood_delta?: number | null
           note?: string | null
           user_id?: string
@@ -236,6 +251,54 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_summaries: {
+        Row: {
+          activities_count: number
+          burden: number | null
+          computed_at: string
+          date: string
+          exercises_actual_minutes: number
+          exercises_count: number
+          function: number | null
+          medications_missed: number
+          medications_taken: number
+          recovery: number | null
+          side_effect_severity: number | null
+          stability: number | null
+          user_id: string
+        }
+        Insert: {
+          activities_count?: number
+          burden?: number | null
+          computed_at?: string
+          date: string
+          exercises_actual_minutes?: number
+          exercises_count?: number
+          function?: number | null
+          medications_missed?: number
+          medications_taken?: number
+          recovery?: number | null
+          side_effect_severity?: number | null
+          stability?: number | null
+          user_id: string
+        }
+        Update: {
+          activities_count?: number
+          burden?: number | null
+          computed_at?: string
+          date?: string
+          exercises_actual_minutes?: number
+          exercises_count?: number
+          function?: number | null
+          medications_missed?: number
+          medications_taken?: number
+          recovery?: number | null
+          side_effect_severity?: number | null
+          stability?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       exercise_sequences: {
         Row: {
           color: string
@@ -271,6 +334,7 @@ export type Database = {
       }
       exercise_sessions: {
         Row: {
+          actual_duration_seconds: number | null
           anxiety_after: number | null
           anxiety_before: number | null
           created_at: string
@@ -282,9 +346,14 @@ export type Database = {
           mood_after: number | null
           mood_before: number | null
           note: string | null
+          planned_duration_seconds: number | null
+          sequence_slug: string | null
+          sequence_step: number | null
+          timer_mode: string | null
           user_id: string
         }
         Insert: {
+          actual_duration_seconds?: number | null
           anxiety_after?: number | null
           anxiety_before?: number | null
           created_at?: string
@@ -296,9 +365,14 @@ export type Database = {
           mood_after?: number | null
           mood_before?: number | null
           note?: string | null
+          planned_duration_seconds?: number | null
+          sequence_slug?: string | null
+          sequence_step?: number | null
+          timer_mode?: string | null
           user_id: string
         }
         Update: {
+          actual_duration_seconds?: number | null
           anxiety_after?: number | null
           anxiety_before?: number | null
           created_at?: string
@@ -310,6 +384,10 @@ export type Database = {
           mood_after?: number | null
           mood_before?: number | null
           note?: string | null
+          planned_duration_seconds?: number | null
+          sequence_slug?: string | null
+          sequence_step?: number | null
+          timer_mode?: string | null
           user_id?: string
         }
         Relationships: [
@@ -335,6 +413,7 @@ export type Database = {
           not_recommended_for_json: Json
           recommended_for_json: Json
           steps_json: Json
+          timer_mode: string
           title: string
           type: string
         }
@@ -350,6 +429,7 @@ export type Database = {
           not_recommended_for_json?: Json
           recommended_for_json?: Json
           steps_json?: Json
+          timer_mode?: string
           title: string
           type: string
         }
@@ -365,6 +445,7 @@ export type Database = {
           not_recommended_for_json?: Json
           recommended_for_json?: Json
           steps_json?: Json
+          timer_mode?: string
           title?: string
           type?: string
         }
@@ -469,7 +550,9 @@ export type Database = {
           id: string
           medication_id: string
           note: string | null
+          severity: number | null
           side_effects_json: Json
+          taken_at: string | null
           taken_status: string
           user_id: string
         }
@@ -479,7 +562,9 @@ export type Database = {
           id?: string
           medication_id: string
           note?: string | null
+          severity?: number | null
           side_effects_json?: Json
+          taken_at?: string | null
           taken_status: string
           user_id: string
         }
@@ -489,7 +574,9 @@ export type Database = {
           id?: string
           medication_id?: string
           note?: string | null
+          severity?: number | null
           side_effects_json?: Json
+          taken_at?: string | null
           taken_status?: string
           user_id?: string
         }
@@ -532,6 +619,42 @@ export type Database = {
           dose?: string | null
           id?: string
           name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      recommendations_log: {
+        Row: {
+          acted_at: string | null
+          acted_on: boolean
+          date: string
+          id: string
+          outcome: Json | null
+          payload: Json
+          shown_at: string
+          source: string
+          user_id: string
+        }
+        Insert: {
+          acted_at?: string | null
+          acted_on?: boolean
+          date?: string
+          id?: string
+          outcome?: Json | null
+          payload?: Json
+          shown_at?: string
+          source: string
+          user_id: string
+        }
+        Update: {
+          acted_at?: string | null
+          acted_on?: boolean
+          date?: string
+          id?: string
+          outcome?: Json | null
+          payload?: Json
+          shown_at?: string
+          source?: string
           user_id?: string
         }
         Relationships: []
