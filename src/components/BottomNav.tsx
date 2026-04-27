@@ -105,7 +105,7 @@ export const BottomNav = () => {
   return (
     <>
       <nav
-        className="fixed bottom-0 inset-x-0 z-40 bg-surface/95 backdrop-blur border-t border-border-soft"
+        className="fixed bottom-0 inset-x-0 z-40 bg-surface/95 backdrop-blur border-t border-border-soft lg:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <ul
