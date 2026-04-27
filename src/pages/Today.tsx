@@ -932,7 +932,7 @@ const Today = () => {
               const improved = goodWhenLower ? d < 0 : d > 0;
               deltas.push({ label, delta: d, tone: improved ? "good" : "warn" });
             };
-            pushDelta("Mående", s.mood_before, s.mood_after, true);
+            pushDelta("Mående", s.mood_before, s.mood_after, false);
             pushDelta("Ångest", s.anxiety_before, s.anxiety_after, true);
             pushDelta("Energi", s.energy_before, s.energy_after, false);
             const visibleDeltas = deltas.slice(0, 2);
