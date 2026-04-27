@@ -194,6 +194,8 @@ const Analysis = () => {
       {fetching && checkins.length === 0 && (
         <div className="mt-6 h-32 rounded-3xl bg-surface-alt animate-pulse" aria-hidden />
       )}
+        </div>
+      </div>
     </AppShell>
   );
 };
