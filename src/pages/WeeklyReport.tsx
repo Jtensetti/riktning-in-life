@@ -519,7 +519,7 @@ const WeeklyReport = () => {
   }
 
   return (
-    <AppShell>
+    <AppShell wide>
       <button
         onClick={() => navigate("/")}
         className="flex items-center gap-1 text-sm font-bold text-text-secondary mb-4"
@@ -542,8 +542,10 @@ const WeeklyReport = () => {
         />
       )}
 
-      {/* AI-veckosammanfattning visas också här som mjuk preamble — göms tyst utan AI. */}
-      <WeeklyAIInsight minDays={3} />
+      <div className="lg:grid lg:grid-cols-[1.5fr_1fr] lg:gap-10">
+        <div className="space-y-0">
+          {/* AI-veckosammanfattning visas också här som mjuk preamble — göms tyst utan AI. */}
+          <WeeklyAIInsight minDays={3} />
 
       {summary && (
         <div className="card-cream p-4 mb-5 space-y-1">
@@ -564,6 +566,9 @@ const WeeklyReport = () => {
         </div>
       )}
 
+        </div>
+
+        <div className="space-y-0">
       <div className="card-cream p-4 mb-5">
         <label className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-2 block">
           Frågor du vill ställa till läkaren
@@ -638,6 +643,8 @@ const WeeklyReport = () => {
       >
         <FileDown size={16} className="mr-1" /> Skapa PDF
       </Button>
+        </div>
+      </div>
     </AppShell>
   );
 };

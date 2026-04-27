@@ -83,7 +83,7 @@ const Analysis = () => {
   const sparse = loggedDays < 4;
 
   return (
-    <AppShell>
+    <AppShell wide>
       <ScreenHeader
         screen="explore"
         title="Analys"
@@ -122,24 +122,27 @@ const Analysis = () => {
         )}
       </InsightCard>
 
-      <section className="mb-8">
-        <h2 className="text-h2 mb-4">Vad förändras</h2>
-        {sparse && (
-          <p className="text-body text-text-secondary mb-4">
-            Logga några dagar till så kan vi börja jämföra vecka mot vecka.
-          </p>
-        )}
-        <div className="space-y-4">
-          {trends.map((t, i) => (
-            <MetricTrendCard
-              key={t.meta.metric}
-              trend={t}
-              index={i}
-              hideDelta={sparse}
-            />
-          ))}
-        </div>
-      </section>
+      <div className="lg:grid lg:grid-cols-[1.5fr_1fr] lg:gap-10">
+        <section className="mb-8 lg:mb-0">
+          <h2 className="text-h2 mb-4">Vad förändras</h2>
+          {sparse && (
+            <p className="text-body text-text-secondary mb-4">
+              Logga några dagar till så kan vi börja jämföra vecka mot vecka.
+            </p>
+          )}
+          <div className="space-y-4">
+            {trends.map((t, i) => (
+              <MetricTrendCard
+                key={t.meta.metric}
+                trend={t}
+                index={i}
+                hideDelta={sparse}
+              />
+            ))}
+          </div>
+        </section>
+
+        <div className="space-y-6 lg:space-y-6">
 
       {(lifts.lifters.length > 0 || lifts.drainers.length > 0) && (
         <section className="mb-8">
@@ -191,6 +194,8 @@ const Analysis = () => {
       {fetching && checkins.length === 0 && (
         <div className="mt-6 h-32 rounded-3xl bg-surface-alt animate-pulse" aria-hidden />
       )}
+        </div>
+      </div>
     </AppShell>
   );
 };
