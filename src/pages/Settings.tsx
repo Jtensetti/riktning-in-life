@@ -69,18 +69,56 @@ const Settings = () => {
     if (!user || confirmText !== "RADERA") return;
     setBusy(true);
     try {
-      // Delete in order that respects FKs (logs/sessions/journal first)
-      await supabase.from("medication_logs").delete().eq("user_id", user.id);
-      await supabase.from("medications").delete().eq("user_id", user.id);
-      await supabase.from("exercise_sessions").delete().eq("user_id", user.id);
-      await supabase.from("journal_entries").delete().eq("user_id", user.id);
-      await supabase.from("weekly_forms").delete().eq("user_id", user.id);
-      await supabase.from("daily_checkins").delete().eq("user_id", user.id);
+      // Alla tabeller där användaren äger rader. Kör parallellt — ingen FK
+      // mellan dem kräver särskild ordning (allt är peer-data per user_id).
+      const tables = [
+        "medication_logs",
+        "medications",
+        "exercise_sessions",
+        "journal_entries",
+        "weekly_forms",
+        "daily_checkins",
+        "activity_logs",
+        "activity_favorites",
+        "crisis_plans",
+        "weekly_insights",
+        "user_settings",
+      ] as const;
+
+      const results = await Promise.all(
+        tables.map(async (t) => {
+          const { error } = await supabase.from(t).delete().eq("user_id", user.id);
+          return { table: t, error };
+        }),
+      );
+
+      const failed = results.filter((r) => r.error);
+      if (failed.length > 0) {
+        const names = failed.map((f) => f.table).join(", ");
+        console.error("deleteAll failed for:", failed);
+        toast.error(`Kunde inte radera: ${names}`);
+        setBusy(false);
+        return;
+      }
+
+      // Rensa lokal cache INNAN signOut så att inget hinner re-hydrera.
+      try {
+        const keys: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && k.startsWith("riktning")) keys.push(k);
+        }
+        keys.forEach((k) => localStorage.removeItem(k));
+      } catch {
+        /* quota / privacy mode — ignorera */
+      }
+
       resetOnboarded();
       await supabase.auth.signOut();
       toast.success("All data raderad");
       navigate("/auth", { replace: true });
-    } catch {
+    } catch (e) {
+      console.error("deleteAll exception:", e);
       toast.error("Något gick fel");
       setBusy(false);
     }
