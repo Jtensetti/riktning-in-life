@@ -10,6 +10,7 @@
 
 import type { Checkin } from "./metrics";
 import type { PersonalThresholds } from "./baseline";
+import { improvementSign } from "./valence";
 
 export type PatternKind =
   | "sleep_next_day_anxiety"
@@ -25,8 +26,12 @@ export type Pattern = {
   headline: string;
   /** Förklaring med konkreta siffror från användarens egna data. */
   evidence: string;
-  /** "Du brukar må X bättre/sämre" — riktning. positive = lyfter, negative = drar ner. */
+  /** "Du brukar må X bättre/sämre" — riktning. positive = lyfter, negative = drar ner.
+   *  Härleds nu via valens-modulen så grön/röd alltid betyder samma sak. */
   direction: "positive" | "negative";
+  /** Vilket mått (i valens-tabellen) mönstret refererar till. UI använder
+   *  detta för att färga delta-pillen konsekvent via deltaChipClass. */
+  metric: string;
   /** Antal datapunkter mönstret bygger på (jämförelsegrupp). */
   sample: number;
   /** Hur stark effekten är — högre värde = vi visar den högre upp. */
