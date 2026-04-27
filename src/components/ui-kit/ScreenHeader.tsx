@@ -39,7 +39,7 @@ export const ScreenHeader = ({
   const iconColor = light ? "hsl(var(--foreground))" : "hsl(var(--surface))";
   return (
     <header
-      className={`-mx-6 -mt-8 mb-6 relative overflow-hidden ${fg}`}
+      className={`-mx-6 -mt-5 mb-8 relative overflow-hidden ${fg}`}
       style={{
         background: `hsl(var(${id.toneVar}))`,
         borderBottomLeftRadius: "var(--header-curve)",
@@ -50,14 +50,14 @@ export const ScreenHeader = ({
         className="relative px-6"
         style={{
           minHeight: "var(--header-h-min)",
-          paddingTop: "max(28px, env(safe-area-inset-top))",
-          paddingBottom: "20px",
+          paddingTop: "max(16px, env(safe-area-inset-top))",
+          paddingBottom: "16px",
         }}
       >
-        {topLeft && <div className="absolute top-4 left-4 z-10">{topLeft}</div>}
-        {topRight && <div className="absolute top-4 right-4 z-10">{topRight}</div>}
-        <div className="flex flex-col items-center text-center gap-3">
-          <AbstractIcon name={id.icon} size={56} color={iconColor} inline />
+        {topLeft && <div className="absolute top-3 left-4 z-10">{topLeft}</div>}
+        {topRight && <div className="absolute top-3 right-4 z-10">{topRight}</div>}
+        <div className="flex flex-col items-center text-center gap-2">
+          <AbstractIcon name={id.icon} size={44} color={iconColor} inline />
           <div>
             <h1 className="text-h2">{title ?? id.title}</h1>
             <p className={`text-body mt-0.5 opacity-85 ${light ? "" : ""}`}>

@@ -97,7 +97,7 @@ const Explore = () => {
           <h3 className="text-xl">Rutiner</h3>
           <button onClick={() => navigate("/rutiner")} className="text-xs font-extrabold text-orange-deep press-soft">Se alla</button>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-4">
           {sequences.slice(0, 4).map((s, i) => (
             <button
               key={s.slug}
@@ -125,7 +125,7 @@ const Explore = () => {
           <h3 className="text-xl">Lär dig</h3>
           <button onClick={() => navigate("/lar-dig")} className="text-xs font-extrabold text-orange-deep press-soft">Se alla</button>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-4">
           {articles.slice(0, 4).map((a, i) => (
             <button
               key={a.slug}

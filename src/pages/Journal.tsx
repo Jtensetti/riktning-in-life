@@ -250,7 +250,7 @@ const Journal = () => {
           <p className="text-sm text-text-secondary">Inga anteckningar än. Börja med Tre rader.</p>
         </div>
       ) : (
-        <ul className="space-y-3">
+        <ul className="space-y-4">
           {entries.map((e, i) => {
             const t = TEMPLATES[e.template_type as TemplateKey];
             const preview = e.free_text ?? Object.values(e.body_json ?? {}).filter(Boolean).join(" · ");

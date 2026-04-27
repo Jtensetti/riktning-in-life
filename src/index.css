@@ -38,9 +38,9 @@
     --card-radius-action: 28px;
     --card-radius-list: 28px;
     --card-radius-insight: 28px;
-    --header-h-min: 150px;
-    --header-h-max: 190px;
-    --header-curve: 36px;
+    --header-h-min: 118px;
+    --header-h-max: 150px;
+    --header-curve: 40px;
     --fab-size: 68px;
     --fab-shadow: 0 8px 24px hsl(19 100% 55% / 0.35);
 

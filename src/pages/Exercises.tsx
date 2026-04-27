@@ -110,7 +110,7 @@ const Exercises = () => {
         <>
           <h2 className="text-xl mb-3">Kategorier</h2>
           {/* Single-column horizontal cards — Headspace-inspired */}
-          <div className="space-y-3 mb-7">
+          <div className="space-y-4 mb-7">
             {categories.map(({ name, bg, text }, i) => (
               <button
                 key={name}
@@ -142,7 +142,7 @@ const Exercises = () => {
         )}
       </h2>
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {filtered.map((ex, i) => (
           <button
             key={ex.id}
