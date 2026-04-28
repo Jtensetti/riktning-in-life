@@ -1,102 +1,63 @@
-# Större sidebar + riktig desktop-disposition
+# Lägg till MADR-S, KEDS och BBQ-12 i /vård
 
-Mobilvyn är fryst. Allt nedan triggas på `lg:`-breakpoint eller högre.
+Tre nya skattningar adderas som självständiga formulär i samma flöde som PHQ-9 / GAD-7 / WHO-5. Allt återanvänder befintlig `FormRunner`, `weekly_forms`-tabellen och PDF-rapporten — inga schemaändringar behövs (`type` är redan fri text, `total_score` är numerisk, `answers_json` är jsonb).
 
-## 1. Sidebar — större, mer närvaro
+## Vad användaren får
 
-Desktop-sidebaren känns som en mobil-meny smetad mot kanten. Den ska se ut som en riktig desktop-navigation.
+I `/vård` får sektionen "Veckoskattningar" tre nya kort under PHQ-9 / GAD-7 / WHO-5:
 
-| Aspekt | Idag | Nytt |
-|---|---|---|
-| Bredd | 240px | **272px** (mer luft, fler tecken får plats utan trunkering) |
-| Ikonstorlek | 22px | **26px** |
-| Radhöjd | 44px (h-11) | **48px** (h-12) |
-| Textstorlek | 14px | **15px** |
-| Snabblogg-chips | 4 i rad, ikon 20px | 4 i rad, ikon **24px**, något större tile (rounded-2xl behålls) |
-| CTA "Skriv i journalen" | h-12, ikon 20px | **h-14**, ikon **24px**, text **15px** |
-| Sektionsetiketter | 10px uppercase | **11px** uppercase med 2px mer avstånd |
-| Padding | px-3 py-5 | **px-4 py-6** |
-| Active-indikator | 4px stripe vänster | Behålls — höjd 28px istället för 24px |
-| Topbar | 56px | **64px** (matchar sidebarens nya tonalitet, wordmark 20px) |
+- **MADR-S** — depression, senaste 3 dagarna, 9 frågor, 0–54 poäng
+- **KEDS** — utmattning, senaste 2 veckorna, 9 frågor, 0–54 poäng (vi tar bara med de 9 första; den 10:e "Anteckningar" hanteras inte som poängfråga)
+- **BBQ-12** — livskvalitet, 12 frågor i 6 par (nöjdhet × viktighet), 0–96 poäng
 
-`SideNav` får också en hover-bakgrund (`hover:bg-surface-alt/60`) på item-raderna så det känns klickbart från större avstånd.
+Varje kort visar samma layout som idag: ikonbricka i tonal färg + titel + "Senast: X / max · etikett".
 
-## 2. Desktop-disposition — sidor som idag är inklämda i 448px
+## Form-design
 
-Mobilen lämnas helt orörd. På `lg:` byggs varje sida om till en logisk grid.
+### MADR-S och KEDS — 0–6-skalan
+Skalan har officiellt sju steg där bara 0, 2, 4 och 6 har beskrivande text och 1, 3, 5 är "mellanlägen". Vi följer originalformatet och visar alla sju alternativ:
 
-### Sidor som blir `wide` + två kolumner via `WideLayout`
+- 0 / 2 / 4 / 6 visas med sin fulla beskrivning
+- 1 / 3 / 5 visas som "Mellanläge" (mindre, kursiv, sekundärfärg)
 
-**Today** — primär hemsida som idag är en lång enkel-kolumn på desktop. Bygg om till:
-- **Vänster (1.4fr)**: Header med dag/datum + dagens hero-banner + "Steg-av-dagen" + EveningPredictionCard + TomorrowForecastCard.
-- **Höger (1fr)**: WeeklyAIInsight + ForYouCarousel (här blir det ett vertikalt staplat kort-grid istället för horisontell carousel) + WeatherChip + senaste loggar.
+Detta kräver en liten utökning av `FormDef`: alternativen kan variera per fråga, så fältet `options` blir `options: Option[] | ((q: number) => Option[])` (eller så bygger vi MADR/KEDS-alternativen inline). Enklast: lägg till fältet `questionsWithOptions?: { text: string; help?: string; options: Option[] }[]` som har företräde över `questions` + `options` om det finns. `FormRunner` får ett tunt tillägg som plockar rätt set per steg samt renderar valfri "help"-text under frågetiteln (MADR/KEDS har en förklarande paragraf per fråga).
 
-**Health** — idag enkolumn med stack av kort:
-- **Vänster**: Översiktsmetrics (sömn, rörelse, mående) som **2x2 grid** av kort istället för stack.
-- **Höger**: Trender / mönster / insikter.
+### BBQ-12 — par av nöjdhet × viktighet
+Behåller samma 1-fråga-i-taget-flöde, en fråga per skärm, totalt 12. Skalan är gemensam ("Instämmer inte alls" 0 → "Instämmer fullständigt" 4). Total = summan, max 48. (Kan visas som 0–48 i kortet.)
 
-**Analysis** — analys-/insiktsida:
-- **Vänster (primary-heavy 1.7/1)**: Huvudchart större och bredare.
-- **Höger**: Filter, period-väljare, kontextkort.
+### Etiketter (`scoreLabel`)
+- **MADR-S**: 0–12 ingen/mycket lindrig · 13–19 lindrig · 20–34 måttlig · 35–54 svår
+- **KEDS**: 0–18 låg risk · 19+ tecken på utmattning (klinisk gräns 19)
+- **BBQ-12**: visa råpoäng + procent av max (t.ex. "32 / 48")
 
-**Explore** — utforska/innehåll:
-- Byt 1-kolumns-stack mot **3-kolumns kortgrid** (`lg:grid-cols-3 gap-6`) istället för WideLayout, eftersom det är en katalog.
+## Tekniska ändringar
 
-**Sequences / Exercises** — kataloger:
-- 1 kolumn → **3 kolumns kortgrid** på desktop, 2 kolumner på md.
+### `src/lib/forms.ts`
+- Utöka `FormType` till `"phq9" | "gad7" | "who5" | "madrs" | "keds" | "bbq12"`
+- Utöka `FormDef` med valfritt `questionsWithOptions` och valfritt `help` per fråga
+- Lägg till `MADRS`, `KEDS`, `BBQ12` enligt frågetexterna i requesten
+- Lägg till dem i `FORMS`-mappen
 
-**WeeklyReport** — rapport:
-- **Vänster (primary-heavy)**: Rapport-renderingen.
-- **Höger**: Periodval, exportknappar, sammanfattning.
+### `src/pages/Vard.tsx`
+- Lägg till de tre nya typerna i listan på rad 120 (`["phq9","gad7","who5","madrs","keds","bbq12"]`)
+- Mappa toner: madrs → `blue-calm`, keds → `orange-start`, bbq12 → `green-recovery` (eller liknande som matchar designsystemet)
+- `FormRunner`: rendera `def.questionsWithOptions[step].help` under titeln om den finns; använd `questionsWithOptions[step].options` om det finns, annars fall tillbaka på `def.options`
+- Kortets "Senast"-rad: använder redan `f.toFinal ? "/100" : "/" + f.maxRaw` — fungerar direkt för MADR/KEDS/BBQ utan `toFinal`
 
-**Settings / CrisisPlan / More / QuickLog / Checkin / LearnArticle / ExerciseDetail / SequenceDetail**:
-- Behåll den centrerade 448–520px läs-kolumnen — det är "calm stream"-sidor där en fokuserad enkolumn är medvetet vald (formulär, lång läsning, krisplan-checklista). **Höj dock max-bredden på desktop från 448 → 560px** för läsbarhet vid längre rader.
+### `src/lib/valence.ts`
+Lägg till valens för de nya typerna så ev. trendvisning blir korrekt:
+- `madrs: "lower-better"`
+- `keds: "lower-better"`
+- `bbq12: "higher-better"`
 
-### Sidor redan `wide` men utan grid
+### Rapport / PDF
+`weekly_forms` läses redan generiskt i Vard.tsx ReportView och WeeklyReport. Lägg till en rad för MADR-S, KEDS och BBQ-12 i `formStat`-utskriften (rad ~675 i Vard.tsx) så att de kommer med i text-/PDF-exporten. Vikterna i `burdenScore` (metrics.ts) lämnas oförändrade — MADR/KEDS/BBQ påverkar inte burden-formeln, de visas som egna kompletterande mått.
 
-**Journal**, **Learn**, **Week** är `wide` men lägger ut innehållet fritt. Lägg `WideLayout` på dem så vänster/höger får tydlig roll:
-- **Journal desktop**: vänster = editor + dagens entry, höger = mall-väljare + senaste journal-historik (idag ligger denna under editorn).
-- **Learn desktop**: 3-kolumns artikelgrid (likt Explore) istället för WideLayout.
-- **Week desktop**: vänster = hela vecko-charten större, höger = dagsdetaljer + insikter.
+### Inga schemaändringar
+`weekly_forms.type` är `text` utan check-constraint, `total_score` är `numeric`, `answers_json` är `jsonb`. Allt rymmer de nya formulären utan migration.
 
-## 3. Charts — desktop-uppgradering
+## Avgränsningar
 
-Mobilen är orörd. På `lg:` får charts mer höjd och tydligare läsbarhet.
-
-- **MetricLine / TrendLine / Sparkline / WeekDirectionChart**: höj höjden från ~140–160px → **220–260px** på desktop. Visa Y-axel-etiketter och fler X-axel-tickar (idag är de gömda för utrymmesskäl).
-- **ActivityBars / MetricBars / StackedRecovery**: bredare staplar, gap ökas, värdesetiketter på toppen av staplarna på desktop.
-- **MetricDonut**: större (180px → 240px diameter) och visa centrum-text större.
-- Lägg till **hover-tooltip** med exakta värden på desktop (recharts har det inbyggt — det är bara att aktivera).
-- Charts som idag är "ensam komponent" i en 448px-kolumn på Health/Analysis flyttas in i grids där de delar yta med insikter.
-
-## 4. Tekniska detaljer
-
-**Filer som ändras:**
-- `src/components/desktop/SideNav.tsx` — alla nya storlekar.
-- `src/components/desktop/DesktopTopbar.tsx` — höjd 64px.
-- `src/components/AppShell.tsx` — höj `top: 56` → `64` för SideNav offset, höj `max-w-md` → `lg:max-w-[560px]` för calm stream-sidor.
-- `src/components/desktop/WideLayout.tsx` — oförändrad, används av fler sidor.
-- `src/pages/Today.tsx`, `Health.tsx`, `Analysis.tsx`, `WeeklyReport.tsx`, `Journal.tsx`, `Week.tsx` — desktop-grid via `WideLayout` (lg-only).
-- `src/pages/Explore.tsx`, `Learn.tsx`, `Sequences.tsx`, `Exercises.tsx` — `lg:grid-cols-3` katalog-grid.
-- `src/components/charts/*` — höjdvariabler får desktop-overrides; tooltip aktiveras.
-
-**Mönster för all sidlogik (mobil orörd):**
-```tsx
-// Mobil = stack (oförändrad), desktop = grid
-<div className="space-y-5 lg:space-y-0">
-  <WideLayout left={<…>} right={<…>} />
-</div>
-```
-
-eller för kataloger:
-```tsx
-<div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">…</div>
-```
-
-**Inga DB-, RLS- eller routing-ändringar.**
-
-## Out of scope
-- Mobilvyn — orörd överallt.
-- Onboarding, Auth — fullskärms-flöden, inte i scope.
-- Nya features eller nytt innehåll — endast layout, storlekar och chart-polish.
-- Tablet-breakpoint (md) — om det behövs separat behandling tas det i en senare iteration.
+- KEDS' 10:e "Anteckningar"-fråga utelämnas (fritextfält, ingår inte i totalpoäng). Kan läggas till senare som valfritt note-fält efter formuläret om önskat.
+- Ingen ny startpunkt på Idag-sidan eller i påminnelser — dessa tre läggs in som veckoskattningar i /vård precis som de befintliga. Påminnelse-toggeln "Veckoformulär" täcker även dem.
+- Inga nya designkomponenter — vi återanvänder kortmallen och `FormRunner` exakt som den ser ut idag.
