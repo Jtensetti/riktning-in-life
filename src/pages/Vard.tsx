@@ -117,7 +117,7 @@ const Vard = () => {
               <h2 className="text-lg font-extrabold mb-1">Veckoskattningar</h2>
               <p className="text-xs text-text-secondary mb-3">Görs en gång i veckan — håller riktningen i sikte.</p>
               <div className="space-y-3">
-                {(["phq9", "gad7", "who5"] as FormType[]).map((t, i) => {
+                {(["phq9", "gad7", "who5", "madrs", "keds", "bbq12"] as FormType[]).map((t, i) => {
                   const f = FORMS[t];
                   const last = latest(t);
                   const final = last && f.toFinal ? f.toFinal(last.total_score) : last?.total_score;
@@ -125,7 +125,10 @@ const Vard = () => {
                   const tileTone =
                     t === "phq9" ? "yellow-journal"
                       : t === "gad7" ? "pink-move"
-                        : "green-recovery";
+                        : t === "who5" ? "green-recovery"
+                          : t === "madrs" ? "blue-calm"
+                            : t === "keds" ? "orange-start"
+                              : "green-recovery";
                   const tileBg = `hsl(var(--${tileTone}) / 0.14)`;
                   const iconColor = `hsl(var(--${tileTone}))`;
                   return (

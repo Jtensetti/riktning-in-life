@@ -49,6 +49,9 @@ export const METRIC_DIRECTION: Record<string, Direction> = {
   // --- Skattningar där högt råvärde = sämre mående ---
   phq9: "lower-better",
   gad7: "lower-better",
+  madrs: "lower-better",
+  keds: "lower-better",
+  bbq12: "higher-better",
 };
 
 export const directionOf = (metric: string): Direction =>
