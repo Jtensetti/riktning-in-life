@@ -216,12 +216,18 @@ const Vard = () => {
 const FormRunner = ({ type, onBack, onDone }: { type: FormType; onBack: () => void; onDone: () => void }) => {
   const { user } = useAuth();
   const def = FORMS[type];
-  const [answers, setAnswers] = useState<number[]>(Array(def.questions.length).fill(-1));
+  const totalQuestions = def.questionsWithOptions?.length ?? def.questions.length;
+  const [answers, setAnswers] = useState<number[]>(Array(totalQuestions).fill(-1));
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
 
+  const currentQuestion = def.questionsWithOptions?.[step];
+  const questionText = currentQuestion?.text ?? def.questions[step];
+  const helpText = currentQuestion?.help;
+  const stepOptions = currentQuestion?.options ?? def.options;
+
   const current = answers[step];
-  const isLast = step === def.questions.length - 1;
+  const isLast = step === totalQuestions - 1;
   const allAnswered = answers.every(a => a >= 0);
   const raw = answers.reduce((s, a) => s + Math.max(0, a), 0);
 
@@ -252,23 +258,38 @@ const FormRunner = ({ type, onBack, onDone }: { type: FormType; onBack: () => vo
 
       <div className="card-cream p-5 mb-5">
         <div className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-2">
-          Fråga {step + 1} av {def.questions.length}
+          Fråga {step + 1} av {totalQuestions}
         </div>
-        <p className="text-lg font-extrabold mb-4 leading-snug">{def.questions[step]}</p>
-        <div className="space-y-2">
-          {def.options.map(o => (
-            <button
-              key={o.value}
-              onClick={() => setAnswers(a => a.map((v, i) => i === step ? o.value : v))}
-              className={`w-full text-left rounded-2xl p-3.5 border-2 transition font-bold ${
-                current === o.value
-                  ? "border-blue-calm bg-blue-calm/10 text-foreground"
-                  : "border-border-soft bg-surface text-foreground hover:border-blue-calm/40"
-              }`}
-            >
-              {o.label}
-            </button>
-          ))}
+        <p className="text-lg font-extrabold mb-2 leading-snug">{questionText}</p>
+        {helpText && (
+          <p className="text-[13px] text-text-secondary leading-relaxed mb-4">{helpText}</p>
+        )}
+        <div className="space-y-2 mt-4">
+          {stepOptions.map((o, idx) => {
+            const selected = current === o.value;
+            const isMuted = o.muted;
+            return (
+              <button
+                key={`${o.value}-${idx}`}
+                onClick={() => setAnswers(a => a.map((v, i) => i === step ? o.value : v))}
+                className={`w-full text-left rounded-2xl border-2 transition font-bold ${
+                  isMuted ? "py-2 px-3.5 text-sm italic" : "p-3.5"
+                } ${
+                  selected
+                    ? "border-blue-calm bg-blue-calm/10 text-foreground"
+                    : isMuted
+                      ? "border-border-soft/60 bg-surface/60 text-text-secondary hover:border-blue-calm/40"
+                      : "border-border-soft bg-surface text-foreground hover:border-blue-calm/40"
+                }`}
+              >
+                {isMuted ? (
+                  <span className="opacity-80">{o.value} · {o.label}</span>
+                ) : (
+                  <span>{o.label}</span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -300,7 +321,7 @@ const FormRunner = ({ type, onBack, onDone }: { type: FormType; onBack: () => vo
         )}
       </div>
       <div className="h-1.5 bg-surface-alt rounded-full overflow-hidden">
-        <div className="h-full bg-blue-calm transition-all" style={{ width: `${((step + 1) / def.questions.length) * 100}%` }} />
+        <div className="h-full bg-blue-calm transition-all" style={{ width: `${((step + 1) / totalQuestions) * 100}%` }} />
       </div>
     </AppShell>
   );
