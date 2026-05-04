@@ -67,32 +67,47 @@ export const SideNav = () => {
     await insertActivityLog(user.id, a);
   };
 
+  /**
+   * Sidonav-rad. AbstractIcon-stickers har bakade färger så vi kan inte
+   * tinta själva ikonen — istället bär aktivt läge sin färg via:
+   *   1) ett bredare/högre vänsterstreck
+   *   2) en mjuk färgad bricka bakom ikonen (sektionsfärg @ 12%)
+   *   3) tydligare textfärg
+   * Tillsammans ger det ikonerna mer visuell vikt utan att skrika.
+   */
   const renderItem = (item: Item) => (
     <li key={item.to} className="relative">
       <NavLink
         to={item.to}
         end={item.to === "/"}
-        className="group flex items-center gap-3 px-3 h-12 rounded-2xl press-soft transition-colors hover:bg-surface-alt/60"
+        className="group flex items-center gap-3 pl-4 pr-3 h-12 rounded-2xl press-soft transition-colors hover:bg-surface-alt/60"
       >
         {({ isActive }) => (
           <>
             <span
-              className="absolute left-0 w-1 rounded-r-full transition-all"
+              className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full transition-opacity"
               style={{
-                height: isActive ? 28 : 0,
                 background: item.activeColor,
+                opacity: isActive ? 1 : 0,
               }}
               aria-hidden
             />
-            <AbstractIcon
-              name={item.icon}
-              size={26}
-              color={isActive ? item.activeColor : NAV_INACTIVE}
-              inline
-            />
             <span
-              className="text-[15px] font-extrabold transition-colors"
-              style={{ color: isActive ? item.activeColor : "hsl(var(--foreground))" }}
+              className="shrink-0 grid place-items-center rounded-xl transition-colors"
+              style={{
+                width: 32,
+                height: 32,
+                background: isActive ? `${item.activeColor.replace("hsl(", "hsla(").replace(")", ", 0.14)")}` : "transparent",
+              }}
+            >
+              <AbstractIcon name={item.icon} size={24} inline />
+            </span>
+            <span
+              className="text-[15px] transition-colors"
+              style={{
+                color: isActive ? item.activeColor : "hsl(var(--foreground))",
+                fontWeight: isActive ? 800 : 700,
+              }}
             >
               {item.label}
             </span>
@@ -112,7 +127,8 @@ export const SideNav = () => {
           <ul className="space-y-1 relative">
             {PRIMARY.map(renderItem)}
 
-            {/* Snabblogg-chips — sekundär snabblogg på desktop. */}
+            {/* Snabblogg-chips — sekundär snabblogg på desktop. Större ikoner
+                + hover-bg + tydlig title-tooltip så de inte försvinner. */}
             <li className="pt-5 pb-2">
               <div className="px-1 mb-2.5 text-[11px] font-extrabold uppercase tracking-[0.08em] text-text-secondary">
                 Snabblogg
@@ -124,9 +140,9 @@ export const SideNav = () => {
                     onClick={() => navigate(`/snabblogg?open=${c.key}`)}
                     title={c.label}
                     aria-label={c.label}
-                    className="aspect-square rounded-2xl bg-surface hover:bg-surface-alt grid place-items-center press-soft transition-colors"
+                    className="aspect-square rounded-2xl bg-surface-alt/50 hover:bg-surface-alt grid place-items-center press-soft transition-colors border border-transparent hover:border-border-soft"
                   >
-                    <AbstractIcon name={c.icon} size={24} color={c.color} inline />
+                    <AbstractIcon name={c.icon} size={30} inline />
                   </button>
                 ))}
               </div>

@@ -37,6 +37,10 @@ import { quickStartsFor } from "@/lib/quickStarts";
 import { BASELINE_MIN_DAYS } from "@/lib/baseline";
 import { useAppTick } from "@/hooks/useAppTick";
 import { useLiveData } from "@/hooks/useLiveData";
+import { useTodayActivities } from "@/hooks/useTodayActivities";
+import { DayMat } from "@/components/desktop/DayMat";
+import { DirectionMicroInsight } from "@/components/desktop/DirectionMicroInsight";
+import { MissingToday } from "@/components/desktop/MissingToday";
 
 type Checkin = {
   id: string;
@@ -449,6 +453,9 @@ const Today = () => {
 
   // Hooks MUST run before any early return — kalla allt här uppe.
   const { data: recent7 } = useRecentCheckins(7);
+  // Dagens aktiviteter — används av desktop-cockpitens DayMat. Egen hook så
+  // att Todays "count"-state (activitiesToday) kan ligga kvar oförändrat.
+  const { data: todayActivities } = useTodayActivities();
   useEffect(() => {
     if (trendData.length >= 14) {
       // trendData saknar vissa fält som baseline.ts förväntar sig — vi gör en
@@ -1030,25 +1037,72 @@ const Today = () => {
       </button>
 
       {/*
-       * Mobile: vertical stack of modules (unchanged).
-       * Desktop (≥lg): masonry-style two columns via CSS columns. Each
-       * module is rendered as a column-break-inside-avoid block so cards
-       * don't split across columns. This gives Today a real desktop
-       * disposition without coupling layout to specific module IDs.
+       * Mobile: vertical stack of modules (oförändrat).
+       * Desktop (≥lg): explicit cockpit-grid 1.4fr / 1fr.
+       *   Vänster: status, handling, riktning (befintliga moduler).
+       *   Höger: rekommendation + DayMat + mikroinsikt + saknas idag.
+       * Vi delar moduler i två set efter id så befintlig modul-ordning
+       * från decideTodayLayout() bevaras inom respektive kolumn.
        */}
-      <div className="lg:[column-count:2] lg:[column-gap:2.5rem]">
-        {decision.modules
-          .filter((id) => id !== "reportShortcut" && id !== "learn")
-          .map((id) => {
-            const node = MODULES[id]?.();
-            if (!node) return null;
-            return (
-              <div key={id} className="lg:break-inside-avoid lg:[break-inside:avoid]">
-                {node}
+      {(() => {
+        const RIGHT_IDS = new Set<ModuleId>(["primary", "forYou", "forecast", "eveningPrediction", "todayRoutine", "latestActivity"]);
+        const visible = decision.modules.filter((id) => id !== "reportShortcut" && id !== "learn");
+        const leftIds = visible.filter((id) => !RIGHT_IDS.has(id));
+        const rightIds = visible.filter((id) => RIGHT_IDS.has(id));
+        const renderModule = (id: ModuleId) => {
+          const node = MODULES[id]?.();
+          if (!node) return null;
+          return <div key={id} className="lg:break-inside-avoid">{node}</div>;
+        };
+
+        // Desktop-only beräkningar för mikro-insikten + missing.
+        const todayISOStr = todayISO();
+        const week = recent7.filter((r) => r.date !== todayISOStr);
+        const wAvg = (pick: (r: typeof week[number]) => number | null) => {
+          const xs = week.map(pick).filter((x): x is number => x != null);
+          return xs.length >= 3 ? xs.reduce((s, x) => s + x, 0) / xs.length : null;
+        };
+        const weekMood = wAvg((r) => r.mood_heaviness);
+        const weekAnxiety = wAvg((r) => r.anxiety);
+        const weekEnergy = wAvg((r) => r.energy);
+        const hasMovement = todayActivities.some((a) => a.semantic_kind === "rorelse");
+        const hasRecovery = todayActivities.some((a) => a.semantic_kind === "aterhamtning");
+
+        return (
+          <>
+            {/* Mobil: vertikal stack — exakt som tidigare */}
+            <div className="lg:hidden">
+              {visible.map(renderModule)}
+            </div>
+
+            {/* Desktop: cockpit */}
+            <div className="hidden lg:grid lg:grid-cols-[1.4fr_1fr] lg:gap-10">
+              <div className="min-w-0 space-y-0">
+                {leftIds.map(renderModule)}
               </div>
-            );
-          })}
-      </div>
+              <div className="min-w-0 space-y-5">
+                {rightIds.map(renderModule)}
+                <DayMat activities={todayActivities} onAdd={() => setPickerOpen(true)} />
+                <DirectionMicroInsight
+                  todayMood={checkin?.mood_heaviness ?? null}
+                  todayAnxiety={checkin?.anxiety ?? null}
+                  todayEnergy={checkin?.energy ?? null}
+                  weekMood={weekMood}
+                  weekAnxiety={weekAnxiety}
+                  weekEnergy={weekEnergy}
+                />
+                <MissingToday
+                  hasCheckin={!!checkin}
+                  hasMovement={hasMovement}
+                  hasRecovery={hasRecovery}
+                  hasJournal={false /* journal-status hämtas inte här — visas tills bevisat motsatsen */}
+                  hasSleepLogged={checkin?.sleep_hours != null}
+                />
+              </div>
+            </div>
+          </>
+        );
+      })()}
 
       <ActivityPicker open={pickerOpen} onOpenChange={setPickerOpen} onAdd={handleQuickAdd} />
     </AppShell>
