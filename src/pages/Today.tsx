@@ -453,6 +453,9 @@ const Today = () => {
 
   // Hooks MUST run before any early return — kalla allt här uppe.
   const { data: recent7 } = useRecentCheckins(7);
+  // Dagens aktiviteter — används av desktop-cockpitens DayMat. Egen hook så
+  // att Todays "count"-state (activitiesToday) kan ligga kvar oförändrat.
+  const { data: todayActivities } = useTodayActivities();
   useEffect(() => {
     if (trendData.length >= 14) {
       // trendData saknar vissa fält som baseline.ts förväntar sig — vi gör en
