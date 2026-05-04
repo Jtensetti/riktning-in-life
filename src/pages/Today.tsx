@@ -37,6 +37,10 @@ import { quickStartsFor } from "@/lib/quickStarts";
 import { BASELINE_MIN_DAYS } from "@/lib/baseline";
 import { useAppTick } from "@/hooks/useAppTick";
 import { useLiveData } from "@/hooks/useLiveData";
+import { useTodayActivities } from "@/hooks/useTodayActivities";
+import { DayMat } from "@/components/desktop/DayMat";
+import { DirectionMicroInsight } from "@/components/desktop/DirectionMicroInsight";
+import { MissingToday } from "@/components/desktop/MissingToday";
 
 type Checkin = {
   id: string;
