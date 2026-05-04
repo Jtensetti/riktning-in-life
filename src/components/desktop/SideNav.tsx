@@ -127,7 +127,8 @@ export const SideNav = () => {
           <ul className="space-y-1 relative">
             {PRIMARY.map(renderItem)}
 
-            {/* Snabblogg-chips — sekundär snabblogg på desktop. */}
+            {/* Snabblogg-chips — sekundär snabblogg på desktop. Större ikoner
+                + hover-bg + tydlig title-tooltip så de inte försvinner. */}
             <li className="pt-5 pb-2">
               <div className="px-1 mb-2.5 text-[11px] font-extrabold uppercase tracking-[0.08em] text-text-secondary">
                 Snabblogg
@@ -139,9 +140,9 @@ export const SideNav = () => {
                     onClick={() => navigate(`/snabblogg?open=${c.key}`)}
                     title={c.label}
                     aria-label={c.label}
-                    className="aspect-square rounded-2xl bg-surface hover:bg-surface-alt grid place-items-center press-soft transition-colors"
+                    className="aspect-square rounded-2xl bg-surface-alt/50 hover:bg-surface-alt grid place-items-center press-soft transition-colors border border-transparent hover:border-border-soft"
                   >
-                    <AbstractIcon name={c.icon} size={24} color={c.color} inline />
+                    <AbstractIcon name={c.icon} size={30} inline />
                   </button>
                 ))}
               </div>
