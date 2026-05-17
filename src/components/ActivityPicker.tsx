@@ -134,6 +134,8 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
       setWithWho(null);
       setSleepQuality(null);
       setLocation(null);
+      setMulti(false);
+      setPicked(new Set());
     }
   }, [open]);
 
