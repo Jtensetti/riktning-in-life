@@ -399,6 +399,8 @@ export type DetectPatternsInput = {
   sessions: SessionLite[];
   medLogs: MedLogLite[];
   thresholds: PersonalThresholds;
+  /** Optional: dagligt väder från `daily_weather` (backfillat via Open-Meteo). */
+  dailyWeather?: DailyWeatherLite[];
 };
 
 /**
