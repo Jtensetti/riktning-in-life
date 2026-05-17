@@ -859,6 +859,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_clinical_report: {
+        Args: { p_end: string; p_start: string }
+        Returns: Json
+      }
       get_weekly_report: { Args: { target_date?: string }; Returns: Json }
     }
     Enums: {
