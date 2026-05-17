@@ -18,7 +18,10 @@ export type PatternKind =
   | "stillness_heaviness"
   | "med_miss_next_day"
   | "lifter_delayed"
-  | "drainer_next_day";
+  | "drainer_next_day"
+  | "weather_sensitivity"
+  | "trend_shift_up"
+  | "trend_shift_down";
 
 export type Pattern = {
   kind: PatternKind;
