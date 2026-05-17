@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { BottomNav } from "./BottomNav";
 import { SideNav } from "./desktop/SideNav";
 import { DesktopTopbar } from "./desktop/DesktopTopbar";
+import { CommandPalette } from "./desktop/CommandPalette";
 
 interface AppShellProps {
   children: ReactNode;
@@ -59,6 +60,7 @@ export const AppShell = ({ children, density = "dashboard", wide }: AppShellProp
         </main>
       </div>
       <BottomNav />
+      <CommandPalette />
     </div>
   );
 };
