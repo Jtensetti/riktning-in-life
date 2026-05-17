@@ -539,6 +539,28 @@ const Today = () => {
     return () => window.removeEventListener("riktning:settings-hydrated", handler);
   }, [user]);
 
+  // Personlig effekt — central beräkning i lib/personalEffect.ts.
+  // OBS: alla hooks måste köras före tidiga returns (React error #310).
+  const personalEffect = useMemo(
+    () => buildPersonalEffect(recent as unknown as Parameters<typeof buildPersonalEffect>[0], []),
+    [recent],
+  );
+  const effectHistory = useMemo(
+    () =>
+      pickEffectHistoryFor(personalEffect, {
+        anxiety: checkin?.anxiety ?? null,
+        energy: checkin?.energy ?? null,
+        mood_heaviness: checkin?.mood_heaviness ?? null,
+      }),
+    [personalEffect, checkin?.anxiety, checkin?.energy, checkin?.mood_heaviness],
+  );
+
+  // Progression — streak + baseline-skift + top-lifter. Kräver bredare dataset.
+  const progressionFacts = useMemo(
+    () => computeProgression(progressionRows, personalEffect),
+    [progressionRows, personalEffect],
+  );
+
   if (loading || fetching) {
     return (
       <AppShell>
@@ -560,27 +582,6 @@ const Today = () => {
       created_at: s.created_at,
       exercise_id: s.exercise_id ?? undefined,
     }));
-
-  // Personlig effekt — central beräkning i lib/personalEffect.ts.
-  const personalEffect = useMemo(
-    () => buildPersonalEffect(recent as unknown as Parameters<typeof buildPersonalEffect>[0], []),
-    [recent],
-  );
-  const effectHistory = useMemo(
-    () =>
-      pickEffectHistoryFor(personalEffect, {
-        anxiety: checkin?.anxiety ?? null,
-        energy: checkin?.energy ?? null,
-        mood_heaviness: checkin?.mood_heaviness ?? null,
-      }),
-    [personalEffect, checkin?.anxiety, checkin?.energy, checkin?.mood_heaviness],
-  );
-
-  // Progression — streak + baseline-skift + top-lifter. Kräver bredare dataset.
-  const progressionFacts = useMemo(
-    () => computeProgression(progressionRows, personalEffect),
-    [progressionRows, personalEffect],
-  );
 
 
   const moodTrend = computeTrend(trendData, c => c.mood_heaviness, true);
