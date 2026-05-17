@@ -137,7 +137,38 @@ const Checkin = () => {
       });
   }, [user]);
 
-  const addActivity = async (a: ActivityDraft) => {
+  // Adaptiv check-in — leta upp stabila fält från senaste 7 dagarna (exkl. idag).
+  useEffect(() => {
+    if (!user) return;
+    const since = new Date(Date.now() - 8 * 86_400_000).toISOString().split("T")[0];
+    supabase
+      .from("daily_checkins")
+      .select("date,mood_heaviness,anxiety,guilt_selfcriticism,hopelessness,energy,getting_started,function_score,sleep_hours,sleep_quality")
+      .eq("user_id", user.id)
+      .gte("date", since)
+      .neq("date", todayISO())
+      .order("date", { ascending: false })
+      .then(({ data }) => {
+        if (!data) return;
+        const rows = data.map((r: any) => ({
+          ...r,
+          sleep_hours: r.sleep_hours == null ? null : Number(r.sleep_hours),
+        }));
+        setStableSuggestions(detectStableFields(rows as any));
+      });
+  }, [user]);
+
+  const applyStableSuggestions = () => {
+    if (stableSuggestions.length === 0) return;
+    setForm((f) => {
+      const next = { ...f } as Form;
+      for (const s of stableSuggestions) {
+        (next as any)[s.field] = s.suggested;
+      }
+      return next;
+    });
+    setAppliedStable(true);
+  };
     setActivities((prev) => [...prev, a]);
     if (!user) return;
     await supabase.from("activity_logs").insert({
