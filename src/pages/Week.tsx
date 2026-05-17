@@ -20,6 +20,7 @@ import { buildDayHighlights, buildLiftSummary } from "@/lib/dayInsights";
 import { DayHighlightCards } from "@/components/DayHighlightCards";
 import { detectPatterns } from "@/lib/patterns";
 import { PatternsSection } from "@/components/PatternsSection";
+import { loadDailyWeather, type DailyWeatherRow } from "@/lib/dailyWeather";
 import { WeeklyAIInsight } from "@/components/WeeklyAIInsight";
 import { ChartCard } from "@/components/charts/ChartCard";
 // Bara WeekDirectionChart syns ovan kollapsen — resten lazy-laddas när
@@ -150,6 +151,7 @@ const Week = () => {
   const [activitiesAll, setActivitiesAll] = useState<{ activity_slug: string; label: string; icon: string; color: string; mood_delta: number | null; date: string }[]>([]);
   const [sessionsAll, setSessionsAll] = useState<{ exercises: { title: string; category: string; color: string } | null; mood_before: number | null; mood_after: number | null; anxiety_before: number | null; anxiety_after: number | null; created_at: string }[]>([]);
   const [medLogsAll, setMedLogsAll] = useState<{ date: string; taken_status: string }[]>([]);
+  const [dailyWeather, setDailyWeather] = useState<DailyWeatherRow[]>([]);
   type HistoryFilter = "all" | "checkins" | "exercises" | SemanticKind;
   const [historyFilter, setHistoryFilter] = useState<HistoryFilter>("all");
   // Toggle persistas i localStorage så användaren slipper öppna detaljerna
@@ -224,6 +226,8 @@ const Week = () => {
       setActivitiesAll((actsAllRes.data ?? []) as any[]);
       setSessionsAll((sessAllRes.data ?? []) as any[]);
       setMedLogsAll((medLogsRes.data ?? []) as any[]);
+      // Dagligt väder från Open-Meteo-backfillen (tomt om backfill inte hunnit).
+      loadDailyWeather(user.id, 30).then(setDailyWeather);
 
       // Spår D: uppdatera personlig baslinje när vi har ≥14 dagar.
       refreshBaseline((checkinsRes.data ?? []) as Checkin[]);
@@ -313,8 +317,9 @@ const Week = () => {
       sessions: sessionsForPatterns,
       medLogs: medLogsAll,
       thresholds,
+      dailyWeather,
     });
-  }, [checkins, activitiesAll, sessionsAll, medLogsAll, thresholds]);
+  }, [checkins, activitiesAll, sessionsAll, medLogsAll, thresholds, dailyWeather]);
 
   /** Per-dag Riktning (0–100, högre = bättre) för senaste 7 dagar.
    *  Riktning = 100 − burden för dagens checkin. Saknas dagen → null. */

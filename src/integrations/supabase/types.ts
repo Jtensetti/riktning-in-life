@@ -344,6 +344,57 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_weather: {
+        Row: {
+          created_at: string
+          date: string
+          daylight_minutes: number | null
+          id: string
+          precip_mm: number | null
+          pressure_hpa_mean: number | null
+          source: string
+          temp_avg_c: number | null
+          temp_max_c: number | null
+          temp_min_c: number | null
+          updated_at: string
+          user_id: string
+          uv_index_max: number | null
+          weather_code: number | null
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          daylight_minutes?: number | null
+          id?: string
+          precip_mm?: number | null
+          pressure_hpa_mean?: number | null
+          source?: string
+          temp_avg_c?: number | null
+          temp_max_c?: number | null
+          temp_min_c?: number | null
+          updated_at?: string
+          user_id: string
+          uv_index_max?: number | null
+          weather_code?: number | null
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          daylight_minutes?: number | null
+          id?: string
+          precip_mm?: number | null
+          pressure_hpa_mean?: number | null
+          source?: string
+          temp_avg_c?: number | null
+          temp_max_c?: number | null
+          temp_min_c?: number | null
+          updated_at?: string
+          user_id?: string
+          uv_index_max?: number | null
+          weather_code?: number | null
+        }
+        Relationships: []
+      }
       exercise_sequences: {
         Row: {
           color: string

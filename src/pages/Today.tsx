@@ -45,6 +45,7 @@ import { MissingToday } from "@/components/desktop/MissingToday";
 import { detectRisks, type RiskSignal } from "@/lib/riskSignals";
 import { RiskSignalsCard } from "@/components/RiskSignalsCard";
 import type { Checkin as MetricsCheckin } from "@/lib/metrics";
+import { backfillDailyWeather } from "@/lib/dailyWeather";
 
 type Checkin = {
   id: string;
@@ -408,6 +409,14 @@ const Today = () => {
       setRiskSignals(detectRisks({ checkins: checks, medLogs: logs }));
     })();
   }, [user, streakReloadKey]);
+
+  // Backfill av Open-Meteo arkivdata in i `daily_weather` — högst en gång per
+  // dygn per enhet (stämpel i lib/dailyWeather.ts). Vi behöver bara lat/lon,
+  // som vi får från `useWeather`. Best-effort — UI:t blockeras aldrig.
+  useEffect(() => {
+    if (!user || !weather) return;
+    backfillDailyWeather(user.id, weather.lat, weather.lon, 30).catch(() => { /* tyst */ });
+  }, [user, weather?.lat, weather?.lon]);
 
   const handleQuickAdd = async (a: ActivityDraft) => {
     if (!user) return;
