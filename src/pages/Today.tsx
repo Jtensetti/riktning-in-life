@@ -413,7 +413,21 @@ const Today = () => {
     })();
   }, [user, streakReloadKey]);
 
-  // Backfill av Open-Meteo arkivdata in i `daily_weather` — högst en gång per
+  // Bredare fönster för progression — 60 dagar räcker för "första 14 vs senaste 14".
+  useEffect(() => {
+    if (!user) return;
+    const since60 = new Date(Date.now() - 60 * 86_400_000).toISOString().split("T")[0];
+    (async () => {
+      const { data } = await supabase
+        .from("daily_checkins")
+        .select("date,mood_heaviness,anxiety,energy,function_score")
+        .eq("user_id", user.id)
+        .gte("date", since60)
+        .order("date");
+      setProgressionRows((data ?? []) as Array<{ date: string; mood_heaviness: number | null; anxiety: number | null; energy: number | null; function_score: number | null }>);
+    })();
+  }, [user, streakReloadKey]);
+
   // dygn per enhet (stämpel i lib/dailyWeather.ts). Vi behöver bara lat/lon,
   // som vi får från `useWeather`. Best-effort — UI:t blockeras aldrig.
   useEffect(() => {
