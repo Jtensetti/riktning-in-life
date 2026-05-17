@@ -58,6 +58,17 @@ const SOS = [
   { name: "Jourhavande medmänniska", phone: "08-702 16 80", role: "Kvällar och nätter" },
 ];
 
+type LiveStatus = {
+  /** Antal dagar sedan senaste check-in (null = aldrig). */
+  daysSinceCheckin: number | null;
+  /** Aktuell tyngd 0–10 från dagens checkin, om gjord. */
+  moodHeaviness: number | null;
+  /** Antal aktivitetsloggar de senaste 24h. */
+  recentActivities: number;
+  /** safety_status från senaste checkinen. */
+  safety: string | null;
+};
+
 const CrisisPlan = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -66,6 +77,7 @@ const CrisisPlan = () => {
   const [mode, setMode] = useState<"read" | "edit">("read");
   const [saving, setSaving] = useState(false);
   const [fetched, setFetched] = useState(false);
+  const [live, setLive] = useState<LiveStatus | null>(null);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
@@ -98,6 +110,42 @@ const CrisisPlan = () => {
         setFetched(true);
       });
   }, [user]);
+
+  // Live-status till desktop-kontextpanelen: hämtas separat så krisplan-fetch
+  // stannar snabb. Allt är read-only och under RLS — användarens egna rader.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const since24h = new Date(Date.now() - 86_400_000).toISOString();
+      const [checkinRes, actsRes] = await Promise.all([
+        supabase
+          .from("daily_checkins")
+          .select("date,mood_heaviness,safety_status")
+          .eq("user_id", user.id)
+          .order("date", { ascending: false })
+          .limit(1),
+        supabase
+          .from("activity_logs")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .gte("created_at", since24h),
+      ]);
+      if (cancelled) return;
+      const last = checkinRes.data?.[0];
+      const days = last
+        ? Math.floor((Date.now() - new Date(last.date).getTime()) / 86_400_000)
+        : null;
+      setLive({
+        daysSinceCheckin: days,
+        moodHeaviness: last?.mood_heaviness ?? null,
+        recentActivities: actsRes.count ?? 0,
+        safety: last?.safety_status ?? null,
+      });
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
 
   const save = async () => {
     if (!user) return;
