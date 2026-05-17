@@ -566,6 +566,9 @@ const Week = () => {
         <ChevronRight size={20} className="text-text-secondary shrink-0" />
       </button>
 
+      {/* Fas F: Veckans playbook — riktning + konkreta steg för nästa 7 dagar. */}
+      <div className="lg:col-start-1 mb-6"><WeeklyPlaybookCard playbook={playbook} /></div>
+
       {/* AI-veckosammanfattning — varm sammanfattning baserad på riktig data. Göms tyst om AI inte svarar. */}
       <div className="lg:col-start-1"><WeeklyAIInsight /></div>
 
