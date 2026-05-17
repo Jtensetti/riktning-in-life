@@ -148,16 +148,32 @@ const Vard = () => {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-[15px] font-extrabold text-foreground">{f.title}</div>
-                        <div className="text-xs text-text-secondary">
-                          {last
-                            ? `Senast: ${final}${f.toFinal ? "/100" : `/${f.maxRaw}`} · ${f.scoreLabel(last.total_score)}`
-                            : "Aldrig genomförd"}
+                        <div className="text-xs text-text-secondary flex items-center gap-1.5 flex-wrap">
+                          {last ? (
+                            <>
+                              <span>Senast: {final}{f.toFinal ? "/100" : `/${f.maxRaw}`}</span>
+                              {(() => {
+                                const lbl = f.scoreLabel(last.total_score);
+                                const tone = severityToneFor(lbl);
+                                const badge = severityBadgeClasses(tone);
+                                return (
+                                  <span className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-extrabold ${badge.bg} ${badge.text}`}>
+                                    <span className={`w-1 h-1 rounded-full ${badge.dot}`} aria-hidden />
+                                    {lbl}
+                                  </span>
+                                );
+                              })()}
+                            </>
+                          ) : (
+                            "Aldrig genomförd"
+                          )}
                         </div>
                       </div>
                       <ChevronRight size={18} className="text-text-secondary" />
                     </button>
                   );
                 })}
+
               </div>
             </section>
           </>
