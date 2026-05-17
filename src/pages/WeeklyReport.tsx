@@ -704,9 +704,10 @@ const WeeklyReport = () => {
       </button>
 
       <header className="mb-5">
-        <h1 className="text-[28px] leading-[34px] mb-1">Veckorapport till läkaren</h1>
+        <h1 className="text-[28px] leading-[34px] mb-1">Vårdrapport till läkaren</h1>
         <p className="text-sm text-text-secondary">
-          Sammanställer senaste 7 dagar: sömn, rörelse, journal, medicin — plus tomma anteckningsfält för vården.
+          Välj tidsspann, låt en kort sammanfattning skrivas åt dig och dela rapporten — i mailen
+          eller som PDF. Du bestämmer alltid själv vad som skickas.
         </p>
       </header>
 
