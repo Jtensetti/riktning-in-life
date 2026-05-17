@@ -11,6 +11,7 @@ import { useWeather, weatherLabel, type WeatherKind } from "@/lib/weather";
 import { AbstractIcon, weatherIcon, weatherIconColor, weatherIconAccent, type IconName } from "@/components/AbstractIcon";
 import { ActivityPicker, type ActivityDraft } from "@/components/ActivityPicker";
 import { refreshBaseline, loadBaseline, rankVariance, type VarianceField } from "@/lib/baseline";
+import { detectStableFields, labelFor as stableLabel, type StableField, type StableSuggestion } from "@/lib/adaptiveCheckin";
 
 const colorBg = (color: string): string => {
   switch (color) {
