@@ -266,7 +266,7 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="rounded-t-[28px] max-h-[88vh] bg-background border-border-soft">
+      <DrawerContent className="rounded-t-[28px] max-h-[88vh] bg-background border-border-soft lg:max-w-[960px] lg:mx-auto">
         <DrawerHeader className="text-left px-6 pb-2">
           <DrawerTitle className="text-[22px] leading-tight font-extrabold">
             {selected ? "Hur kändes det?" : "Vad gjorde du?"}
