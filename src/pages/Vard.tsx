@@ -6,6 +6,9 @@ import { AppShell } from "@/components/AppShell";
 import { WideLayout } from "@/components/desktop/WideLayout";
 import { AssessmentStatusList } from "@/components/desktop/AssessmentStatusList";
 import { severityToneFor, severityBadgeClasses } from "@/lib/severity";
+import { detectRisks, type RiskSignal } from "@/lib/riskSignals";
+import { RiskSignalsCard } from "@/components/RiskSignalsCard";
+import type { Checkin as MetricsCheckin } from "@/lib/metrics";
 import { Illustration } from "@/components/Illustrations";
 import { AbstractIcon } from "@/components/AbstractIcon";
 import { ScreenHeader } from "@/components/ui-kit/ScreenHeader";
@@ -52,6 +55,7 @@ const Vard = () => {
   const [meds, setMeds] = useState<Med[]>([]);
   const [forms, setForms] = useState<WeeklyForm[]>([]);
   const [selectedMed, setSelectedMed] = useState<Med | null>(null);
+  const [riskSignals, setRiskSignals] = useState<RiskSignal[]>([]);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
@@ -68,6 +72,21 @@ const Vard = () => {
   };
 
   useEffect(() => { load(); }, [user]);
+
+  // Risksignaler — körs när vården-vyn öppnas. Vi visar bara om något finns.
+  useEffect(() => {
+    if (!user) return;
+    const since14 = new Date(Date.now() - 14 * 86_400_000).toISOString().split("T")[0];
+    (async () => {
+      const [ci, ml] = await Promise.all([
+        supabase.from("daily_checkins").select("*").eq("user_id", user.id).gte("date", since14).order("date"),
+        supabase.from("medication_logs").select("date,taken_status,severity,side_effects_json").eq("user_id", user.id).gte("date", since14).order("date"),
+      ]);
+      const checks = (ci.data ?? []) as unknown as MetricsCheckin[];
+      const logs = (ml.data ?? []) as Array<{ date: string; taken_status: string; severity: number | null; side_effects_json: unknown }>;
+      setRiskSignals(detectRisks({ checkins: checks, medLogs: logs }));
+    })();
+  }, [user]);
 
   if (loading) return <AppShell><div className="h-40 bg-surface-alt rounded-3xl animate-pulse" /></AppShell>;
 
@@ -97,6 +116,7 @@ const Vard = () => {
       <WideLayout
         left={
           <>
+            <RiskSignalsCard signals={riskSignals} />
             <section className="mb-7">
               <button
                 onClick={() => navigate("/krisplan")}

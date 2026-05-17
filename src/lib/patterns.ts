@@ -18,7 +18,10 @@ export type PatternKind =
   | "stillness_heaviness"
   | "med_miss_next_day"
   | "lifter_delayed"
-  | "drainer_next_day";
+  | "drainer_next_day"
+  | "weather_sensitivity"
+  | "trend_shift_up"
+  | "trend_shift_down";
 
 export type Pattern = {
   kind: PatternKind;
@@ -292,7 +295,81 @@ const detectDelayedLift = (
 };
 
 // ─────────────────────────────────────────────────────────────
-// Publik API
+// 6. Väderkänslighet — burden på regn/kallt vs sol/mildt
+// ─────────────────────────────────────────────────────────────
+const burdenOfRow = (c: Checkin): number | null => {
+  if (c.mood_heaviness == null && c.anxiety == null) return null;
+  const parts = [c.mood_heaviness, c.anxiety].filter((x): x is number => x != null);
+  return avg(parts);
+};
+
+const detectWeatherSensitivity = (rows: Checkin[]): Pattern | null => {
+  const heavyWeather: number[] = [];
+  const lightWeather: number[] = [];
+  for (const c of rows) {
+    const b = burdenOfRow(c);
+    if (b == null) continue;
+    const w = c as unknown as { weather_kind?: string | null; weather_temp_c?: number | string | null };
+    const kind = (w.weather_kind ?? "").toLowerCase();
+    const temp = w.weather_temp_c == null ? null : Number(w.weather_temp_c);
+    const isHeavy =
+      kind.includes("rain") || kind.includes("snow") || kind.includes("storm") ||
+      kind.includes("regn") || kind.includes("mulet") || kind.includes("cloud") ||
+      (temp != null && temp <= 2);
+    const isLight =
+      kind.includes("sun") || kind.includes("clear") || kind.includes("sol") ||
+      (temp != null && temp >= 12);
+    if (isHeavy) heavyWeather.push(b);
+    else if (isLight) lightWeather.push(b);
+  }
+  if (heavyWeather.length < MIN_SAMPLE || lightWeather.length < MIN_SAMPLE) return null;
+  const diff = avg(heavyWeather) - avg(lightWeather);
+  if (Math.abs(diff) < 1) return null;
+  return {
+    kind: "weather_sensitivity",
+    headline:
+      diff > 0
+        ? "Gråa/kalla dagar tenderar att kännas tyngre"
+        : "Du verkar klara dåligt väder bra",
+    evidence: `Vid regn, moln eller ≤ 2 °C ligger belastningen i snitt ${avg(heavyWeather).toFixed(1)}/10 — mot ${avg(lightWeather).toFixed(1)}/10 vid sol eller mildare väder.`,
+    direction: diff > 0 ? "negative" : "positive",
+    metric: "burden",
+    sample: heavyWeather.length + lightWeather.length,
+    strength: Math.abs(diff),
+  };
+};
+
+// ─────────────────────────────────────────────────────────────
+// 7. Trend-skifte — sista 7 d jämfört med föregående 7 d
+// ─────────────────────────────────────────────────────────────
+const detectTrendShift = (rows: Checkin[]): Pattern | null => {
+  const sorted = [...rows].sort((a, b) => a.date.localeCompare(b.date));
+  const recent = sorted.slice(-7).map(burdenOfRow).filter((x): x is number => x != null);
+  const prev = sorted.slice(-14, -7).map(burdenOfRow).filter((x): x is number => x != null);
+  if (recent.length < 4 || prev.length < 4) return null;
+  const diff = avg(recent) - avg(prev);
+  if (Math.abs(diff) < 1) return null;
+  if (diff > 0) {
+    return {
+      kind: "trend_shift_up",
+      headline: "Belastningen har stigit senaste veckan",
+      evidence: `Snittbelastning ${avg(recent).toFixed(1)}/10 — mot ${avg(prev).toFixed(1)}/10 veckan innan.`,
+      direction: "negative",
+      metric: "burden",
+      sample: recent.length + prev.length,
+      strength: diff,
+    };
+  }
+  return {
+    kind: "trend_shift_down",
+    headline: "Det har vänt nedåt — riktningen är bättre",
+    evidence: `Snittbelastning ${avg(recent).toFixed(1)}/10 — mot ${avg(prev).toFixed(1)}/10 veckan innan.`,
+    direction: "positive",
+    metric: "burden",
+    sample: recent.length + prev.length,
+    strength: -diff,
+  };
+};
 // ─────────────────────────────────────────────────────────────
 
 export type DetectPatternsInput = {
@@ -320,6 +397,10 @@ export const detectPatterns = (
   if (still) all.push(still);
   const med = detectMedMiss(input.checkins, input.medLogs);
   if (med) all.push(med);
+  const weather = detectWeatherSensitivity(input.checkins);
+  if (weather) all.push(weather);
+  const trend = detectTrendShift(input.checkins);
+  if (trend) all.push(trend);
   for (const p of detectDelayedLift(input.checkins, input.activities, input.sessions)) {
     all.push(p);
   }

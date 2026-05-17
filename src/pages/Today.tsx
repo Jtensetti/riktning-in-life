@@ -42,6 +42,9 @@ import { useTodayActivities } from "@/hooks/useTodayActivities";
 import { DayMat } from "@/components/desktop/DayMat";
 import { DirectionMicroInsight } from "@/components/desktop/DirectionMicroInsight";
 import { MissingToday } from "@/components/desktop/MissingToday";
+import { detectRisks, type RiskSignal } from "@/lib/riskSignals";
+import { RiskSignalsCard } from "@/components/RiskSignalsCard";
+import type { Checkin as MetricsCheckin } from "@/lib/metrics";
 
 type Checkin = {
   id: string;
@@ -259,6 +262,7 @@ const Today = () => {
   const [savingEveningGoal, setSavingEveningGoal] = useState(false);
   // Kontinuitet: kommer ihåg när användaren senast var här. Skrivs vid mount.
   const [lastSeen] = useState<LastSeen>(() => readAndUpdateLastSeen());
+  const [riskSignals, setRiskSignals] = useState<RiskSignal[]>([]);
 
   // Realtime: när loggar förändras (t.ex. på en annan enhet) — bumpa reload.
   const live = useLiveData();
@@ -376,6 +380,32 @@ const Today = () => {
         session: countDaysInWindow((es.data ?? []) as any[]),
       });
       setActivitiesToday(((al.data ?? []) as any[]).filter((r) => r.date === todayStr).length);
+    })();
+  }, [user, streakReloadKey]);
+
+  // Risksignaler — deterministisk regelmotor på senaste 14 d. Egen fetch
+  // eftersom Todays bas-query bara plockar smalt urval av kolumner.
+  useEffect(() => {
+    if (!user) return;
+    const since14 = new Date(Date.now() - 14 * 86_400_000).toISOString().split("T")[0];
+    (async () => {
+      const [ci, ml] = await Promise.all([
+        supabase
+          .from("daily_checkins")
+          .select("*")
+          .eq("user_id", user.id)
+          .gte("date", since14)
+          .order("date"),
+        supabase
+          .from("medication_logs")
+          .select("date,taken_status,severity,side_effects_json")
+          .eq("user_id", user.id)
+          .gte("date", since14)
+          .order("date"),
+      ]);
+      const checks = (ci.data ?? []) as unknown as MetricsCheckin[];
+      const logs = (ml.data ?? []) as Array<{ date: string; taken_status: string; severity: number | null; side_effects_json: unknown }>;
+      setRiskSignals(detectRisks({ checkins: checks, medLogs: logs }));
     })();
   }, [user, streakReloadKey]);
 
@@ -1074,6 +1104,7 @@ const Today = () => {
               </div>
               <div className="min-w-0 space-y-5">
                 {rightIds.map(renderModule)}
+                <RiskSignalsCard signals={riskSignals} />
                 <DayMat activities={todayActivities} onAdd={() => setPickerOpen(true)} />
                 <DirectionMicroInsight
                   todayMood={checkin?.mood_heaviness ?? null}

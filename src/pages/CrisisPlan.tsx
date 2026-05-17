@@ -12,6 +12,9 @@ import { WideLayout } from "@/components/desktop/WideLayout";
 import { ContextPanel } from "@/components/desktop/ContextPanel";
 import { ChevronLeft, Pencil, Check } from "lucide-react";
 import { toast } from "sonner";
+import { detectRisks, type RiskSignal } from "@/lib/riskSignals";
+import { RiskSignalsCard } from "@/components/RiskSignalsCard";
+import type { Checkin as MetricsCheckin } from "@/lib/metrics";
 
 type Contact = { name: string; phone: string; role?: string };
 
@@ -78,6 +81,23 @@ const CrisisPlan = () => {
   const [saving, setSaving] = useState(false);
   const [fetched, setFetched] = useState(false);
   const [live, setLive] = useState<LiveStatus | null>(null);
+  const [riskSignals, setRiskSignals] = useState<RiskSignal[]>([]);
+
+  // Risksignaler — visas högst upp på krisplanen så de mest akuta varningarna
+  // är direkt synliga när användaren öppnar planen.
+  useEffect(() => {
+    if (!user) return;
+    const since14 = new Date(Date.now() - 14 * 86_400_000).toISOString().split("T")[0];
+    (async () => {
+      const [ci, ml] = await Promise.all([
+        supabase.from("daily_checkins").select("*").eq("user_id", user.id).gte("date", since14).order("date"),
+        supabase.from("medication_logs").select("date,taken_status,severity,side_effects_json").eq("user_id", user.id).gte("date", since14).order("date"),
+      ]);
+      const checks = (ci.data ?? []) as unknown as MetricsCheckin[];
+      const logs = (ml.data ?? []) as Array<{ date: string; taken_status: string; severity: number | null; side_effects_json: unknown }>;
+      setRiskSignals(detectRisks({ checkins: checks, medLogs: logs }));
+    })();
+  }, [user]);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
@@ -219,6 +239,8 @@ const CrisisPlan = () => {
         split="aside"
         left={
           <>
+            <RiskSignalsCard signals={riskSignals} showCrisisLink={false} title="Signaler vi sett senaste 14 dagarna" />
+
             {/* Akutknappar — på mobil överst i flödet, på desktop i höger kontextpanel. */}
             <section className="mb-7 lg:hidden">
               <h2 className="text-sm font-extrabold uppercase tracking-wider text-text-secondary mb-3">
