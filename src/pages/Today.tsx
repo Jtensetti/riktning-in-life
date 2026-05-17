@@ -266,6 +266,7 @@ const Today = () => {
   // Kontinuitet: kommer ihåg när användaren senast var här. Skrivs vid mount.
   const [lastSeen] = useState<LastSeen>(() => readAndUpdateLastSeen());
   const [riskSignals, setRiskSignals] = useState<RiskSignal[]>([]);
+  const [progressionRows, setProgressionRows] = useState<Array<{ date: string; mood_heaviness: number | null; anxiety: number | null; energy: number | null; function_score: number | null }>>([]);
 
   // Realtime: när loggar förändras (t.ex. på en annan enhet) — bumpa reload.
   const live = useLiveData();
