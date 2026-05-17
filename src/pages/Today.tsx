@@ -46,6 +46,8 @@ import { detectRisks, type RiskSignal } from "@/lib/riskSignals";
 import { RiskSignalsCard } from "@/components/RiskSignalsCard";
 import type { Checkin as MetricsCheckin } from "@/lib/metrics";
 import { backfillDailyWeather } from "@/lib/dailyWeather";
+import { computeProgression } from "@/lib/progression";
+import { ProgressionPanel } from "@/components/ProgressionPanel";
 
 type Checkin = {
   id: string;
