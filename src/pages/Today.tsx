@@ -593,9 +593,14 @@ const Today = () => {
   const forecastSignal: ForecastSignal | undefined = forecast?.kind
     ? { kind: forecast.kind, partOfDay: time.partOfDay }
     : undefined;
-  const picks: Pick[] = showSafety
+  const rawPicks: Pick[] = showSafety
     ? []
     : recommendForToday(library, checkin, time, weather, recentForRec, effectHistory, forecastSignal);
+  // Berika varje pick med "Brukar sänka din oro …"-rad om vi har bevis.
+  const picks: Pick[] = rawPicks.map((p) => {
+    const hit = bestStatFor(personalEffect, p.exercise);
+    return hit ? { ...p, effectChip: formatEffectChip(hit) } : p;
+  });
 
   // Levande hero — tid + väder + säsong + dagens energi avgör ton, ikon och tempo.
   const hero = heroVisualsFor({
