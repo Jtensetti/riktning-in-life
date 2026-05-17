@@ -370,7 +370,7 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
                 />
               ))}
               {filtered.length === 0 && q.trim() && (
-                <div className="col-span-2 card-cream p-4">
+                <div className="col-span-2 lg:col-span-4 card-cream p-4">
                   <p className="text-sm font-extrabold mb-2">Inget i listan?</p>
                   <p className="text-xs text-text-secondary mb-3">Lägg till "{q}" som en egen aktivitet.</p>
                   <Button
