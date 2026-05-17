@@ -96,7 +96,7 @@ const Onboarding = () => {
 
         {step === 0 && (
           <div className="animate-fade-in-up">
-            <Illustration name="start" className="w-full h-auto mb-6 rounded-3xl animate-pop-in" />
+            <Illustration name="start" className="w-full h-auto mb-6 rounded-3xl animate-pop-in lg:hidden" />
             <h1 className="text-[32px] leading-[38px] mb-3">Välkommen till Riktning</h1>
             <p className="text-base text-text-secondary mb-6 leading-relaxed">
               En lugn plats för att se hur du har det över tid. Du loggar lite varje dag — appen hjälper dig att se mönstren.
@@ -114,7 +114,7 @@ const Onboarding = () => {
 
         {step === 1 && (
           <div className="animate-fade-in-up">
-            <Illustration name="medication" className="w-full h-auto mb-6 rounded-3xl" />
+            <Illustration name="medication" className="w-full h-auto mb-6 rounded-3xl lg:hidden" />
             <h1 className="text-[32px] leading-[38px] mb-3">Tar du någon medicin?</h1>
             <p className="text-base text-text-secondary mb-6 leading-relaxed">
               Helt valfritt. Du kan lägga till — eller hoppa över — och göra det senare när du vill.
@@ -140,7 +140,7 @@ const Onboarding = () => {
 
         {step === 2 && (
           <div className="animate-fade-in-up">
-            <Illustration name="checkin" className="w-full h-auto mb-6 rounded-3xl" />
+            <Illustration name="checkin" className="w-full h-auto mb-6 rounded-3xl lg:hidden" />
             <h1 className="text-[32px] leading-[38px] mb-3">Vill du ha små påminnelser?</h1>
             <p className="text-base text-text-secondary mb-6 leading-relaxed">
               En enkel pingning om dagen — och en kort fråga i veckan. Du kan ändra detta när som helst.
