@@ -325,7 +325,7 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
             {recentItems.length > 0 && !activeCat && !q.trim() && (
               <div className="mb-5">
                 <p className="text-meta text-text-secondary mb-2">Senast använda</p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                   {recentItems.map((item) => (
                     <PickerCard
                       key={`recent-${item.slug}`}
@@ -344,7 +344,7 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
                 <p className="text-meta text-text-secondary mb-2 inline-flex items-center gap-1">
                   <Star size={12} className="fill-current" /> Dina favoriter
                 </p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                   {favoriteItems.map((item) => (
                     <PickerCard
                       key={`fav-${item.slug}`}
@@ -358,7 +358,7 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3 pb-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 pb-4">
               {filtered.map((item, i) => (
                 <PickerCard
                   key={item.slug}
