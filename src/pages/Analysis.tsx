@@ -9,8 +9,12 @@ import { InsightCard } from "@/components/ui-kit/InsightCard";
 import { ListCard } from "@/components/ui-kit/ListCard";
 import { MetricTrendCard } from "@/components/MetricTrendCard";
 import { WeekMat, buildWeekMatDays } from "@/components/desktop/WeekMat";
+import { WideLayout } from "@/components/desktop/WideLayout";
+import { ContextPanel } from "@/components/desktop/ContextPanel";
+import { CorrelationCard } from "@/components/desktop/CorrelationCard";
 import { buildMetricTrends, overallVerdict, loggedDaysLastWeek } from "@/lib/analysis";
 import { buildLiftSummary } from "@/lib/dayInsights";
+import { buildCorrelations } from "@/lib/correlations";
 import { isoDaysAgo, type Checkin } from "@/lib/metrics";
 import type { IconName } from "@/components/AbstractIcon";
 
