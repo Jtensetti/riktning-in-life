@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { ChevronLeft, ChevronRight, LogOut } from "lucide-react";
+import { WideLayout } from "@/components/desktop/WideLayout";
 import { toast } from "sonner";
 import { loadReminders, saveReminders, resetOnboarded, type Reminders } from "@/lib/settings";
 import { loadFlags, saveFlags, type UserFlags } from "@/lib/flags";
