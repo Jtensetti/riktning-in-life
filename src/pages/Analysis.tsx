@@ -62,7 +62,7 @@ const Analysis = () => {
           .eq("user_id", user.id).gte("date", since14).order("date", { ascending: true }),
         supabase
           .from("activity_logs")
-          .select("activity_slug,label,icon,color,mood_delta,date")
+          .select("activity_slug,label,icon,color,mood_delta,date,duration_minutes,semantic_kind")
           .eq("user_id", user.id).gte("date", since30),
         supabase
           .from("exercise_sessions")
