@@ -73,6 +73,21 @@ const Vard = () => {
 
   useEffect(() => { load(); }, [user]);
 
+  // Risksignaler — körs när vården-vyn öppnas. Vi visar bara om något finns.
+  useEffect(() => {
+    if (!user) return;
+    const since14 = new Date(Date.now() - 14 * 86_400_000).toISOString().split("T")[0];
+    (async () => {
+      const [ci, ml] = await Promise.all([
+        supabase.from("daily_checkins").select("*").eq("user_id", user.id).gte("date", since14).order("date"),
+        supabase.from("medication_logs").select("date,taken_status,severity,side_effects_json").eq("user_id", user.id).gte("date", since14).order("date"),
+      ]);
+      const checks = (ci.data ?? []) as unknown as MetricsCheckin[];
+      const logs = (ml.data ?? []) as Array<{ date: string; taken_status: string; severity: number | null; side_effects_json: unknown }>;
+      setRiskSignals(detectRisks({ checkins: checks, medLogs: logs }));
+    })();
+  }, [user]);
+
   if (loading) return <AppShell><div className="h-40 bg-surface-alt rounded-3xl animate-pulse" /></AppShell>;
 
   if (view === "form" && activeForm) {
