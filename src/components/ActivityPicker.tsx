@@ -49,19 +49,8 @@ export type ActivityDraft = {
   location?: Location | null;
 };
 
-const colorBg = (color: string): string => {
-  switch (color) {
-    case "orange": return "bg-orange-start text-white";
-    case "blue": return "bg-blue-calm text-white";
-    case "yellow": return "bg-yellow-journal text-foreground";
-    case "purple": return "bg-purple-sleep text-white";
-    case "pink": return "bg-pink-move text-white";
-    case "green": return "bg-green-recovery text-white";
-    // Default: lugn blåton i stället för cream/lila — undviker
-    // att aktiviteter utan explicit färg ärver något grått eller lila.
-    default: return "bg-blue-calm/15 text-foreground";
-  }
-};
+// Färger används nu via ActivityTile + ikon-bakgrund i detaljvyn — den
+// tidigare colorBg-helpern är borta tillsammans med inline-PickerCard.
 
 const moodFaces: { value: number; label: string }[] = [
   { value: -2, label: "Sämre" },
@@ -72,55 +61,6 @@ const moodFaces: { value: number; label: string }[] = [
 ];
 
 const durationPresets = [15, 30, 60, 90];
-
-/**
- * PickerCard — minimal variant.
- *  - 88px h, radius 24, padding 18
- *  - INGEN ikon (titeln säger redan vad det är)
- *  - title 16/20/800, line-clamp-2 → ingen ellipsis på "Långpromenad"
- *  - star 22px, opacity 0.4 inactive, full opacity active
- */
-const PickerCard = ({
-  item,
-  isFav,
-  onPick,
-  onToggleFav,
-  delayMs,
-}: {
-  item: CatalogItem;
-  isFav: boolean;
-  onPick: () => void;
-  onToggleFav: (e: React.MouseEvent) => void;
-  delayMs?: number;
-}) => (
-  <div
-    className={`relative shadow-card animate-fade-in-up rounded-3xl min-h-[88px] lg:min-h-[132px] ${colorBg(item.color)}`}
-    style={{
-      animationDelay: delayMs ? `${delayMs}ms` : undefined,
-    }}
-  >
-    <button
-      onClick={onPick}
-      className="w-full h-full text-left press-soft flex items-center justify-start lg:items-end lg:justify-start min-h-[88px] lg:min-h-[132px] px-[18px] py-4 pr-11 lg:p-4 lg:pr-10"
-    >
-      <span className="font-extrabold text-[16px] leading-[20px] lg:text-[15px] lg:leading-[18px]">
-        {item.label}
-      </span>
-    </button>
-    <button
-      onClick={onToggleFav}
-      aria-label={isFav ? "Ta bort favorit" : "Spara som favorit"}
-      className="absolute top-2 right-2 grid place-items-center press-soft"
-      style={{
-        width: 32,
-        height: 32,
-        opacity: isFav ? 1 : 0.4,
-      }}
-    >
-      <Star size={22} className={isFav ? "fill-current" : ""} strokeWidth={2.2} />
-    </button>
-  </div>
-);
 
 interface Props {
   open: boolean;
