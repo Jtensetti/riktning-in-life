@@ -439,6 +439,26 @@ const Week = () => {
     [sessions],
   );
 
+  // Fas A — personlig effekt från senaste sessionerna med före/efter-värden.
+  const personalEffect = useMemo(
+    () =>
+      buildPersonalEffect(
+        sessionsAll.map((s) => ({
+          exercise_id: null,
+          created_at: s.created_at,
+          mood_before: s.mood_before,
+          mood_after: s.mood_after,
+          anxiety_before: s.anxiety_before,
+          anxiety_after: s.anxiety_after,
+          energy_before: null,
+          energy_after: null,
+          exercises: s.exercises ? { title: s.exercises.title, category: s.exercises.category } : null,
+        })),
+        [],
+      ),
+    [sessionsAll],
+  );
+
   const loggedToday = useMemo(
     () => activities.filter((a) => a.date === todayIso).length
       + sessions.filter((s) => s.created_at.split("T")[0] === todayIso).length,
