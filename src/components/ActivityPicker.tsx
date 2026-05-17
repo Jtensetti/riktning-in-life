@@ -308,17 +308,46 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
                   {c}
                 </button>
               ))}
+              {/* Multi-select-toggle — sist i raden så den inte stör kategorierna. */}
+              <button
+                onClick={() => { setMulti((m) => !m); setPicked(new Set()); }}
+                className={`shrink-0 rounded-full px-4 py-2 text-xs font-extrabold press-soft border-2 inline-flex items-center gap-1 ${
+                  multi ? "bg-foreground text-background border-foreground" : "bg-surface text-foreground border-border-soft"
+                }`}
+                aria-pressed={multi}
+              >
+                <Layers size={12} /> Välj flera
+              </button>
             </div>
+
+            {recommendedItems.length > 0 && !activeCat && !q.trim() && (
+              <div className="mb-5">
+                <p className="text-meta text-text-secondary mb-2">Rekommenderat just nu</p>
+                <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                  {recommendedItems.map((item) => (
+                    <ActivityTile
+                      key={`rec-${item.slug}`}
+                      item={item}
+                      isFav={favorites.has(item.slug)}
+                      selected={picked.has(item.slug)}
+                      onPick={() => pick(item)}
+                      onToggleFav={(e) => toggleFavorite(item.slug, e)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
 
             {recentItems.length > 0 && !activeCat && !q.trim() && (
               <div className="mb-5">
                 <p className="text-meta text-text-secondary mb-2">Senast använda</p>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                   {recentItems.map((item) => (
-                    <PickerCard
+                    <ActivityTile
                       key={`recent-${item.slug}`}
                       item={item}
                       isFav={favorites.has(item.slug)}
+                      selected={picked.has(item.slug)}
                       onPick={() => pick(item)}
                       onToggleFav={(e) => toggleFavorite(item.slug, e)}
                     />
@@ -332,12 +361,13 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
                 <p className="text-meta text-text-secondary mb-2 inline-flex items-center gap-1">
                   <Star size={12} className="fill-current" /> Dina favoriter
                 </p>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                   {favoriteItems.map((item) => (
-                    <PickerCard
+                    <ActivityTile
                       key={`fav-${item.slug}`}
                       item={item}
                       isFav
+                      selected={picked.has(item.slug)}
                       onPick={() => pick(item)}
                       onToggleFav={(e) => toggleFavorite(item.slug, e)}
                     />
@@ -346,19 +376,20 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
               </div>
             )}
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 pb-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3 pb-4">
               {filtered.map((item, i) => (
-                <PickerCard
+                <ActivityTile
                   key={item.slug}
                   item={item}
                   isFav={favorites.has(item.slug)}
+                  selected={picked.has(item.slug)}
                   onPick={() => pick(item)}
                   onToggleFav={(e) => toggleFavorite(item.slug, e)}
                   delayMs={Math.min(i, 8) * 25}
                 />
               ))}
               {filtered.length === 0 && q.trim() && (
-                <div className="col-span-2 lg:col-span-4 card-cream p-4">
+                <div className="col-span-2 lg:col-span-4 xl:col-span-5 card-cream p-4">
                   <p className="text-sm font-extrabold mb-2">Inget i listan?</p>
                   <p className="text-xs text-text-secondary mb-3">Lägg till "{q}" som en egen aktivitet.</p>
                   <Button
@@ -370,6 +401,27 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
                 </div>
               )}
             </div>
+
+            {multi && picked.size > 0 && (
+              <div className="sticky bottom-0 -mx-6 px-6 py-3 bg-background/95 backdrop-blur border-t border-border-soft flex items-center gap-3">
+                <p className="text-sm font-extrabold flex-1 min-w-0">
+                  {picked.size} {picked.size === 1 ? "aktivitet vald" : "aktiviteter valda"}
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => setPicked(new Set())}
+                  className="rounded-full h-11 font-extrabold border-2 border-border-soft press-soft"
+                >
+                  Rensa
+                </Button>
+                <Button
+                  onClick={confirmMulti}
+                  className="rounded-full h-11 bg-orange-start hover:bg-orange-deep text-white font-extrabold press-soft"
+                >
+                  <Check size={16} className="mr-1" /> Spara {picked.size}
+                </Button>
+              </div>
+            )}
 
             {!q.trim() && (
               <div className="card-cream p-4 mb-4">
