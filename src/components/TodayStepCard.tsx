@@ -3,6 +3,7 @@ import { ChevronRight, Sparkles, X } from "lucide-react";
 import { recommendForToday, type Exercise, type CheckinSignals, type RecentSession } from "@/lib/recommend";
 import { getTimeContext } from "@/lib/timeContext";
 import { useEffect, useMemo, useState } from "react";
+import { bestStatFor, formatEffectChip, pickEffectHistoryFor, type PersonalEffect } from "@/lib/personalEffect";
 
 const todayKey = () => {
   const d = new Date();
@@ -18,6 +19,8 @@ interface Props {
   recentSessions: RecentSession[];
   /** Antal aktiviteter loggade idag (visar "klar"-läge när > 0 om man vill). */
   loggedToday: number;
+  /** Personlig effekt-historik. När angiven viktas rekommendationen och chippet "Brukar sänka din oro …" renderas. */
+  personalEffect?: PersonalEffect;
   /** Stagger-index för animation. */
   index?: number;
 }
