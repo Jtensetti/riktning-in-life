@@ -409,6 +409,34 @@ const WeeklyReport = () => {
       if (opts.gap) y += opts.gap;
     };
 
+    // ----- AI-sammanfattning till vården (Fas D) -----
+    if (aiSummary) {
+      ensureSpace(140);
+      y = drawSectionHeader(doc, "Sammanfattning för behandlare", y, margin);
+      writeLine(aiSummary.headline, { bold: true, size: 11, gap: 2 });
+      writeLine(`Vad har förändrats: ${aiSummary.whats_changed}`);
+      writeLine(`Vad fungerar: ${aiSummary.whats_working}`);
+      writeLine(`Vad oroar: ${aiSummary.whats_worrying}`);
+      writeLine(`Fokus framåt: ${aiSummary.recommended_focus}`);
+      if (aiSummary.flags.length) {
+        writeLine(`Nyckelord: ${aiSummary.flags.join(", ")}`, { muted: true, size: 9 });
+      }
+      writeLine("AI-genererad sammanfattning. Patienten har godkänt innehållet före delning.", {
+        muted: true, size: 8, gap: 4,
+      });
+    }
+
+    // ----- Risksignaler (Fas D / Fas B) -----
+    if (riskSignals.length > 0) {
+      ensureSpace(80);
+      y = drawSectionHeader(doc, "Risksignaler senaste 14 dagarna", y, margin);
+      for (const s of riskSignals) {
+        const tag = s.severity === "alert" ? "[VIKTIGT]" : s.severity === "warn" ? "[Att se över]" : "[Info]";
+        writeLine(`${tag} ${s.headline}`, { bold: true });
+        writeLine(s.evidence, { muted: true, size: 9, gap: 2 });
+      }
+    }
+
     // ----- Score-kort i rad -----
     ensureSpace(110);
     y = drawSectionHeader(doc, "Beräknade scores (0–100)", y, margin);
