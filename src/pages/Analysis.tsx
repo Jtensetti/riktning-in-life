@@ -8,6 +8,7 @@ import { ScreenHeader } from "@/components/ui-kit/ScreenHeader";
 import { InsightCard } from "@/components/ui-kit/InsightCard";
 import { ListCard } from "@/components/ui-kit/ListCard";
 import { MetricTrendCard } from "@/components/MetricTrendCard";
+import { WeekMat, buildWeekMatDays } from "@/components/desktop/WeekMat";
 import { buildMetricTrends, overallVerdict, loggedDaysLastWeek } from "@/lib/analysis";
 import { buildLiftSummary } from "@/lib/dayInsights";
 import { isoDaysAgo, type Checkin } from "@/lib/metrics";
@@ -20,6 +21,8 @@ type ActivityLite = {
   color: string;
   mood_delta: number | null;
   date: string;
+  duration_minutes: number | null;
+  semantic_kind: string | null;
 };
 
 type SessionLite = {
@@ -60,7 +63,7 @@ const Analysis = () => {
           .eq("user_id", user.id).gte("date", since14).order("date", { ascending: true }),
         supabase
           .from("activity_logs")
-          .select("activity_slug,label,icon,color,mood_delta,date")
+          .select("activity_slug,label,icon,color,mood_delta,date,duration_minutes,semantic_kind")
           .eq("user_id", user.id).gte("date", since30),
         supabase
           .from("exercise_sessions")
@@ -121,6 +124,10 @@ const Analysis = () => {
           </div>
         )}
       </InsightCard>
+
+      {/* Veckomatta — 7-dagars matris med Riktning/Sömn/Rörelse/Loggar/Check-in.
+       *  Ger en datanära jämförelsevy precis under den mänskliga slutsatsen. */}
+      <WeekMat days={buildWeekMatDays(checkins, activities)} className="mb-8" />
 
       <div className="lg:grid lg:grid-cols-[1.5fr_1fr] lg:gap-10">
         <section className="mb-8 lg:mb-0">

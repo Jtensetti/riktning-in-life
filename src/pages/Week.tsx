@@ -44,6 +44,7 @@ const ChartFallback = ({ height = 128 }: { height?: number }) => (
   />
 );
 import { WeekDirectionChart, type DirectionPoint } from "@/components/charts/WeekDirectionChart";
+import { WeekMat, buildWeekMatDays } from "@/components/desktop/WeekMat";
 import { TodayStepCard } from "@/components/TodayStepCard";
 import {
   loadActionPreferences, saveActionPreferences, resolvePreferredTime, resolvePreferredLength, lengthRange,
@@ -467,6 +468,17 @@ const Week = () => {
         screen="insights"
         title="Insikter"
         subtitle="Vad veckan visar — på en skärm."
+      />
+
+      {/* Veckomatta — 7-dagars översikt (mobil + desktop). Använder redan
+       *  beräknad directionSeries så samma poäng visas som i WeekDirectionChart. */}
+      <WeekMat
+        days={buildWeekMatDays(
+          checkins,
+          activities,
+          Object.fromEntries(directionSeries.map((p) => [p.date, p.value])),
+        )}
+        className="mb-6"
       />
 
       {/*
