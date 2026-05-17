@@ -28,21 +28,26 @@ export const ForYouCarousel = ({ picks }: Props) => {
   if (picks.length === 0) return null;
 
   return (
-    <section className="mb-7 -mx-6">
-      <div className="px-6 mb-3 flex items-baseline justify-between">
+    <section className="mb-7 -mx-6 lg:mx-0">
+      <div className="px-6 lg:px-0 mb-3 flex items-baseline justify-between">
         <div>
           <h3 className="text-xl">För dig just nu</h3>
           <p className="text-sm text-text-secondary">Tre vägar in i dagen</p>
         </div>
       </div>
-      <div className="overflow-x-auto scrollbar-hide snap-x snap-mandatory flex gap-3 px-6 pb-3 -mb-3">
+      {/*
+       * Mobil: horisontell snap-carousel.
+       * Desktop (≥lg): rent 3-kol grid — inget klipps, ingen scroll,
+       * hover-states läsbara med pekare.
+       */}
+      <div className="overflow-x-auto scrollbar-hide snap-x snap-mandatory flex gap-3 px-6 pb-3 -mb-3 lg:overflow-visible lg:grid lg:grid-cols-3 lg:gap-4 lg:px-0 lg:pb-0 lg:mb-0">
         {picks.map((p, i) => {
           const tone = asTone(p.exercise.color);
           const strong = p.fitScore >= 80;
           const isOpen = openWhy === p.exercise.id;
           const hasWhy = (p.whyFactors?.length ?? 0) > 0;
           return (
-            <div key={p.exercise.id} className="shrink-0 w-[78%] snap-start flex flex-col gap-2">
+            <div key={p.exercise.id} className="shrink-0 w-[78%] snap-start flex flex-col gap-2 lg:w-auto lg:shrink">
               <ColorCard
                 tone={tone}
                 size="lg"

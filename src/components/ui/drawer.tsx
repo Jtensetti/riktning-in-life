@@ -22,6 +22,15 @@ const DrawerOverlay = React.forwardRef<
 ));
 DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName;
 
+/**
+ * DrawerContent — bottom-sheet på mobil (oförändrat) men centrerad,
+ * cappad modal på desktop (≥lg). Hela snabblogg-bibblan + mood-edit
+ * delar denna komponent så vi får desktop-läget på en plats.
+ *
+ * Mobil: `bottom-0` + `rounded-t-[10px]` + grippe-handle (vaul-standard).
+ * Desktop: max-w-[720px] centrerad, max-h 85vh, rundade hörn runtom,
+ *   ingen grippe-handle (modal-mönster).
+ */
 const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
@@ -31,13 +40,19 @@ const DrawerContent = React.forwardRef<
     <DrawerPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[10px] border bg-background",
+        "fixed z-50 flex flex-col bg-background border border-border-soft",
+        // Mobil: bottom-sheet — fyller bredden, sitter fast i botten.
+        "inset-x-0 bottom-0 mt-24 h-auto rounded-t-[10px]",
+        // Desktop (≥lg): centrerad modal, max 720px bred, max 85vh hög.
+        "lg:inset-auto lg:top-1/2 lg:left-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2",
+        "lg:mt-0 lg:w-[min(720px,calc(100vw-4rem))] lg:max-h-[85vh] lg:rounded-3xl lg:shadow-2xl",
         className,
       )}
       {...props}
     >
-      <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
-      {children}
+      {/* Grippe-handle — bara på mobil. På desktop är det en modal, inte ett ark. */}
+      <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted lg:hidden" />
+      <div className="flex-1 overflow-y-auto">{children}</div>
     </DrawerPrimitive.Content>
   </DrawerPortal>
 ));

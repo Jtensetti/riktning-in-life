@@ -7,37 +7,36 @@ import { DesktopTopbar } from "./desktop/DesktopTopbar";
 interface AppShellProps {
   children: ReactNode;
   /**
-   * On desktop (≥lg), opt this page out of the centered 448px column and
-   * give it the full ~1100px content area. Use this for pages that lay
-   * their own sections out side-by-side (Insikter, Vård, Utforska, etc.).
-   *
-   * Mobile is unaffected by this prop — the column is always max-w-md
-   * on small screens.
+   * Bredd-läge på desktop. Mobil är alltid max-w-md (oförändrad).
+   *  - "dashboard" (default): fyller upp till 1440px, byggt för 2–3-kolumns
+   *    arbetsytor (Today, Insikter, Vård, Utforska, Snabblogg).
+   *  - "reader": cappar till 760px centrerat — för enkolumns-läsning
+   *    (LearnArticle, Krisplan, wizards).
    */
+  density?: "dashboard" | "reader";
+  /** @deprecated Bakåtkompatibilitet — alla sidor är "dashboard" på desktop. */
   wide?: boolean;
 }
 
 /**
- * AppShell — wraps every "regular" page (not Auth/Onboarding/wizards).
+ * AppShell — gemensam rampe för alla "normala" sidor (ej Auth/Onboarding).
  *
- * On mobile (< lg): unchanged from before.
- *   - Cream background, max-w-md centered <main>, fixed BottomNav.
+ * Mobil (<lg): cream-bakgrund, 448px centrerad <main>, fix BottomNav.
+ *   → DETTA SKA INTE ÄNDRAS. Allt mobiltestat är fryst.
  *
- * On desktop (≥ lg): introduces a 3-zone layout:
- *   - Top: thin DesktopTopbar (56px) with wordmark + sign-out.
- *   - Left: SideNav (240px sticky) replaces BottomNav (which hides).
- *   - Right: the page content. Two modes:
- *       * Default (calm stream): keeps the 448px column centered in the
- *         remaining space. Cream around it. Used for Today, Krisplan,
- *         readers, wizards — focused single-column reading.
- *       * `wide`: opens up to ~1100px for "workspace" pages that arrange
- *         their own sections in a two-column grid via <WideLayout>.
- *
- * The mobile DOM is preserved exactly — desktop chrome only renders
- * on `lg:` so under that breakpoint nothing visible changes.
+ * Desktop (≥lg): 3 zoner — DesktopTopbar + SideNav (272px sticky) + main.
+ *   - density="dashboard" (default): main upp till 1440px, fyller resten
+ *     av skärmen bredvid SideNav. Det är detta läge som låter Today/
+ *     Insikter/Vård lägga ut sina egna 2–3-kolumns-rutnät utan tomrum.
+ *   - density="reader": cappar 760px centrerat — sidor som är
+ *     "en lång läs-tråd" (LearnArticle, Krisplan, wizards).
  */
-export const AppShell = ({ children, wide = false }: AppShellProps) => {
+export const AppShell = ({ children, density = "dashboard", wide }: AppShellProps) => {
   const location = useLocation();
+  // Backwards compat: wide=true motsvarar nya defaulten dashboard,
+  // wide=false betyder ingenting längre (vi använder aldrig 560px-cap).
+  void wide;
+  const isReader = density === "reader";
   return (
     <div className="min-h-screen bg-background">
       <DesktopTopbar />
@@ -47,14 +46,13 @@ export const AppShell = ({ children, wide = false }: AppShellProps) => {
           key={location.pathname}
           className={[
             "px-6 pt-5 safe-bottom animate-fade-in-up mx-auto",
-            // Mobile (default): tight 448px column, exactly as before.
+            // Mobil: 448px column — oförändrat.
             "max-w-md",
-            // Desktop calm stream: open the column to ~560px for readability.
-            "lg:max-w-[560px]",
-            // Desktop layout: take the remaining flex space + add room.
-            "lg:flex-1 lg:min-w-0 lg:pt-10 lg:px-10",
-            // Wide pages override the calm-stream cap on desktop only.
-            wide ? "lg:!max-w-[1180px]" : "",
+            // Desktop: tar resten av flex-raden, generös top-padding.
+            "lg:flex-1 lg:min-w-0 lg:pt-8 lg:px-8",
+            // Dashboard fyller upp till 1440px (vi har 1575+ px att jobba med);
+            // reader cappar 760px för långform.
+            isReader ? "lg:!max-w-[760px]" : "lg:!max-w-[1440px]",
           ].join(" ")}
         >
           {children}

@@ -567,7 +567,9 @@ const Week = () => {
       </button>
 
       {/* Fas F: Veckans playbook — riktning + konkreta steg för nästa 7 dagar. */}
-      <div className="lg:col-start-1 mb-6"><WeeklyPlaybookCard playbook={playbook} /></div>
+      {/* Fas F: Veckans playbook — sticky aside på desktop så högerkolumnen
+       *  följer med scrollen istället för att lämna ~3000px tomrum nedanför. */}
+      <div className="lg:col-start-2 lg:row-start-2 lg:row-span-6 mb-6 lg:sticky lg:top-24 lg:self-start"><WeeklyPlaybookCard playbook={playbook} /></div>
 
       {/* AI-veckosammanfattning — varm sammanfattning baserad på riktig data. Göms tyst om AI inte svarar. */}
       <div className="lg:col-start-1"><WeeklyAIInsight /></div>
