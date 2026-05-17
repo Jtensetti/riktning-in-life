@@ -11,6 +11,7 @@
 import type { Checkin } from "./metrics";
 import type { PersonalThresholds } from "./baseline";
 import { improvementSign } from "./valence";
+import { weatherCodeKind } from "./dailyWeather";
 
 export type PatternKind =
   | "sleep_next_day_anxiety"
