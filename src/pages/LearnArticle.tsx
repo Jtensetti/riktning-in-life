@@ -87,30 +87,32 @@ const LearnArticle = () => {
   return (
     <div className="min-h-screen bg-background pb-24">
       <div className={`${colorBg(article.color)} ${txt} px-6 pt-8 pb-10 rounded-b-[36px] relative overflow-hidden`}>
-        <button
-          onClick={() => navigate("/lar-dig")}
-          className="flex items-center gap-1 text-sm font-bold mb-4 opacity-90 press-soft"
-        >
-          <ChevronLeft size={18} /> Lär dig
-        </button>
-        <div className="absolute right-4 top-4 opacity-90 pointer-events-none">
-          <AbstractIcon name="bookmark-soft" size={64} color="currentColor" />
+        <div className="max-w-md lg:max-w-[720px] mx-auto relative">
+          <button
+            onClick={() => navigate("/lar-dig")}
+            className="flex items-center gap-1 text-sm font-bold mb-4 opacity-90 press-soft"
+          >
+            <ChevronLeft size={18} /> Lär dig
+          </button>
+          <div className="absolute right-0 top-0 opacity-90 pointer-events-none">
+            <AbstractIcon name="bookmark-soft" size={64} color="currentColor" />
+          </div>
+          <div className="flex items-center gap-2 mb-3 mt-12">
+            <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+              article.color === "yellow" ? "bg-foreground/10" : "bg-white/20"
+            }`}>
+              {article.category}
+            </span>
+            <span className="inline-flex items-center gap-1 text-[11px] font-extrabold opacity-80">
+              <Clock size={11} strokeWidth={2.6} /> {article.read_minutes} min läsning
+            </span>
+          </div>
+          <h1 className="text-[28px] leading-[34px] mb-2">{article.title}</h1>
+          <p className="text-sm opacity-90 leading-snug">{article.excerpt}</p>
         </div>
-        <div className="flex items-center gap-2 mb-3 mt-12">
-          <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-            article.color === "yellow" ? "bg-foreground/10" : "bg-white/20"
-          }`}>
-            {article.category}
-          </span>
-          <span className="inline-flex items-center gap-1 text-[11px] font-extrabold opacity-80">
-            <Clock size={11} strokeWidth={2.6} /> {article.read_minutes} min läsning
-          </span>
-        </div>
-        <h1 className="text-[28px] leading-[34px] mb-2">{article.title}</h1>
-        <p className="text-sm opacity-90 leading-snug">{article.excerpt}</p>
       </div>
 
-      <div className="max-w-md mx-auto px-6 -mt-2">
+      <div className="max-w-md lg:max-w-[720px] mx-auto px-6 -mt-2">
         <article className="card-soft p-5 mb-5 prose-riktning">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
             {article.body_md}
