@@ -8,6 +8,7 @@ import { ScreenHeader } from "@/components/ui-kit/ScreenHeader";
 import { InsightCard } from "@/components/ui-kit/InsightCard";
 import { ListCard } from "@/components/ui-kit/ListCard";
 import { MetricTrendCard } from "@/components/MetricTrendCard";
+import { WeekMat, buildWeekMatDays } from "@/components/desktop/WeekMat";
 import { buildMetricTrends, overallVerdict, loggedDaysLastWeek } from "@/lib/analysis";
 import { buildLiftSummary } from "@/lib/dayInsights";
 import { isoDaysAgo, type Checkin } from "@/lib/metrics";
