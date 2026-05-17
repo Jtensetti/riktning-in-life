@@ -556,7 +556,7 @@ const Week = () => {
       <div className="lg:grid lg:grid-cols-[1.5fr_1fr] lg:gap-x-10 lg:gap-y-0 lg:items-start">
       <button
         onClick={() => navigate("/analys")}
-        className="w-full mb-6 ui-card-list flex items-center gap-3 press-soft text-left animate-pop-in lg:col-start-1"
+        className="w-full mb-6 ui-card-list flex items-center gap-3 press-soft text-left animate-pop-in lg:col-start-2"
       >
         <div className="flex-1 min-w-0">
           <p className="text-meta text-text-secondary mb-0.5">Snabb sammanfattning</p>
@@ -566,12 +566,11 @@ const Week = () => {
         <ChevronRight size={20} className="text-text-secondary shrink-0" />
       </button>
 
-      {/* Fas F: Veckans playbook — riktning + konkreta steg för nästa 7 dagar. */}
-      {/* Fas F: Veckans playbook — sticky aside på desktop så högerkolumnen
-       *  följer med scrollen istället för att lämna ~3000px tomrum nedanför. */}
-      <div className="lg:col-start-2 lg:row-start-2 lg:row-span-6 mb-6 lg:sticky lg:top-24 lg:self-start"><WeeklyPlaybookCard playbook={playbook} /></div>
+      {/* Fas F: Veckans playbook — i höger aside, INTE sticky (annars
+       *  lämnar resten av kolumnen tomrum när höger naturligt är kortare). */}
+      <div className="lg:col-start-2 mb-6"><WeeklyPlaybookCard playbook={playbook} /></div>
 
-      {/* AI-veckosammanfattning — varm sammanfattning baserad på riktig data. Göms tyst om AI inte svarar. */}
+      {/* AI-veckosammanfattning — varm sammanfattning baserad på riktig data. */}
       <div className="lg:col-start-1"><WeeklyAIInsight /></div>
 
       {/* Spår 1: bevisbaserade mönster från senaste 28 dagarna. */}
@@ -591,13 +590,14 @@ const Week = () => {
       )}
 
       {!baselineComplete && (
-        <div className="mb-6 animate-fade-in-up lg:col-start-2">
+        <div className="mb-6 animate-fade-in-up lg:col-start-1">
           <BaselineProgressCard daysLogged={total} />
         </div>
       )}
 
-      {/* Dagens lilla steg — uppdateras live när nya loggar/check-ins kommer in */}
-      <section className="mb-6 lg:col-start-1">
+      {/* Dagens lilla steg — i höger aside under playbook så att högerkolumnen
+       *  fylls naturligt istället för att vänsterkolumnen blir 3000px längre. */}
+      <section className="mb-6 lg:col-start-2">
         <TodayStepCard
           exercises={exercisesForRec}
           todayCheckin={todayCheckin}
