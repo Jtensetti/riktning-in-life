@@ -48,6 +48,10 @@ import { WeekDirectionChart, type DirectionPoint } from "@/components/charts/Wee
 import { WeekMat, buildWeekMatDays } from "@/components/desktop/WeekMat";
 import { TodayStepCard } from "@/components/TodayStepCard";
 import { buildPersonalEffect } from "@/lib/personalEffect";
+import { computeProgression } from "@/lib/progression";
+import { detectRisks } from "@/lib/riskSignals";
+import { buildPlaybook } from "@/lib/weeklyPlaybook";
+import { WeeklyPlaybookCard } from "@/components/WeeklyPlaybookCard";
 import {
   loadActionPreferences, saveActionPreferences, resolvePreferredTime, resolvePreferredLength, lengthRange,
   type ActionPreferences, type PreferredTime, type PreferredLength,
@@ -465,6 +469,41 @@ const Week = () => {
     [sessionsAll],
   );
 
+  // Fas F — Veckans playbook: deterministisk sammanfattning + 3–5 steg.
+  const progressionFacts = useMemo(
+    () => computeProgression(checkins, personalEffect),
+    [checkins, personalEffect],
+  );
+  const riskSignals = useMemo(
+    () =>
+      detectRisks({
+        checkins,
+        medLogs: medLogsAll.map((l) => ({
+          date: l.date,
+          taken_status: l.taken_status,
+          severity: null,
+          side_effects_json: [],
+        })),
+      }),
+    [checkins, medLogsAll],
+  );
+  const recentCheckinDays = useMemo(() => {
+    const cutoff = isoDaysAgo(13);
+    return checkins.filter((c) => c.date >= cutoff).length;
+  }, [checkins]);
+  const playbook = useMemo(
+    () =>
+      buildPlaybook({
+        patterns,
+        risks: riskSignals,
+        progression: progressionFacts,
+        personalEffect,
+        recentCheckin: todayCheckin,
+        recentCheckinDays,
+      }),
+    [patterns, riskSignals, progressionFacts, personalEffect, todayCheckin, recentCheckinDays],
+  );
+
   const loggedToday = useMemo(
     () => activities.filter((a) => a.date === todayIso).length
       + sessions.filter((s) => s.created_at.split("T")[0] === todayIso).length,
@@ -526,6 +565,9 @@ const Week = () => {
         </div>
         <ChevronRight size={20} className="text-text-secondary shrink-0" />
       </button>
+
+      {/* Fas F: Veckans playbook — riktning + konkreta steg för nästa 7 dagar. */}
+      <div className="lg:col-start-1 mb-6"><WeeklyPlaybookCard playbook={playbook} /></div>
 
       {/* AI-veckosammanfattning — varm sammanfattning baserad på riktig data. Göms tyst om AI inte svarar. */}
       <div className="lg:col-start-1"><WeeklyAIInsight /></div>
