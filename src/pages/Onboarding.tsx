@@ -57,9 +57,25 @@ const Onboarding = () => {
     navigate("/", { replace: true });
   };
 
+  const stepIllustration: "start" | "medication" | "checkin" =
+    step === 0 ? "start" : step === 1 ? "medication" : "checkin";
+
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <main className="flex-1 max-w-md w-full mx-auto px-6 pt-8 pb-32 flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col lg:flex-row">
+      {/* Desktop-only sidopanel — illustrationen flyttas ut till halva skärmen
+       *  istället för att klämmas in över 448 px-kolonnen. Inget extra innehåll
+       *  bara för att fylla bredden. */}
+      <aside
+        aria-hidden
+        className="hidden lg:flex lg:w-1/2 items-center justify-center p-12"
+        style={{ background: "linear-gradient(135deg, hsl(var(--orange-start) / 0.12), hsl(var(--cream-card)))" }}
+      >
+        <div className="max-w-[480px] w-full">
+          <Illustration name={stepIllustration} className="w-full h-auto rounded-3xl" />
+        </div>
+      </aside>
+
+      <main className="flex-1 max-w-md w-full mx-auto px-6 pt-8 pb-32 flex flex-col lg:max-w-[520px] lg:justify-center lg:pt-12">
         <div className="flex items-center justify-between mb-6">
           {step > 0 ? (
             <button onClick={() => setStep(s => s - 1)} className="flex items-center gap-1 text-sm font-bold text-text-secondary">
