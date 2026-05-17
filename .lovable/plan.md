@@ -1,150 +1,109 @@
-# Desktop-omdesign v2 — utifrån dina skärmdumpar
+# Desktop-fix v3 — baserat på dina skärmdumpar + feedback
 
-Skärmdumparna avslöjar fyra konkreta problem som planen behöver lösa direkt. Mobilen rörs inte i något steg.
+Fyra konkreta problem, en sak åt gången. Mobil rörs inte.
 
-## Vad funkar (behåller vi)
+## 1. Snabblogg-modalerna (sömn/kropp/mående/medicin)
 
-- **Topbar** med datum/vecka + check-in-CTA + e-post + logga ut är ren.
-- **Utforska** är nästan i mål — 4-kolumns grid läser bra, situations-sektioner är tydliga.
-- **Färger, typografi, tone-of-voice** — sitter. Inget formspråk ska ändras.
-- **WeeklyPlaybook-, VeckansBild-, RiskSignals-kort** är välkomponerade i sig.
+Idag: centrerad 720px-modal, men innehållet ser "konstigt" ut — 5h/6h/7h/8h/9h som tunna piller + en separat ±-rad + 0–10-knappar i en lång rad. Det är två UI-paradigm på samma yta.
 
-## Vad som inte funkar — diagnos per skärm
+**Tillbaka till "den gamla vyn"-känslan men contained:**
+- Behåll centrerad modal `max-w-[560px]` (smalare än 720, mer "kort" än "panel")
+- Sömn: stor läsbar timme-display (48px siffra) + ±-knappar (40×40) — INTE pillerraden 5h–9h
+- Kvalitet 0–10 + Mående -2…+2: rendera som **enhetlig knapprad** i full bredd, en knapp = `flex-1`, höjd 48px, vald = primary-bg
+- Medicin: 3 stora kort (Tagen / Delvis / Hoppade) som i mobil — inte trångt
+- Bottenknappen "Spara" i sticky footer med 16px padding
+- Mobil: oförändrad bottom-sheet
 
-### 1. Today (Idag) — "smalt" mittsegment, lufthål till vänster
-- Innehållet ligger i ~880 px mittkolumn med ~250 px tom luft mellan SideNav och första kortet.
-- "För dig"-korten *skär av* till höger (sista kortet trunkeras).
-- "Senaste aktivitet" hamnar i höger underkolumn där den knappt syns.
+Fil: `src/components/ui/drawer.tsx` (justera lg:max-w), `src/pages/QuickLog.tsx` (rendering)
 
-### 2. Insikter — vertikal lista som tvingar scroll, tom högerkolumn
-- Veckomatta + Snabb-sammanfattning + Playbook + Veckans bild + (senare) Riktning-graf staplas i en kolumn på ~870 px.
-- Högerkolumnen är **helt tom** efter "Detaljer / Återhämtningshistorik" — flera tusen px tomrum.
-- Användaren ska inte behöva scrolla för att hitta sin riktning-graf.
+## 2. Rensa ALLA emojis
 
-### 3. Vård — mest tomma ytor
-- Hela vänsterkolumnen är vit/tom; allt innehåll trängs i höger ~480 px.
-- Worst-offender: 1575 px skärm visar ~480 px innehåll = ~30 % utnyttjande.
+Hittade dessa:
+- `src/pages/Checkin.tsx:29` — `moodEmoji` (😊🙂😐🙁😔)
+- `src/pages/Checkin.tsx:347` — `"✓ Förfyllt..."`
+- `src/pages/QuickLog.tsx:774` — mood-rad med emojis
+- `src/pages/QuickLog.tsx:941–943` — medicin ✅🟡⛔
+- `src/pages/Today.tsx:816` — `"✓ Du har redan loggat..."`
+- `src/pages/Journal.tsx:406` — `"✓ Inkluderas i rapport"`
+- `src/components/desktop/WeekMat.tsx:230` — `"✓"`
 
-### 4. Snabblogg (Sömn/Kropp/Mående/Medicin) — sheets spränger skärmen
-- Bottom-sheets renderas i **full skärmbredd 1920 px**. Sömn-skalan 0–10 blir 11 enorma rutor som är omöjliga att skanna.
-- Mående har 33 rutor på en rad → meningslöst som UI.
+Ersätt med **lucide-ikoner** (Check, Circle, X, Minus, SmilePlus etc.) eller bara text. Mood-skalan blir nummer-knappar -2…+2 med textetikett ("Tungt" / "Neutralt" / "Lätt"). Medicin blir Check/MinusCircle/XCircle.
 
-### 5. SideNav — abstrakta stickers säger inget
-- Items: små färgade klumpar utan semantik. "Idag", "Utforska", "Insikter", "Analys", "Vård" får ikoner som ser likadana ut.
-- Snabblogg-chips är 4 små klotter ovanför "Logga aktivitet".
+## 3. Idag — scrollas trots desktop-grid
 
-### 6. Övrigt
-- Hero-bannern (grön/lila/orange) på varje sida tar 200 px höjd och säger bara sidans namn → bortkastat space på desktop.
-- Topbar har "Skriv i journalen" som **gigantisk gul knapp** i sidomenyn, men på Today/Insikter syns ingen journal-genväg i toppen.
+Skärmdumpen visar att högerkolumn slutar vid "Rekommenderat just nu"-kortet och allt annat (Senaste aktivitet, Att hålla ett öga på) ligger i mittenkolumnen som scrollar. "Hur har du det?"-CTA upprepas onödigt nedanför streck-knappen.
 
----
-
-## Plan — i 5 fokuserade steg
-
-### Steg 1 — Riv 560 px-cappen och fyll bredden korrekt
-
-`AppShell`:
-- Default desktop-bredd höjs till **`max-w-[1440px]`** (vi har 1575 px att jobba med).
-- Inner-padding: `lg:px-8` (inte `px-10`) — varje pixel av läsyta räknas.
-- Ta bort `wide`-propen helt; alla sidor blir "wide" på desktop. För renderingar som **vill** centrera (LearnArticle, Onboarding, Auth) införs `density="reader"` som cappar 760 px centrerat.
-
-Effekt: Today/Insikter/Vård fyller ~1170 px innehåll bredvid 270 px SideNav. Inget hål till vänster.
-
-### Steg 2 — Krymp hero, ge varje sida ett desktop-eget rutnät
-
-Hero-bannern blir på desktop en **kompakt sidhuvud-rad** (56 px hög: ikon + titel + 1-rads subtitle), inte ett 200 px-block. Mobilen behåller stort hero.
-
-Nya layouts per sida (mobilflöden orörda):
-
-**Today** — 3-kolumns `DashboardGrid`:
-```text
-┌───── header (kompakt) ─────────────────┐
-│ Greet · State · Baseline-progress · KPI│
-├──────────┬──────────────┬───────────────┤
-│ Primär   │ För dig      │ Risksignaler  │
-│ rek-kort │ (4-grid, ej  │ Senaste akt   │
-│ +State   │ overflow!)   │ (tidslinje)   │
-│ +QuickLog│ Evening pred │ Väder         │
-│          │ Dagens rutin │ Krisplan-länk │
-└──────────┴──────────────┴───────────────┘
+**Omkomposition (`src/pages/Today.tsx` lg-grenen):**
 ```
-"För dig" går från `overflow-x-auto`-snap-carousel → `lg:grid lg:grid-cols-3` (inget klipps).
-
-**Insikter** — break upp vertikala listan i ett verktygsbord:
-```text
-┌── Veckomatta (full bredd, +sparkline per rad) ──┐
-├───────────────────────────┬─────────────────────┤
-│ Riktning-graf (stor)      │ Veckans playbook    │
-│                           │ (sticky)            │
-├───────────────────────────┤                     │
-│ Veckans bild (narrativ)   │                     │
-├───────────────────────────┴─────────────────────┤
-│ Rörelse+återhämtning · Vad gjorde dagen av ·    │
-│ Dagslista (3-kol grid, inte stack)              │
-└──────────────────────────────────────────────────┘
+┌─ kompakt header ──────────────────────────────────┐
+├──────────────┬───────────────┬─────────────────────┤
+│ VÄNSTER 30%  │ MITT 40%      │ HÖGER 30%           │
+│ Check-in     │ "Hur har du   │ Rekommenderat       │
+│ progress     │  det?" CTA    │ just nu             │
+│ Tre rader    │ (en gång!)    │                     │
+│ State chip   │ Välj liten    │ För dig (3 kort,    │
+│ Baseline     │ start         │ stack på höjden)    │
+│              │ Snabblogga    │                     │
+│              │ favorit       │ Senaste aktivitet   │
+│              │               │ (5 senaste)         │
+│              │               │ Att hålla öga på    │
+└──────────────┴───────────────┴─────────────────────┘
 ```
-Resultat: Riktning-grafen är synlig **utan scroll**, playbook följer med som sticky aside.
+- "För dig"-korten staplas vertikalt i höger 30%-kolumn (inte 3-grid över hela bredden) → inget tomrum
+- "Hur har du det?"-rad renderas EN gång
+- Senaste aktivitet flyttas från botten till höger, max 5 rader med "Visa fler" → ingen scroll behövs på 1080p
 
-**Vård** — flytta alla wizard-vyer in i ett `SplitWorkspace`:
-- Vänster (60%): aktiv sektion (PHQ/GAD-status, mediciner, kontakter, rapport-byggare)
-- Höger (40%): kontextpanel — kommande skattningar, risksignaler, senaste exporter
-- Subvyer som idag pushar till nya routes blir **inline-paneler** i samma split.
+## 4. Insikter — scrollas, högerkolumn tom
 
-### Steg 3 — Snabblogg-sheets blir centrerade desktop-modaler
+Skärmdumpen: Veckomatta + Snabb-sammanfattning + Veckans bild i vänster, Playbook i höger — sedan tom höger medan Dagens lilla steg + Riktning-graf + Vad gjorde dagen + dagslista alla staplas i vänster och kräver scroll.
 
-På `lg+` byter Sheet-komponenten variant:
-- Mobil: bottom-sheet som idag (oförändrat).
-- Desktop: **centrerad modal**, `max-w-[720px]`, max-height 80vh, scrollbar inom modal.
-- Skalan 0–10 renderas som **kompakta knappar** (40×40 px med tonad bakgrund för valt steg), inte feta rutor som tar 150 px höjd vardera.
-- Mående-vyn: tre rader om 11 knappar = 720 px bredd · 3 × 56 px höjd, inte 1920 × 1000 px.
+**Omkomposition (`src/pages/Insikter`/Week-aktuell fil):**
+```
+┌─ Veckomatta (full bredd, 7 kolumner, kompakt 280px höjd) ─┐
+├──────────────────────────────┬─────────────────────────────┤
+│ Veckans riktning-graf (stor) │ Veckans playbook (sticky)   │
+│ + #1 prioritet under         │                             │
+├──────────────────────────────┤ Dagens lilla steg           │
+│ Veckans bild (narrativ)      │                             │
+├──────────────────────────────┤ Snabb sammanfattning →      │
+│ Vad gjorde dagen av (bars)   │ analysvyn                   │
+├──────────────────────────────┴─────────────────────────────┤
+│ Dagslista (7 dagar i 3-kol grid, inte vertikal stack)      │
+└────────────────────────────────────────────────────────────┘
+```
+- Höger aside blir `sticky top-20` så playbook+dagens steg följer med vid scroll
+- Dagslistan går från 7 vertikala kort → 3-kolumns grid längst ner (inget scroll-block)
+- Riktning-grafen lyfts upp så den syns above the fold
 
-Implementeras genom att lägga `lg:` overrides i `sheet.tsx`/skapa `ResponsiveDialog`-wrapper.
+## 5. Krisplan — för smal
 
-### Steg 4 — Nya, tydliga ikoner i SideNav (desktop-only)
+Skärmdumpen: innehållet (rubrik + signaler + akutkontakter) ligger i ~720px centrerat på en 1575px-skärm. AppShell ger 1440px men `<CrisisPlan>` använder antagligen `density="reader"` eller har inre `max-w`.
 
-Ersätt `AbstractIcon`-stickers på desktop med **lucide-react line-icons + sektionsfärgad bakgrundsbricka**:
+**Fix:** Byt till desktop-grid när lg+:
+```
+┌─ Stort hero (orange curved) — behåll ──────────────────────┐
+├──────────────────────────────┬─────────────────────────────┤
+│ VÄNSTER 60%                  │ HÖGER 40%                   │
+│ Signaler senaste 14 dagarna  │ AKUT — alltid en knapptr.   │
+│ Tidiga varningstecken        │  (4 kontakter, större)      │
+│ Det här hjälper mig          │                             │
+│ Det här ska jag undvika      │ LÄGET JUST NU (sticky)      │
+│ Personer jag kan ringa       │                             │
+│ Professionella kontakter     │ Snabbgenvägar:              │
+│ Trygga platser               │  → Skapa vårdrapport        │
+│ [Spara min krisplan]         │  → Skriv i journalen        │
+└──────────────────────────────┴─────────────────────────────┘
+```
+Form-fälten utnyttjar full bredd av vänster 60% (idag är de 320px breda mitt i en tom yta).
 
-| Item | Ikon | Färg |
-|---|---|---|
-| Idag | `Home` | orange |
-| Utforska | `Compass` | pink |
-| Insikter | `LineChart` | green |
-| Analys | `BarChart3` | purple |
-| Vård | `Stethoscope` | blue |
-| Snabblogg | `Zap` | orange |
-| Krisplan | `ShieldAlert` | red |
-| Inställningar | `Settings` | foreground |
-
-- Ikonstorlek: 22 px, stroke 2.
-- Aktivt läge: ikon i sektionsfärg + 14 % bg + 3 px vänsterstreck (behåll dagens mönster).
-- Mobilens BottomNav rör vi inte (där fungerar AbstractIcon-stickers visuellt).
-
-Snabblogg-chipsen ovanför "Logga aktivitet" byts från 4 små klotter till **4 rena ikon-knappar** (Moon, Activity, SmilePlus, Pill) med samma färgkodning, label i `title=`.
-
-### Steg 5 — Desktop-finish
-
-- **Hover-states** på alla kort: `hover:-translate-y-0.5 hover:shadow-lg`.
-- **Tooltips** på chart-axlar och KPI-deltas (Radix Tooltip finns).
-- **Command palette `⌘K`** med snabbnavigering + "logga aktivitet" + "starta check-in" + sök övning. Aktiveras endast `lg+`.
-- **`⌘N` / `n`** → ny journal-anteckning, **`?`** → genvägshjälp.
-- **Dölj FAB** på desktop (redan delvis gjort; verifiera).
-- **Densitet**: body-text på desktop `text-[15px]` (mobil behåller `text-[17px]`).
-
----
-
-## Teknik
-
-- All ny chrome bor i `src/components/desktop/`. Mobil-JSX oförändrad.
-- Per sida: `{<div className="lg:hidden">mobil</div>}{<div className="hidden lg:block">desktop</div>}` så mobilträden fryses bit-för-bit.
-- Inga nya paket: `lucide-react`, `cmdk` (Command), `Tooltip`, `Dialog` finns alla redan.
-- Memory: `mem://design/desktop-patterns` uppdateras med DashboardGrid + SplitWorkspace + ResponsiveDialog + ikon-mappningen. Core-regeln "skriv aldrig egna `lg:grid-cols`-rotlayouter" förstärks med exempel från Today/Insikter.
+Fil: `src/pages/CrisisPlan.tsx` — ta bort eventuell `max-w-xl` på innerwrapper, byt till `lg:grid lg:grid-cols-[1fr_400px] lg:gap-8`.
 
 ## Leveransordning
 
-1. **Steg 1 + 2 (Today)** i en runda — direkt synlig effekt: ingen smal kolumn, "För dig" klipps inte längre.
-2. **Steg 4 (ikoner)** — snabb vinst, kan göras parallellt.
-3. **Steg 2 (Insikter + Vård)** — den största omfördelningen av yta.
-4. **Steg 3 (sheets → modaler)**.
-5. **Steg 5 (polish)**.
+1. **Emoji-rensning** (snabbt, 7 ställen)
+2. **Snabblogg-modaler** (störst visuell vinst)
+3. **Krisplan-grid** (enkel layout-fix)
+4. **Idag-omkomposition** (mer arbete, högst impact mot scroll)
+5. **Insikter-omkomposition** (samma omfattning som Idag)
 
-Säg till om jag ska köra hela kedjan eller bara börja med Steg 1+2+4 (största synliga vinsten).
+Säg till om jag ska köra hela kedjan eller börja med 1+2+3 (snabba vinster) först.
