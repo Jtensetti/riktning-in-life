@@ -728,7 +728,7 @@ const Week = () => {
       </section>
 
       {historyOpen && (
-      <section className="mb-7 animate-fade-in-up lg:col-start-2">
+      <section className="mb-7 animate-fade-in-up lg:col-span-2">
         <div className="mb-3">
           <p className="text-xs text-text-secondary">Varje dag berättar något</p>
         </div>
@@ -884,7 +884,7 @@ const Week = () => {
 
         {/* Per-dag rader — sorterade så att de mest relevanta dagarna för valt filter
             hamnar högst. "Idag" hålls alltid kvar i topp som ankare. */}
-        <div className="space-y-2">
+        <div className="space-y-2 lg:grid lg:grid-cols-3 lg:gap-3 lg:space-y-0">
           {(() => {
             const todayIso = new Date().toISOString().split("T")[0];
             // Beräkna ett relevanspoäng per dag givet aktivt filter.
