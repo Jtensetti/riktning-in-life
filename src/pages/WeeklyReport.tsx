@@ -128,7 +128,10 @@ const WeeklyReport = () => {
   // Lyssna på serverhydrering — på en ny enhet vill vi att frågorna dyker upp
   // så fort hydrateUserSettings har skrivit ner cachen.
   useEffect(() => {
-    const onHydrated = () => setQuestions(readCachedQuestions());
+    const onHydrated = () => {
+      setQuestions(readCachedQuestions());
+      setDoctorEmail(localStorage.getItem("riktning_doctor_email") || "");
+    };
     window.addEventListener(SETTINGS_HYDRATED_EVENT, onHydrated);
     return () => window.removeEventListener(SETTINGS_HYDRATED_EVENT, onHydrated);
   }, []);
