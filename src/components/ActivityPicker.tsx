@@ -168,7 +168,35 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
     return recentSlugs.map((s) => bySlug.get(s)).filter((c): c is CatalogItem => !!c);
   }, [catalog, recentSlugs]);
 
+  /** "Rekommenderat just nu" — tid-på-dygnet + senaste loggar. */
+  const recommendedItems = useMemo(() => {
+    return recommendForNow({ catalog, recentSlugs, limit: 6 }).filter(
+      (c) => !recentSlugs.includes(c.slug),
+    );
+  }, [catalog, recentSlugs]);
+
+  const draftFromItem = (item: CatalogItem, opts?: { mood?: number }): ActivityDraft => ({
+    slug: item.slug,
+    label: item.label,
+    category: item.category,
+    icon: item.icon,
+    color: item.color,
+    duration_minutes: item.default_minutes,
+    mood_delta: opts?.mood ?? 0,
+    semantic_kind: item.semantic_kind ?? null,
+  });
+
   const pick = (item: CatalogItem) => {
+    if (multi) {
+      // Toggle i multi-select-läge — ingen detaljvy.
+      setPicked((prev) => {
+        const next = new Set(prev);
+        if (next.has(item.slug)) next.delete(item.slug);
+        else next.add(item.slug);
+        return next;
+      });
+      return;
+    }
     setSelected(item);
     setDuration(item.default_minutes);
     setMood(1);
@@ -194,6 +222,17 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
       sleep_quality: selected.semantic_kind === "somn" ? sleepQuality : null,
       location: selected.semantic_kind === "aterhamtning" ? location : null,
     });
+    onOpenChange(false);
+  };
+
+  /** Spara alla valda aktiviteter i multi-select. Varje får default-tid. */
+  const confirmMulti = () => {
+    if (!picked.size) return;
+    const bySlug = new Map(catalog.map((c) => [c.slug, c]));
+    for (const slug of picked) {
+      const item = bySlug.get(slug);
+      if (item) onAdd(draftFromItem(item));
+    }
     onOpenChange(false);
   };
 
