@@ -343,7 +343,7 @@ const QuickLog = () => {
   }
 
   return (
-    <AppShell>
+    <AppShell wide>
       <ScreenHeader
         screen="log"
         title="Snabblogg"
