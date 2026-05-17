@@ -29,6 +29,8 @@ export type Pick = {
   reasonShort: string;
   reasonLong: string;
   fitScore: number;
+  /** Optional human chip e.g. "Brukar sänka din oro ~1.3 av 10 (8 ggr)" — fylls i av caller via personalEffect. */
+  effectChip?: string;
 };
 
 export type CheckinSignals = {

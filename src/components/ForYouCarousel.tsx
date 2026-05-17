@@ -52,7 +52,18 @@ export const ForYouCarousel = ({ picks }: Props) => {
               ]}
               lead={{ value: p.exercise.duration_minutes, unit: "min" }}
               title={p.exercise.title}
-              reason={p.reasonLong}
+              reason={
+                p.effectChip ? (
+                  <>
+                    {p.reasonLong}
+                    <span className="block mt-1 text-[11px] font-extrabold uppercase tracking-wider opacity-80">
+                      {p.effectChip}
+                    </span>
+                  </>
+                ) : (
+                  p.reasonLong
+                )
+              }
               metaLeft={p.reasonShort}
               showChevron
             />

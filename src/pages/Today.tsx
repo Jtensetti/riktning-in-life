@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,7 +14,8 @@ import { useUserSettings } from "@/hooks/useUserSettings";
 import { getTimeContext, type TimeContext } from "@/lib/timeContext";
 import { useWeather, isOutdoorFriendly, weatherLabel, hasAskedWeatherPermission, isWeatherPermissionGranted, isWeatherPermissionDismissed, dismissWeatherPermission, type Weather } from "@/lib/weather";
 import { ForYouCarousel } from "@/components/ForYouCarousel";
-import { recommendForToday, type Exercise as RecExercise, type Pick, type EffectHistory, type ForecastSignal } from "@/lib/recommend";
+import { recommendForToday, type Exercise as RecExercise, type Pick, type ForecastSignal } from "@/lib/recommend";
+import { buildPersonalEffect, pickEffectHistoryFor, bestStatFor, formatEffectChip } from "@/lib/personalEffect";
 import { Moon } from "lucide-react";
 import { StreakRing } from "@/components/StreakRing";
 import { QuickLogPills } from "@/components/QuickLogPills";
@@ -503,34 +504,20 @@ const Today = () => {
       exercise_id: s.exercise_id ?? undefined,
     }));
 
-  // Personlig effekt-historik per övning: humörlyft + orosänkning, normaliserat till skalsteg.
-  // Liknar logik i buildLiftSummary men aggregerar per exercise_id för snabbt uppslag.
-  const effectHistory: EffectHistory = (() => {
-    const byId: Record<string, { sum: number; count: number }> = {};
-    const byCat: Record<string, { sum: number; count: number }> = {};
-    for (const s of recent) {
-      if (!s.exercise_id || !s.exercises) continue;
-      const moodDelta = s.mood_before != null && s.mood_after != null
-        ? (s.mood_after - s.mood_before) / 3
-        : 0;
-      const anxRelief = s.anxiety_before != null && s.anxiety_after != null
-        ? (s.anxiety_before - s.anxiety_after) / 3
-        : 0;
-      if (s.mood_before == null && s.anxiety_before == null) continue;
-      const combined = moodDelta + anxRelief;
-      const ex = (byId[s.exercise_id] ??= { sum: 0, count: 0 });
-      ex.sum += combined;
-      ex.count += 1;
-      const cat = (byCat[s.exercises.category] ??= { sum: 0, count: 0 });
-      cat.sum += combined;
-      cat.count += 1;
-    }
-    const toStat = (m: Record<string, { sum: number; count: number }>) =>
-      Object.fromEntries(
-        Object.entries(m).map(([k, v]) => [k, { avgDelta: Math.round((v.sum / v.count) * 10) / 10, count: v.count }]),
-      );
-    return { byExerciseId: toStat(byId), byCategory: toStat(byCat) };
-  })();
+  // Personlig effekt — central beräkning i lib/personalEffect.ts.
+  const personalEffect = useMemo(
+    () => buildPersonalEffect(recent as unknown as Parameters<typeof buildPersonalEffect>[0], []),
+    [recent],
+  );
+  const effectHistory = useMemo(
+    () =>
+      pickEffectHistoryFor(personalEffect, {
+        anxiety: checkin?.anxiety ?? null,
+        energy: checkin?.energy ?? null,
+        mood_heaviness: checkin?.mood_heaviness ?? null,
+      }),
+    [personalEffect, checkin?.anxiety, checkin?.energy, checkin?.mood_heaviness],
+  );
 
   // 7-day insights
   const moodTrend = computeTrend(trendData, c => c.mood_heaviness, true);
@@ -606,9 +593,14 @@ const Today = () => {
   const forecastSignal: ForecastSignal | undefined = forecast?.kind
     ? { kind: forecast.kind, partOfDay: time.partOfDay }
     : undefined;
-  const picks: Pick[] = showSafety
+  const rawPicks: Pick[] = showSafety
     ? []
     : recommendForToday(library, checkin, time, weather, recentForRec, effectHistory, forecastSignal);
+  // Berika varje pick med "Brukar sänka din oro …"-rad om vi har bevis.
+  const picks: Pick[] = rawPicks.map((p) => {
+    const hit = bestStatFor(personalEffect, p.exercise);
+    return hit ? { ...p, effectChip: formatEffectChip(hit) } : p;
+  });
 
   // Levande hero — tid + väder + säsong + dagens energi avgör ton, ikon och tempo.
   const hero = heroVisualsFor({
