@@ -239,6 +239,8 @@ const CrisisPlan = () => {
         split="aside"
         left={
           <>
+            <RiskSignalsCard signals={riskSignals} showCrisisLink={false} title="Signaler vi sett senaste 14 dagarna" />
+
             {/* Akutknappar — på mobil överst i flödet, på desktop i höger kontextpanel. */}
             <section className="mb-7 lg:hidden">
               <h2 className="text-sm font-extrabold uppercase tracking-wider text-text-secondary mb-3">
