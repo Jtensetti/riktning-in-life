@@ -9,8 +9,12 @@ import { InsightCard } from "@/components/ui-kit/InsightCard";
 import { ListCard } from "@/components/ui-kit/ListCard";
 import { MetricTrendCard } from "@/components/MetricTrendCard";
 import { WeekMat, buildWeekMatDays } from "@/components/desktop/WeekMat";
+import { WideLayout } from "@/components/desktop/WideLayout";
+import { ContextPanel } from "@/components/desktop/ContextPanel";
+import { CorrelationCard } from "@/components/desktop/CorrelationCard";
 import { buildMetricTrends, overallVerdict, loggedDaysLastWeek } from "@/lib/analysis";
 import { buildLiftSummary } from "@/lib/dayInsights";
+import { buildCorrelations } from "@/lib/correlations";
 import { isoDaysAgo, type Checkin } from "@/lib/metrics";
 import type { IconName } from "@/components/AbstractIcon";
 
@@ -83,6 +87,15 @@ const Analysis = () => {
   const loggedDays = useMemo(() => loggedDaysLastWeek(checkins), [checkins]);
   const verdict = useMemo(() => overallVerdict(trends, loggedDays), [trends, loggedDays]);
   const lifts = useMemo(() => buildLiftSummary(activities, sessions), [activities, sessions]);
+  const correlations = useMemo(
+    () => buildCorrelations(checkins, activities.map((a) => ({
+      date: a.date,
+      duration_minutes: a.duration_minutes,
+      semantic_kind: a.semantic_kind,
+      mood_delta: a.mood_delta,
+    }))),
+    [checkins, activities],
+  );
   const sparse = loggedDays < 4;
 
   return (
@@ -125,84 +138,111 @@ const Analysis = () => {
         )}
       </InsightCard>
 
-      {/* Veckomatta — 7-dagars matris med Riktning/Sömn/Rörelse/Loggar/Check-in.
-       *  Ger en datanära jämförelsevy precis under den mänskliga slutsatsen. */}
-      <WeekMat days={buildWeekMatDays(checkins, activities)} className="mb-8" />
+      <WideLayout
+        split="aside"
+        left={
+          <>
+            <section className="mb-8">
+              <h2 className="text-h2 mb-1">Vad förändras</h2>
+              <p className="text-body text-text-secondary mb-4">
+                {sparse
+                  ? "Logga några dagar till så kan vi börja jämföra vecka mot vecka."
+                  : "Hur veckans mått rör sig jämfört med förra veckan."}
+              </p>
+              <div className="space-y-4">
+                {trends.map((t, i) => (
+                  <MetricTrendCard
+                    key={t.meta.metric}
+                    trend={t}
+                    index={i}
+                    hideDelta={sparse}
+                  />
+                ))}
+              </div>
+            </section>
 
-      <div className="lg:grid lg:grid-cols-[1.5fr_1fr] lg:gap-10">
-        <section className="mb-8 lg:mb-0">
-          <h2 className="text-h2 mb-4">Vad förändras</h2>
-          {sparse && (
-            <p className="text-body text-text-secondary mb-4">
-              Logga några dagar till så kan vi börja jämföra vecka mot vecka.
-            </p>
-          )}
-          <div className="space-y-4">
-            {trends.map((t, i) => (
-              <MetricTrendCard
-                key={t.meta.metric}
-                trend={t}
-                index={i}
-                hideDelta={sparse}
-              />
-            ))}
-          </div>
-        </section>
+            {(lifts.lifters.length > 0 || lifts.drainers.length > 0) && (
+              <section className="mb-8">
+                <h2 className="text-h2 mb-1">Det här verkar hjälpa</h2>
+                <p className="text-body text-text-secondary mb-4">
+                  Aktiviteter med tydlig påverkan på humör/oro.
+                </p>
+                <div className="space-y-4">
+                  {lifts.lifters.map((l, i) => (
+                    <ListCard
+                      key={`lift-${l.label}-${i}`}
+                      icon="spark"
+                      iconTone="green-recovery"
+                      title={l.label}
+                      meta={`${l.count} ggr · snittlyft ${l.avgDelta >= 0 ? "+" : ""}${l.avgDelta}`}
+                      trailing={
+                        <span className="inline-flex items-center gap-1 rounded-full bg-green-recovery/15 text-green-recovery px-2 py-1 text-meta normal-case tracking-normal">
+                          {l.effectLabel}
+                        </span>
+                      }
+                    />
+                  ))}
+                  {lifts.drainers.map((d, i) => (
+                    <ListCard
+                      key={`drain-${d.label}-${i}`}
+                      icon="spark"
+                      iconTone="purple-sleep"
+                      title={d.label}
+                      meta={`${d.count} ggr · snittlyft ${d.avgDelta >= 0 ? "+" : ""}${d.avgDelta}`}
+                      trailing={
+                        <span className="inline-flex items-center gap-1 rounded-full bg-red-bg text-red-risk/90 px-2 py-1 text-meta normal-case tracking-normal">
+                          Drar
+                        </span>
+                      }
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
 
-        <div className="space-y-6 lg:space-y-6">
+            <button
+              onClick={() => navigate("/insikter")}
+              className="w-full ui-card-list flex items-center gap-3 press-soft text-left"
+            >
+              <div className="flex-1">
+                <p className="text-meta text-text-secondary mb-0.5">Mer detaljer</p>
+                <p className="text-card-title leading-tight">Öppna hela veckodashboarden</p>
+              </div>
+              <ChevronRight size={20} className="text-text-secondary" />
+            </button>
 
-      {(lifts.lifters.length > 0 || lifts.drainers.length > 0) && (
-        <section className="mb-8">
-          <h2 className="text-h2 mb-4">Det här verkar hjälpa</h2>
-          <div className="space-y-4">
-            {lifts.lifters.map((l, i) => (
-              <ListCard
-                key={`lift-${l.label}-${i}`}
-                icon="spark"
-                iconTone="green-recovery"
-                title={l.label}
-                meta={`${l.count} ggr · snittlyft ${l.avgDelta >= 0 ? "+" : ""}${l.avgDelta}`}
-                trailing={
-                  <span className="inline-flex items-center gap-1 rounded-full bg-green-recovery/15 text-green-recovery px-2 py-1 text-meta normal-case tracking-normal">
-                    {l.effectLabel}
-                  </span>
-                }
-              />
-            ))}
-            {lifts.drainers.map((d, i) => (
-              <ListCard
-                key={`drain-${d.label}-${i}`}
-                icon="spark"
-                iconTone="purple-sleep"
-                title={d.label}
-                meta={`${d.count} ggr · snittlyft ${d.avgDelta >= 0 ? "+" : ""}${d.avgDelta}`}
-                trailing={
-                  <span className="inline-flex items-center gap-1 rounded-full bg-red-bg text-red-risk/90 px-2 py-1 text-meta normal-case tracking-normal">
-                    Drar
-                  </span>
-                }
-              />
-            ))}
-          </div>
-        </section>
-      )}
+            {fetching && checkins.length === 0 && (
+              <div className="mt-6 h-32 rounded-3xl bg-surface-alt animate-pulse" aria-hidden />
+            )}
+          </>
+        }
+        right={
+          <ContextPanel
+            title="Bevis & samband"
+            footnote="Datan följer med när du scrollar — så slutsatserna alltid har stöd."
+          >
+            {/* Veckomatta — 7-dagars matris med Riktning/Sömn/Rörelse/Loggar/Check-in. */}
+            <WeekMat days={buildWeekMatDays(checkins, activities)} />
 
-      <button
-        onClick={() => navigate("/insikter")}
-        className="w-full ui-card-list flex items-center gap-3 press-soft text-left"
-      >
-        <div className="flex-1">
-          <p className="text-meta text-text-secondary mb-0.5">Mer detaljer</p>
-          <p className="text-card-title leading-tight">Öppna hela veckodashboarden</p>
-        </div>
-        <ChevronRight size={20} className="text-text-secondary" />
-      </button>
-
-      {fetching && checkins.length === 0 && (
-        <div className="mt-6 h-32 rounded-3xl bg-surface-alt animate-pulse" aria-hidden />
-      )}
-        </div>
-      </div>
+            {correlations.length > 0 ? (
+              <div className="space-y-3">
+                <h3 className="text-sm font-extrabold uppercase tracking-wider text-text-secondary">
+                  Vad hänger ihop
+                </h3>
+                {correlations.map((c, i) => (
+                  <CorrelationCard key={c.key} correlation={c} index={i} />
+                ))}
+              </div>
+            ) : (
+              <div className="card-quiet">
+                <p className="text-sm text-text-secondary leading-snug">
+                  Vi behöver några fler loggade dagar för att hitta tydliga samband. Fortsätt logga — kort räcker.
+                </p>
+              </div>
+            )}
+          </ContextPanel>
+        }
+      />
     </AppShell>
   );
 };
