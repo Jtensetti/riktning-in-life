@@ -169,25 +169,17 @@ const Vard = () => {
              *  ändå under left, så vi sparar plats). */}
             <section className="mb-7 hidden lg:block card-cream p-4">
               <h3 className="text-xs font-extrabold uppercase tracking-wider text-text-secondary mb-3">
-                Vårdstatus
+                Senaste resultat
               </h3>
-              <dl className="space-y-2.5">
+              <AssessmentStatusList
+                forms={forms}
+                types={["phq9", "gad7", "who5"]}
+                onOpen={(t) => { setActiveForm(t); setView("form"); }}
+              />
+              <dl className="mt-4 pt-3 border-t border-border-soft space-y-2">
                 <div className="flex items-baseline justify-between">
                   <dt className="text-xs font-bold text-text-secondary">Aktiva läkemedel</dt>
                   <dd className="text-sm font-extrabold tabular-nums">{meds.filter(m => m.active).length}</dd>
-                </div>
-                <div className="flex items-baseline justify-between">
-                  <dt className="text-xs font-bold text-text-secondary">Senaste skattning</dt>
-                  <dd className="text-sm font-extrabold tabular-nums">
-                    {(() => {
-                      const last = forms[0]?.date;
-                      if (!last) return "Aldrig";
-                      const diff = Math.floor((Date.now() - new Date(last).getTime()) / 86_400_000);
-                      if (diff === 0) return "Idag";
-                      if (diff === 1) return "Igår";
-                      return `${diff} d sedan`;
-                    })()}
-                  </dd>
                 </div>
                 <div className="flex items-baseline justify-between">
                   <dt className="text-xs font-bold text-text-secondary">Skattningar (90 d)</dt>
@@ -196,6 +188,9 @@ const Vard = () => {
                   </dd>
                 </div>
               </dl>
+              <p className="mt-3 text-[11px] text-text-secondary leading-snug">
+                Severity-färgen följer skalornas egna gränser — klicka för att skatta på nytt.
+              </p>
             </section>
 
             <section className="mb-7">
