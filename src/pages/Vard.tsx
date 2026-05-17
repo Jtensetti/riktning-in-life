@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { WideLayout } from "@/components/desktop/WideLayout";
 import { AssessmentStatusList } from "@/components/desktop/AssessmentStatusList";
+import { severityToneFor, severityBadgeClasses } from "@/lib/severity";
 import { Illustration } from "@/components/Illustrations";
 import { AbstractIcon } from "@/components/AbstractIcon";
 import { ScreenHeader } from "@/components/ui-kit/ScreenHeader";
