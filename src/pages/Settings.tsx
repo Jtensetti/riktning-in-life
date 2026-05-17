@@ -148,166 +148,170 @@ const Settings = () => {
         }
       />
 
-      <div className="lg:grid lg:grid-cols-2 lg:gap-10">
-        <div className="min-w-0">
-          <section className="mb-7">
-            <h2 className="text-lg font-extrabold mb-3">Konto</h2>
-            <div className="card-soft p-4 mb-3">
-              <p className="text-xs font-bold text-text-secondary uppercase tracking-wide mb-1">E-post</p>
-              <p className="text-sm font-extrabold truncate">{user?.email ?? "—"}</p>
-            </div>
-            <Button
-              onClick={async () => {
-                await supabase.auth.signOut();
-                navigate("/auth", { replace: true });
-              }}
-              variant="secondary"
-              className="w-full h-12 rounded-full font-extrabold press-soft"
-            >
-              <LogOut size={16} /> Logga ut
-            </Button>
-          </section>
-
-          <section className="mb-7">
-            <h2 className="text-lg font-extrabold mb-3 flex items-center gap-2">
-              <AbstractIcon name="clock-alarm" size={20} color="hsl(var(--orange-deep))" />
-              Påminnelser
-            </h2>
-            <div className="space-y-3">
-              <ToggleRow label="Morgon-checkin" checked={reminders.morning_checkin} onChange={v => updateReminders({ ...reminders, morning_checkin: v })} />
-              <ToggleRow label="Kvällsjournal" checked={reminders.evening_journal} onChange={v => updateReminders({ ...reminders, evening_journal: v })} />
-              <ToggleRow label="Veckoformulär" checked={reminders.weekly_forms} onChange={v => updateReminders({ ...reminders, weekly_forms: v })} />
-            </div>
-          </section>
-
-          <section className="mb-7">
-            <h2 className="text-lg font-extrabold mb-3">Plats & väder</h2>
-            <div className="card-cream p-4">
-              <div className="flex items-start gap-3 mb-3">
-                <AbstractIcon
-                  name={weather ? weatherIcon(weather.kind, weather.isDaylight) : "weather-partly"}
-                  size={36}
-                  color={weather ? weatherIconColor(weather.kind, weather.isDaylight) : "hsl(var(--orange-start))"}
-                  accent="hsl(var(--cream-card))"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-extrabold">
-                    {locationGranted ? "Plats aktiv" : "Plats avstängd"}
-                  </p>
-                  <p className="text-xs text-text-secondary mt-0.5">
-                    {weather
-                      ? `${weatherLabel(weather.kind)} · ${Math.round(weather.tempC)}°`
-                      : "Anpassar tips och loggar vädret automatiskt."}
-                  </p>
-                </div>
+      <WideLayout
+        split="even"
+        left={
+          <>
+            <section className="mb-7">
+              <h2 className="text-lg font-extrabold mb-3">Konto</h2>
+              <div className="card-soft p-4 mb-3">
+                <p className="text-xs font-bold text-text-secondary uppercase tracking-wide mb-1">E-post</p>
+                <p className="text-sm font-extrabold truncate">{user?.email ?? "—"}</p>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  onClick={async () => {
-                    const w = await requestLocation();
-                    setLocationGranted(isWeatherPermissionGranted());
-                    if (w) toast.success("Plats uppdaterad");
-                  }}
-                  variant="secondary"
-                  className="flex-1 h-11 rounded-full font-extrabold press-soft"
-                  disabled={weatherStatus === "loading" || weatherStatus === "prompting"}
-                >
-                  {locationGranted ? "Hämta igen" : "Tillåt plats"}
-                </Button>
-                {locationGranted && (
-                  <Button
-                    onClick={() => {
-                      setWeatherPermissionGranted(false);
-                      setLocationGranted(false);
-                      toast.success("Platsåtkomst avstängd");
-                    }}
-                    variant="secondary"
-                    className="h-11 rounded-full font-extrabold press-soft"
-                  >
-                    Stäng av
-                  </Button>
-                )}
-              </div>
-            </div>
-          </section>
-
-          <section className="mb-7">
-            <h2 className="text-lg font-extrabold mb-3">Automatik</h2>
-            <div className="space-y-3">
-              <ToggleRow
-                label="Skapa journal automatiskt från övningar och aktiviteter"
-                checked={flags.auto_journal}
-                onChange={(v) => updateFlags({ ...flags, auto_journal: v })}
-              />
-            </div>
-            <p className="text-xs text-text-secondary mt-2 px-1">
-              Korta noteringar med före/efter-värden sparas i din journal när du loggar något.
-            </p>
-          </section>
-        </div>
-
-        <div className="min-w-0">
-          <section className="mb-7">
-            <h2 className="text-lg font-extrabold mb-3">Din data</h2>
-            <div className="space-y-3">
               <Button
-                onClick={exportAll}
-                disabled={busy}
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  navigate("/auth", { replace: true });
+                }}
                 variant="secondary"
-                className="w-full h-12 rounded-full font-extrabold justify-start press-soft"
+                className="w-full h-12 rounded-full font-extrabold press-soft"
               >
-                <AbstractIcon name="bookmark-soft" size={16} color="currentColor" /> Exportera all data
+                <LogOut size={16} /> Logga ut
               </Button>
-              <Button
-                onClick={() => setShowDelete(s => !s)}
-                disabled={busy}
-                className="w-full h-12 rounded-full font-extrabold justify-start bg-red-bg text-red-risk hover:bg-red-bg/80 press-soft"
-              >
-                <AbstractIcon name="eye-closed" size={16} color="currentColor" /> Radera all data
-              </Button>
-              {showDelete && (
-                <div className="rounded-3xl border-2 border-red-risk bg-red-bg p-4">
-                  <p className="text-sm font-extrabold text-red-risk mb-1">Detta går inte att ångra</p>
-                  <p className="text-xs text-foreground/80 mb-3">
-                    All din data raderas permanent. Skriv <strong>RADERA</strong> för att bekräfta.
-                  </p>
-                  <Input
-                    value={confirmText}
-                    onChange={e => setConfirmText(e.target.value)}
-                    placeholder="RADERA"
-                    className="h-11 rounded-2xl bg-surface mb-3"
+            </section>
+
+            <section className="mb-7">
+              <h2 className="text-lg font-extrabold mb-3 flex items-center gap-2">
+                <AbstractIcon name="clock-alarm" size={20} color="hsl(var(--orange-deep))" />
+                Påminnelser
+              </h2>
+              <div className="space-y-3">
+                <ToggleRow label="Morgon-checkin" checked={reminders.morning_checkin} onChange={v => updateReminders({ ...reminders, morning_checkin: v })} />
+                <ToggleRow label="Kvällsjournal" checked={reminders.evening_journal} onChange={v => updateReminders({ ...reminders, evening_journal: v })} />
+                <ToggleRow label="Veckoformulär" checked={reminders.weekly_forms} onChange={v => updateReminders({ ...reminders, weekly_forms: v })} />
+              </div>
+            </section>
+
+            <section className="mb-7">
+              <h2 className="text-lg font-extrabold mb-3">Plats & väder</h2>
+              <div className="card-cream p-4">
+                <div className="flex items-start gap-3 mb-3">
+                  <AbstractIcon
+                    name={weather ? weatherIcon(weather.kind, weather.isDaylight) : "weather-partly"}
+                    size={36}
+                    color={weather ? weatherIconColor(weather.kind, weather.isDaylight) : "hsl(var(--orange-start))"}
+                    accent="hsl(var(--cream-card))"
                   />
-                  <div className="flex gap-2">
-                    <Button
-                      variant="secondary"
-                      onClick={() => { setShowDelete(false); setConfirmText(""); }}
-                      className="flex-1 rounded-full font-extrabold"
-                    >
-                      Avbryt
-                    </Button>
-                    <Button
-                      onClick={deleteAll}
-                      disabled={confirmText !== "RADERA" || busy}
-                      className="flex-1 rounded-full bg-red-risk hover:bg-red-risk/90 text-white font-extrabold"
-                    >
-                      Radera
-                    </Button>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-extrabold">
+                      {locationGranted ? "Plats aktiv" : "Plats avstängd"}
+                    </p>
+                    <p className="text-xs text-text-secondary mt-0.5">
+                      {weather
+                        ? `${weatherLabel(weather.kind)} · ${Math.round(weather.tempC)}°`
+                        : "Anpassar tips och loggar vädret automatiskt."}
+                    </p>
                   </div>
                 </div>
-              )}
-            </div>
-          </section>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={async () => {
+                      const w = await requestLocation();
+                      setLocationGranted(isWeatherPermissionGranted());
+                      if (w) toast.success("Plats uppdaterad");
+                    }}
+                    variant="secondary"
+                    className="flex-1 h-11 rounded-full font-extrabold press-soft"
+                    disabled={weatherStatus === "loading" || weatherStatus === "prompting"}
+                  >
+                    {locationGranted ? "Hämta igen" : "Tillåt plats"}
+                  </Button>
+                  {locationGranted && (
+                    <Button
+                      onClick={() => {
+                        setWeatherPermissionGranted(false);
+                        setLocationGranted(false);
+                        toast.success("Platsåtkomst avstängd");
+                      }}
+                      variant="secondary"
+                      className="h-11 rounded-full font-extrabold press-soft"
+                    >
+                      Stäng av
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </section>
 
-          <section className="mb-7">
-            <h2 className="text-lg font-extrabold mb-3">Om Riktning</h2>
-            <div className="card-cream p-4">
-              <p className="text-sm leading-relaxed text-foreground/80">
-                Riktning är inte ett medicintekniskt verktyg och ersätter inte vård eller behandling. Vid akut fara, ring 112 eller besök psykiatrisk akutmottagning.
+            <section className="mb-7">
+              <h2 className="text-lg font-extrabold mb-3">Automatik</h2>
+              <div className="space-y-3">
+                <ToggleRow
+                  label="Skapa journal automatiskt från övningar och aktiviteter"
+                  checked={flags.auto_journal}
+                  onChange={(v) => updateFlags({ ...flags, auto_journal: v })}
+                />
+              </div>
+              <p className="text-xs text-text-secondary mt-2 px-1">
+                Korta noteringar med före/efter-värden sparas i din journal när du loggar något.
               </p>
-            </div>
-          </section>
-        </div>
-      </div>
+            </section>
+          </>
+        }
+        right={
+          <>
+            <section className="mb-7">
+              <h2 className="text-lg font-extrabold mb-3">Din data</h2>
+              <div className="space-y-3">
+                <Button
+                  onClick={exportAll}
+                  disabled={busy}
+                  variant="secondary"
+                  className="w-full h-12 rounded-full font-extrabold justify-start press-soft"
+                >
+                  <AbstractIcon name="bookmark-soft" size={16} color="currentColor" /> Exportera all data
+                </Button>
+                <Button
+                  onClick={() => setShowDelete(s => !s)}
+                  disabled={busy}
+                  className="w-full h-12 rounded-full font-extrabold justify-start bg-red-bg text-red-risk hover:bg-red-bg/80 press-soft"
+                >
+                  <AbstractIcon name="eye-closed" size={16} color="currentColor" /> Radera all data
+                </Button>
+                {showDelete && (
+                  <div className="rounded-3xl border-2 border-red-risk bg-red-bg p-4">
+                    <p className="text-sm font-extrabold text-red-risk mb-1">Detta går inte att ångra</p>
+                    <p className="text-xs text-foreground/80 mb-3">
+                      All din data raderas permanent. Skriv <strong>RADERA</strong> för att bekräfta.
+                    </p>
+                    <Input
+                      value={confirmText}
+                      onChange={e => setConfirmText(e.target.value)}
+                      placeholder="RADERA"
+                      className="h-11 rounded-2xl bg-surface mb-3"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        variant="secondary"
+                        onClick={() => { setShowDelete(false); setConfirmText(""); }}
+                        className="flex-1 rounded-full font-extrabold"
+                      >
+                        Avbryt
+                      </Button>
+                      <Button
+                        onClick={deleteAll}
+                        disabled={confirmText !== "RADERA" || busy}
+                        className="flex-1 rounded-full bg-red-risk hover:bg-red-risk/90 text-white font-extrabold"
+                      >
+                        Radera
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            <section className="mb-7">
+              <h2 className="text-lg font-extrabold mb-3">Om Riktning</h2>
+              <div className="card-cream p-4">
+                <p className="text-sm leading-relaxed text-foreground/80">
+                  Riktning är inte ett medicintekniskt verktyg och ersätter inte vård eller behandling. Vid akut fara, ring 112 eller besök psykiatrisk akutmottagning.
+                </p>
+              </div>
+            </section>
+          </>
+        }
+      />
     </AppShell>
   );
 };
