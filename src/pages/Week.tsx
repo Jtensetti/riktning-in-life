@@ -470,6 +470,17 @@ const Week = () => {
         subtitle="Vad veckan visar — på en skärm."
       />
 
+      {/* Veckomatta — 7-dagars översikt (mobil + desktop). Använder redan
+       *  beräknad directionSeries så samma poäng visas som i WeekDirectionChart. */}
+      <WeekMat
+        days={buildWeekMatDays(
+          checkins,
+          activities,
+          Object.fromEntries(directionSeries.map((p) => [p.date, p.value])),
+        )}
+        className="mb-6"
+      />
+
       {/*
        * Mobile: vertical stack (unchanged).
        * Desktop (≥lg): two-column masonry so cards/sections share the wide
