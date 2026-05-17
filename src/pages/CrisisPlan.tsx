@@ -491,4 +491,70 @@ const ContactGroup = ({ title, hint, contacts, onChange }: {
   </section>
 );
 
+/**
+ * LiveStatusPanel — desktop-only sammanfattning under SOS-knapparna.
+ * Visar "läget just nu" så användaren ser sig själv i siffror utan att
+ * lämna planen. Plockar bara från redan-hämtad `LiveStatus`-state.
+ */
+const LiveStatusPanel = ({ live }: { live: LiveStatus }) => {
+  const moodTone =
+    live.moodHeaviness == null ? "neutral"
+    : live.moodHeaviness >= 7 ? "high"
+    : live.moodHeaviness >= 4 ? "mid"
+    : "low";
+  const moodClass =
+    moodTone === "high" ? "text-red-risk"
+    : moodTone === "mid" ? "text-orange-deep"
+    : moodTone === "low" ? "text-green-recovery"
+    : "text-text-secondary";
+  const checkinLabel =
+    live.daysSinceCheckin == null ? "Aldrig"
+    : live.daysSinceCheckin === 0 ? "Idag"
+    : live.daysSinceCheckin === 1 ? "Igår"
+    : `${live.daysSinceCheckin}d sedan`;
+  const safetyClass =
+    live.safety === "in_danger" ? "text-red-risk"
+    : live.safety === "worried" ? "text-orange-deep"
+    : "text-green-recovery";
+  const safetyLabel =
+    live.safety === "in_danger" ? "I fara"
+    : live.safety === "worried" ? "Orolig"
+    : live.safety === "ok" ? "Trygg"
+    : null;
+
+  return (
+    <section className="card-cream p-4">
+      <h3 className="text-xs font-extrabold uppercase tracking-wider text-text-secondary mb-3">
+        Läget just nu
+      </h3>
+      <dl className="space-y-2.5">
+        <div className="flex items-baseline justify-between gap-2">
+          <dt className="text-xs font-bold text-text-secondary">Senaste check-in</dt>
+          <dd className="text-sm font-extrabold tabular-nums">{checkinLabel}</dd>
+        </div>
+        <div className="flex items-baseline justify-between gap-2">
+          <dt className="text-xs font-bold text-text-secondary">Tyngd idag</dt>
+          <dd className={`text-sm font-extrabold tabular-nums ${moodClass}`}>
+            {live.moodHeaviness == null ? "—" : `${live.moodHeaviness}/10`}
+          </dd>
+        </div>
+        {safetyLabel && (
+          <div className="flex items-baseline justify-between gap-2">
+            <dt className="text-xs font-bold text-text-secondary">Säkerhet</dt>
+            <dd className={`text-sm font-extrabold ${safetyClass}`}>{safetyLabel}</dd>
+          </div>
+        )}
+        <div className="flex items-baseline justify-between gap-2">
+          <dt className="text-xs font-bold text-text-secondary">Loggar 24h</dt>
+          <dd className="text-sm font-extrabold tabular-nums">{live.recentActivities}</dd>
+        </div>
+      </dl>
+      <p className="mt-3 text-[11px] text-text-secondary leading-snug">
+        Levande data från dina egna loggar — hjälper dig se varningstecknen tidigt.
+      </p>
+    </section>
+  );
+};
+
 export default CrisisPlan;
+
