@@ -193,9 +193,15 @@ export const DesktopTopbar = () => {
         Riktning
       </div>
 
-      {/* Mitten: datum/vecka. Diskret men närvarande. */}
-      <div className="flex-1 text-center">
+      {/* Mitten: datum/vecka + ⌘K-hint. Diskret men närvarande. */}
+      <div className="flex-1 flex items-center justify-center gap-3">
         <span className="text-[14px] font-bold text-text-secondary">{today}</span>
+        <kbd
+          className="hidden xl:inline-flex items-center gap-1 h-7 px-2 rounded-md border border-border-soft bg-surface-alt text-[11px] font-bold text-text-secondary"
+          aria-label="Tryck Cmd K för snabbnavigering"
+        >
+          <span className="text-[13px] leading-none">⌘</span>K
+        </kbd>
       </div>
 
       <div className="flex items-center gap-3">
