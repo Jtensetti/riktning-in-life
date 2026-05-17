@@ -884,7 +884,7 @@ const Week = () => {
 
         {/* Per-dag rader — sorterade så att de mest relevanta dagarna för valt filter
             hamnar högst. "Idag" hålls alltid kvar i topp som ankare. */}
-        <div className="space-y-2">
+        <div className="space-y-2 lg:grid lg:grid-cols-3 lg:gap-3 lg:space-y-0">
           {(() => {
             const todayIso = new Date().toISOString().split("T")[0];
             // Beräkna ett relevanspoäng per dag givet aktivt filter.
