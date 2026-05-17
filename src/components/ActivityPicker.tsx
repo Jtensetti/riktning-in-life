@@ -92,19 +92,16 @@ const PickerCard = ({
   delayMs?: number;
 }) => (
   <div
-    className={`relative shadow-card animate-fade-in-up ${colorBg(item.color)}`}
+    className={`relative shadow-card animate-fade-in-up rounded-3xl min-h-[88px] lg:min-h-[132px] ${colorBg(item.color)}`}
     style={{
-      borderRadius: 24,
-      minHeight: 88,
       animationDelay: delayMs ? `${delayMs}ms` : undefined,
     }}
   >
     <button
       onClick={onPick}
-      className="w-full text-left press-soft flex items-center justify-start"
-      style={{ padding: "16px 18px", paddingRight: 44, minHeight: 88 }}
+      className="w-full h-full text-left press-soft flex items-center justify-start lg:items-end lg:justify-start min-h-[88px] lg:min-h-[132px] px-[18px] py-4 pr-11 lg:p-4 lg:pr-10"
     >
-      <span className="font-extrabold text-[16px] leading-[20px]">
+      <span className="font-extrabold text-[16px] leading-[20px] lg:text-[15px] lg:leading-[18px]">
         {item.label}
       </span>
     </button>
@@ -269,7 +266,7 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="rounded-t-[28px] max-h-[88vh] bg-background border-border-soft">
+      <DrawerContent className="rounded-t-[28px] max-h-[88vh] bg-background border-border-soft lg:max-w-[960px] lg:mx-auto">
         <DrawerHeader className="text-left px-6 pb-2">
           <DrawerTitle className="text-[22px] leading-tight font-extrabold">
             {selected ? "Hur kändes det?" : "Vad gjorde du?"}
@@ -328,7 +325,7 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
             {recentItems.length > 0 && !activeCat && !q.trim() && (
               <div className="mb-5">
                 <p className="text-meta text-text-secondary mb-2">Senast använda</p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                   {recentItems.map((item) => (
                     <PickerCard
                       key={`recent-${item.slug}`}
@@ -347,7 +344,7 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
                 <p className="text-meta text-text-secondary mb-2 inline-flex items-center gap-1">
                   <Star size={12} className="fill-current" /> Dina favoriter
                 </p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                   {favoriteItems.map((item) => (
                     <PickerCard
                       key={`fav-${item.slug}`}
@@ -361,7 +358,7 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3 pb-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 pb-4">
               {filtered.map((item, i) => (
                 <PickerCard
                   key={item.slug}
@@ -373,7 +370,7 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
                 />
               ))}
               {filtered.length === 0 && q.trim() && (
-                <div className="col-span-2 card-cream p-4">
+                <div className="col-span-2 lg:col-span-4 card-cream p-4">
                   <p className="text-sm font-extrabold mb-2">Inget i listan?</p>
                   <p className="text-xs text-text-secondary mb-3">Lägg till "{q}" som en egen aktivitet.</p>
                   <Button
