@@ -44,6 +44,7 @@ const ChartFallback = ({ height = 128 }: { height?: number }) => (
   />
 );
 import { WeekDirectionChart, type DirectionPoint } from "@/components/charts/WeekDirectionChart";
+import { WeekMat, buildWeekMatDays } from "@/components/desktop/WeekMat";
 import { TodayStepCard } from "@/components/TodayStepCard";
 import {
   loadActionPreferences, saveActionPreferences, resolvePreferredTime, resolvePreferredLength, lengthRange,
