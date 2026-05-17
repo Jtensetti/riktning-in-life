@@ -52,6 +52,7 @@ const Vard = () => {
   const [meds, setMeds] = useState<Med[]>([]);
   const [forms, setForms] = useState<WeeklyForm[]>([]);
   const [selectedMed, setSelectedMed] = useState<Med | null>(null);
+  const [riskSignals, setRiskSignals] = useState<RiskSignal[]>([]);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
