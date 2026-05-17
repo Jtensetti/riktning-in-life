@@ -310,6 +310,44 @@ const Checkin = () => {
           {stepIntro}
         </p>
 
+        {step === 0 && stableSuggestions.length >= 2 && !appliedStable && !stableDismissed && (
+          <div className="card-cream p-4 mb-4 animate-fade-in-up border-2 border-border-soft">
+            <p className="text-[11px] font-extrabold uppercase tracking-wider text-blue-calm mb-1">
+              Snabbval
+            </p>
+            <p className="text-sm font-extrabold leading-snug mb-1">
+              {stableSuggestions.length} värden har legat stilla senaste veckan.
+            </p>
+            <p className="text-xs text-text-secondary leading-snug mb-3">
+              Vi kan förfylla {stableSuggestions.slice(0, 4).map((s) => stableLabel(s.field)).join(", ")}
+              {stableSuggestions.length > 4 ? ", m.fl." : ""} så går check-in snabbare. Du kan justera fritt efteråt.
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={applyStableSuggestions}
+                className="flex-1 h-11 rounded-full bg-foreground text-background font-extrabold text-sm press-soft"
+              >
+                Behåll som senaste dagarna
+              </button>
+              <button
+                type="button"
+                onClick={() => setStableDismissed(true)}
+                className="h-11 px-4 rounded-full bg-surface-alt text-foreground font-extrabold text-sm press-soft"
+              >
+                Nej tack
+              </button>
+            </div>
+          </div>
+        )}
+        {appliedStable && step === 0 && (
+          <div className="card-quiet p-3 mb-4 animate-fade-in-up">
+            <p className="text-xs text-text-secondary">
+              ✓ Förfyllt med dina senaste värden. Dra reglagen om något känns annorlunda idag.
+            </p>
+          </div>
+        )}
+
         {/* Steg 1 — Kroppen: sömn (timmar + kvalitet), energi */}
         {step === 0 && (
           <>
