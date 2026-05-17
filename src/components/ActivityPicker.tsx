@@ -92,19 +92,16 @@ const PickerCard = ({
   delayMs?: number;
 }) => (
   <div
-    className={`relative shadow-card animate-fade-in-up ${colorBg(item.color)}`}
+    className={`relative shadow-card animate-fade-in-up rounded-3xl min-h-[88px] lg:min-h-[132px] ${colorBg(item.color)}`}
     style={{
-      borderRadius: 24,
-      minHeight: 88,
       animationDelay: delayMs ? `${delayMs}ms` : undefined,
     }}
   >
     <button
       onClick={onPick}
-      className="w-full text-left press-soft flex items-center justify-start"
-      style={{ padding: "16px 18px", paddingRight: 44, minHeight: 88 }}
+      className="w-full h-full text-left press-soft flex items-center justify-start lg:items-end lg:justify-start min-h-[88px] lg:min-h-[132px] px-[18px] py-4 pr-11 lg:p-4 lg:pr-10"
     >
-      <span className="font-extrabold text-[16px] leading-[20px]">
+      <span className="font-extrabold text-[16px] leading-[20px] lg:text-[15px] lg:leading-[18px]">
         {item.label}
       </span>
     </button>
