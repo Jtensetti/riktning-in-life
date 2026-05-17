@@ -69,6 +69,7 @@ type MoodEdit = { id: string; heaviness: number; anxiety: number; energy: number
 
 const QuickLog = () => {
   const { user, loading } = useAuth();
+  const { data: todayActivities } = useTodayActivities();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [openTpl, setOpenTpl] = useState<TemplateKey | null>(null);
