@@ -1,8 +1,13 @@
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Sparkles } from "lucide-react";
+import { ChevronRight, Sparkles, X } from "lucide-react";
 import { recommendForToday, type Exercise, type CheckinSignals, type RecentSession } from "@/lib/recommend";
 import { getTimeContext } from "@/lib/timeContext";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+const todayKey = () => {
+  const d = new Date();
+  return `recDismiss:${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+};
 
 interface Props {
   /** Hela övningsbiblioteket. */
