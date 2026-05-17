@@ -31,6 +31,8 @@ export type Pick = {
   fitScore: number;
   /** Optional human chip e.g. "Brukar sänka din oro ~1.3 av 10 (8 ggr)" — fylls i av caller via personalEffect. */
   effectChip?: string;
+  /** Mänskliga rader bakom rekommendationen — "Varför ser jag detta?". 2–4 punkter. */
+  whyFactors?: string[];
 };
 
 export type CheckinSignals = {
