@@ -469,6 +469,41 @@ const Week = () => {
     [sessionsAll],
   );
 
+  // Fas F — Veckans playbook: deterministisk sammanfattning + 3–5 steg.
+  const progressionFacts = useMemo(
+    () => computeProgression(checkins, personalEffect),
+    [checkins, personalEffect],
+  );
+  const riskSignals = useMemo(
+    () =>
+      detectRisks({
+        checkins,
+        medLogs: medLogsAll.map((l) => ({
+          date: l.date,
+          taken_status: l.taken_status,
+          severity: null,
+          side_effects_json: [],
+        })),
+      }),
+    [checkins, medLogsAll],
+  );
+  const recentCheckinDays = useMemo(() => {
+    const cutoff = isoDaysAgo(13);
+    return checkins.filter((c) => c.date >= cutoff).length;
+  }, [checkins]);
+  const playbook = useMemo(
+    () =>
+      buildPlaybook({
+        patterns,
+        risks: riskSignals,
+        progression: progressionFacts,
+        personalEffect,
+        recentCheckin: todayCheckin,
+        recentCheckinDays,
+      }),
+    [patterns, riskSignals, progressionFacts, personalEffect, todayCheckin, recentCheckinDays],
+  );
+
   const loggedToday = useMemo(
     () => activities.filter((a) => a.date === todayIso).length
       + sessions.filter((s) => s.created_at.split("T")[0] === todayIso).length,
