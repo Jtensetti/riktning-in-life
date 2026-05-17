@@ -420,7 +420,7 @@ export const detectPatterns = (
   if (still) all.push(still);
   const med = detectMedMiss(input.checkins, input.medLogs);
   if (med) all.push(med);
-  const weather = detectWeatherSensitivity(input.checkins);
+  const weather = detectWeatherSensitivity(input.checkins, input.dailyWeather ?? []);
   if (weather) all.push(weather);
   const trend = detectTrendShift(input.checkins);
   if (trend) all.push(trend);
