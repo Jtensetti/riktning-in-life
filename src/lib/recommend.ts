@@ -291,6 +291,7 @@ export const recommendForToday = (
       reasonShort: slotReasonShort(slot, best.ex, c, t, w),
       reasonLong: slotReasonLong(slot, best.ex, c, t, w),
       fitScore: best.score,
+      whyFactors: explainPick(best.ex, slot, c, t, w, history, forecast),
     };
   };
 
