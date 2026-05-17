@@ -1104,6 +1104,7 @@ const Today = () => {
               </div>
               <div className="min-w-0 space-y-5">
                 {rightIds.map(renderModule)}
+                <RiskSignalsCard signals={riskSignals} />
                 <DayMat activities={todayActivities} onAdd={() => setPickerOpen(true)} />
                 <DirectionMicroInsight
                   todayMood={checkin?.mood_heaviness ?? null}
