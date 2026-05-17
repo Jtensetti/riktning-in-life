@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { AbstractIcon } from "@/components/AbstractIcon";
+import { WideLayout } from "@/components/desktop/WideLayout";
+import { ContextPanel } from "@/components/desktop/ContextPanel";
 import { ChevronLeft, Pencil, Check } from "lucide-react";
 import { toast } from "sonner";
 
