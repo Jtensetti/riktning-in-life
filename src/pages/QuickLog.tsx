@@ -454,6 +454,14 @@ const QuickLog = () => {
         {/* === DESKTOP: kontextpanel med dagens loggar + historik utan tabs === */}
         <aside className="hidden lg:block min-w-0">
           <div className="lg:sticky lg:top-24 space-y-6">
+            {todayActivities.length > 0 && (
+              <DayMat
+                activities={todayActivities}
+                title="Dagens aktivitetsmatta"
+                onAdd={() => navigate("/snabblogg?picker=1")}
+              />
+            )}
+
             <div>
               <p className="text-xs font-extrabold uppercase tracking-wider text-text-secondary mb-3">
                 Idag <span className="opacity-60">· {todayEntries.length} st</span>
