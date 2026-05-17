@@ -362,6 +362,7 @@ const WeeklyReport = () => {
     window.location.href = href;
   };
 
+  const generatePdf = () => {
     if (!data || !summary) return;
     const doc = new jsPDF({ unit: PDF_PAGE.unit, format: PDF_PAGE.format });
     const pageW = doc.internal.pageSize.getWidth();
