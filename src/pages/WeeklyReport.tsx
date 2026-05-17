@@ -375,8 +375,8 @@ const WeeklyReport = () => {
     let y = drawReportHeader(
       doc,
       {
-        title: "Klinisk veckorapport",
-        subtitle: `Period ${isoDaysAgo(6)} – ${today} · 7 dagar`,
+        title: "Klinisk vårdrapport",
+        subtitle: `Period ${period.start} – ${period.end} · ${rangeLabel[range]}`,
         meta: `Genererad ${new Date().toLocaleDateString("sv-SE")}`,
         metrics: [
           { label: "Riktning", value: fmtScore(summary.direction) },
