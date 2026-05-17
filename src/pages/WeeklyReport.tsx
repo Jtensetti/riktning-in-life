@@ -277,7 +277,91 @@ const WeeklyReport = () => {
     };
   }, [data]);
 
-  const generatePdf = () => {
+  // Fas D — risksignaler (deterministisk regelmotor, ingen AI)
+  const riskSignals: RiskSignal[] = useMemo(() => {
+    if (!data) return [];
+    return detectRisks({ checkins: data.checkins, medLogs: data.medLogs });
+  }, [data]);
+
+  // Fas D — räkna ut tidsspann (start/end) utifrån valt range
+  const period = useMemo(() => {
+    const end = new Date().toISOString().split("T")[0];
+    let start = isoDaysAgo(6);
+    if (range === "14d") start = isoDaysAgo(13);
+    else if (range === "30d") start = isoDaysAgo(29);
+    else if (range === "since_visit" && lastVisit) start = lastVisit;
+    return { start, end };
+  }, [range, lastVisit]);
+
+  const rangeLabel: Record<ReportRange, string> = {
+    "7d": "7 dagar",
+    "14d": "14 dagar",
+    "30d": "30 dagar",
+    since_visit: lastVisit ? `Sedan ${lastVisit}` : "Sedan senaste besök",
+  };
+
+  const persistLastVisit = (iso: string) => {
+    setLastVisit(iso);
+    try { localStorage.setItem(LAST_VISIT_KEY, iso); } catch { /* quota */ }
+  };
+
+  const runDoctorSummary = async () => {
+    if (range === "since_visit" && !lastVisit) {
+      toast.error("Välj datum för senaste besök först.");
+      return;
+    }
+    setAiLoading(true);
+    setAiSummary(null);
+    try {
+      const { data: payload, error } = await supabase.functions.invoke("doctor-summary", {
+        body: { start: period.start, end: period.end },
+      });
+      if (error) throw error;
+      const summary = (payload as { summary?: DoctorSummary } | null)?.summary;
+      if (!summary) throw new Error("ai_no_summary");
+      setAiSummary(summary);
+      toast.success("Sammanfattning klar");
+    } catch (e) {
+      console.error("doctor-summary failed", e);
+      toast.error("Kunde inte generera sammanfattning just nu.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const mailDoctor = () => {
+    if (!doctorEmail) {
+      toast.error("Lägg in läkarens e-post i Vård-fliken först.");
+      return;
+    }
+    const subject = `Vårdrapport ${period.start} – ${period.end}`;
+    const bodyLines: string[] = [
+      `Hej,`,
+      ``,
+      `Här kommer en sammanfattning av mina senaste ${rangeLabel[range].toLowerCase()}.`,
+      ``,
+    ];
+    if (aiSummary) {
+      bodyLines.push(aiSummary.headline);
+      bodyLines.push("");
+      bodyLines.push(`Vad har förändrats: ${aiSummary.whats_changed}`);
+      bodyLines.push(`Vad fungerar: ${aiSummary.whats_working}`);
+      bodyLines.push(`Vad jag oroar mig för: ${aiSummary.whats_worrying}`);
+      bodyLines.push(`Fokus framåt: ${aiSummary.recommended_focus}`);
+      if (aiSummary.flags.length) {
+        bodyLines.push("");
+        bodyLines.push(`Att hålla ett öga på: ${aiSummary.flags.join(", ")}`);
+      }
+    } else {
+      bodyLines.push("PDF med detaljer bifogas separat.");
+    }
+    bodyLines.push("", "Vänliga hälsningar");
+    const href = `mailto:${encodeURIComponent(doctorEmail)}?subject=${encodeURIComponent(
+      subject,
+    )}&body=${encodeURIComponent(bodyLines.join("\n"))}`;
+    window.location.href = href;
+  };
+
     if (!data || !summary) return;
     const doc = new jsPDF({ unit: PDF_PAGE.unit, format: PDF_PAGE.format });
     const pageW = doc.internal.pageSize.getWidth();
