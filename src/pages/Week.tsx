@@ -728,7 +728,7 @@ const Week = () => {
       </section>
 
       {historyOpen && (
-      <section className="mb-7 animate-fade-in-up lg:col-start-2">
+      <section className="mb-7 animate-fade-in-up lg:col-span-2">
         <div className="mb-3">
           <p className="text-xs text-text-secondary">Varje dag berättar något</p>
         </div>
