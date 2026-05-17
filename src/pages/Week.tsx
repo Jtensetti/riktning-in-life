@@ -491,7 +491,7 @@ const Week = () => {
       <div className="lg:grid lg:grid-cols-[1.5fr_1fr] lg:gap-x-10 lg:gap-y-0 lg:items-start">
       <button
         onClick={() => navigate("/analys")}
-        className="w-full mb-6 ui-card-list flex items-center gap-3 press-soft text-left animate-pop-in"
+        className="w-full mb-6 ui-card-list flex items-center gap-3 press-soft text-left animate-pop-in lg:col-start-1"
       >
         <div className="flex-1 min-w-0">
           <p className="text-meta text-text-secondary mb-0.5">Snabb sammanfattning</p>
@@ -502,14 +502,14 @@ const Week = () => {
       </button>
 
       {/* AI-veckosammanfattning — varm sammanfattning baserad på riktig data. Göms tyst om AI inte svarar. */}
-      <WeeklyAIInsight />
+      <div className="lg:col-start-1"><WeeklyAIInsight /></div>
 
       {/* Spår 1: bevisbaserade mönster från senaste 28 dagarna. */}
-      <PatternsSection patterns={patterns} />
+      <div className="lg:col-start-1"><PatternsSection patterns={patterns} /></div>
 
       {/* Mjuk fallback: korta heuristik-insikter när vi inte hittat starka mönster ännu. */}
       {patterns.length === 0 && insights.length > 0 && (
-        <section className="mb-6 animate-pop-in">
+        <section className="mb-6 animate-pop-in lg:col-start-1">
           <p className="text-[11px] font-extrabold uppercase tracking-wider text-orange-deep mb-2">Vi ser ett mönster</p>
           <div className="card-quiet">
             <p className="text-[20px] leading-[26px] font-extrabold mb-2">{insights[0]}</p>
@@ -521,13 +521,13 @@ const Week = () => {
       )}
 
       {!baselineComplete && (
-        <div className="mb-6 animate-fade-in-up">
+        <div className="mb-6 animate-fade-in-up lg:col-start-2">
           <BaselineProgressCard daysLogged={total} />
         </div>
       )}
 
       {/* Dagens lilla steg — uppdateras live när nya loggar/check-ins kommer in */}
-      <section className="mb-6">
+      <section className="mb-6 lg:col-start-1">
         <TodayStepCard
           exercises={exercisesForRec}
           todayCheckin={todayCheckin}
@@ -537,7 +537,7 @@ const Week = () => {
       </section>
 
       {/* === LAGER 1: RIKTNING === */}
-      <section className="mb-7">
+      <section className="mb-7 lg:col-start-1">
         <div className="flex items-baseline gap-2 mb-3">
           <h2 className="text-xl">Riktning</h2>
           <span className="text-xs font-bold text-text-secondary">Vad veckan visar</span>
@@ -581,8 +581,8 @@ const Week = () => {
 
       {/* === LAGER 2: HEADSPACE-STYLE ACTIONS === */}
       {suggestedActions.length > 0 && (
-        <section className="mb-7 -mx-6">
-          <div className="px-6 mb-3">
+        <section className="mb-7 -mx-6 lg:col-start-1 lg:mx-0">
+          <div className="px-6 mb-3 lg:px-0">
             <h2 className="text-xl">Föreslagna handlingar</h2>
             <p className="text-xs text-text-secondary">Små steg som möter veckans mönster — anpassat efter dig</p>
           </div>
@@ -641,7 +641,7 @@ const Week = () => {
       )}
 
       {/* === LAGER 3: ÅTERHÄMTNINGSHISTORIK — kollapsad som default === */}
-      <section className="mb-7">
+      <section className="mb-7 lg:col-start-2">
         <button
           onClick={() => setHistoryOpen((o) => !o)}
           aria-expanded={historyOpen}
@@ -657,7 +657,7 @@ const Week = () => {
       </section>
 
       {historyOpen && (
-      <section className="mb-7 animate-fade-in-up">
+      <section className="mb-7 animate-fade-in-up lg:col-start-2">
         <div className="mb-3">
           <p className="text-xs text-text-secondary">Varje dag berättar något</p>
         </div>
@@ -958,7 +958,7 @@ const Week = () => {
 
       {/* Måttkort — endast inom detaljvyn */}
       {historyOpen && current.length > 0 && (
-        <section className="mb-7 animate-fade-in-up">
+        <section className="mb-7 animate-fade-in-up lg:col-start-2">
           <h2 className="text-xl mb-1">Jämfört med förra veckan</h2>
           <p className="text-xs text-text-secondary mb-3">Riktning över tid — inte dagsbetyg</p>
           <div className="grid grid-cols-2 gap-3">
@@ -979,7 +979,7 @@ const Week = () => {
       )}
 
       {insights.length > 2 && (
-        <section className="mb-7">
+        <section className="mb-7 lg:col-start-1">
           <h2 className="text-xl mb-3">Fler mönster</h2>
           <div className="space-y-2">
             {insights.slice(2).map((s, i) => (
@@ -993,7 +993,7 @@ const Week = () => {
       )}
 
       {(liftSummary.lifters.length > 0 || liftSummary.drainers.length > 0 || topActivities.length > 0) && (
-        <section className="mb-2">
+        <section className="mb-2 lg:col-start-1">
           <h2 className="text-xl mb-1 flex items-center gap-2">
             <AbstractIcon name="heart-care" size={18} color="hsl(var(--pink-move))" />
             Vad lyfte dig?
@@ -1058,7 +1058,7 @@ const Week = () => {
       {/* Klinisk veckorapport — lugn länkrad längst ner, inte CTA */}
       <button
         onClick={() => navigate("/rapport/vecka")}
-        className="w-full card-quiet flex items-center justify-between gap-3 press-soft mb-2"
+        className="w-full card-quiet flex items-center justify-between gap-3 press-soft mb-2 lg:col-start-1"
       >
         <div className="text-left">
           <p className="text-[11px] font-extrabold uppercase tracking-wider text-blue-calm mb-1">För vården</p>
