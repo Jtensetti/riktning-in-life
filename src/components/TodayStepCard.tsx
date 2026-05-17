@@ -31,27 +31,39 @@ interface Props {
  */
 export const TodayStepCard = ({ exercises, todayCheckin, recentSessions, loggedToday, index = 0 }: Props) => {
   const navigate = useNavigate();
+  const [dismissed, setDismissed] = useState<string[]>([]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(todayKey());
+      if (raw) setDismissed(JSON.parse(raw));
+    } catch { /* ignore */ }
+  }, []);
 
   const pick = useMemo(() => {
     if (exercises.length === 0) return null;
     const t = getTimeContext();
     const picks = recommendForToday(exercises, todayCheckin, t, null, recentSessions);
-    // Vi vill helst ha "land"-slot (minsta steg). Faller tillbaka på första bästa.
-    return picks.find((p) => p.slot === "land") ?? picks[0] ?? null;
-  }, [exercises, todayCheckin, recentSessions]);
+    const filtered = picks.filter((p) => !dismissed.includes(p.exercise.id));
+    return filtered.find((p) => p.slot === "land") ?? filtered[0] ?? null;
+  }, [exercises, todayCheckin, recentSessions, dismissed]);
 
   if (!pick) return null;
 
   const ex = pick.exercise;
 
+  const handleDismiss = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const next = [...dismissed, ex.id];
+    setDismissed(next);
+    try { localStorage.setItem(todayKey(), JSON.stringify(next)); } catch { /* ignore */ }
+  };
+
   return (
-    <button
-      onClick={() => navigate(`/ovningar/${ex.id}`)}
-      className="w-full text-left rounded-3xl bg-orange-start text-white p-5 shadow-soft press-soft animate-pop-in flex flex-col gap-3 min-h-[184px] relative overflow-hidden"
+    <div
+      className="w-full text-left rounded-3xl bg-orange-start text-white p-5 shadow-soft animate-pop-in flex flex-col gap-3 min-h-[200px] relative overflow-hidden"
       style={{ animationDelay: `var(--stagger-${Math.min(index, 4)})` }}
-      aria-label={`Dagens lilla steg: ${ex.title}, ${ex.duration_minutes} minuter`}
     >
-      {/* Bakgrundsblob i mörkare ton */}
       <span aria-hidden className="absolute -bottom-10 -right-10 w-44 h-44 rounded-full bg-orange-deep opacity-25 pointer-events-none" />
       <span aria-hidden className="absolute top-8 -right-6 w-20 h-20 rounded-full bg-orange-deep opacity-15 pointer-events-none" />
 
@@ -65,7 +77,6 @@ export const TodayStepCard = ({ exercises, todayCheckin, recentSessions, loggedT
         </span>
       </div>
 
-      {/* Numerisk lead — minuter bär ~40% av kortets vikt, inga stickers */}
       <div className="absolute right-4 top-12 z-[1] pointer-events-none flex flex-col items-end leading-none">
         <span className="text-[60px] leading-[56px] font-extrabold tabular-nums tracking-tight">
           {ex.duration_minutes}
@@ -76,18 +87,35 @@ export const TodayStepCard = ({ exercises, todayCheckin, recentSessions, loggedT
       </div>
 
       <div className="relative z-[1] mt-auto">
-        <h4 className="text-[20px] leading-[24px] font-extrabold mb-1 pr-24">{ex.title}</h4>
-        <p className="text-sm opacity-90 leading-snug mb-3 pr-2">{pick.reasonLong}</p>
+        <h4 className="text-[20px] leading-[24px] font-extrabold mb-2 pr-24">{ex.title}</h4>
+        <div className="mb-3 pr-2">
+          <p className="text-[10px] font-extrabold uppercase tracking-wider opacity-70 mb-0.5">
+            Varför just nu
+          </p>
+          <p className="text-sm opacity-95 leading-snug">{pick.reasonLong}</p>
+        </div>
         <div className="flex items-center justify-between gap-2">
-          <span className="text-xs font-extrabold opacity-90">
-            {pick.reasonShort}
-          </span>
-          <span className="shrink-0 grid place-items-center w-9 h-9 rounded-full bg-white/25">
-            <ChevronRight size={18} />
-          </span>
+          <button
+            type="button"
+            onClick={handleDismiss}
+            aria-label="Inte nu"
+            className="inline-flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-wider px-3 py-1.5 rounded-full bg-white/15 hover:bg-white/25 press-soft"
+          >
+            <X size={12} />
+            Inte nu
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate(`/ovningar/${ex.id}`)}
+            aria-label={`Starta: ${ex.title}`}
+            className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider px-4 py-2 rounded-full bg-white text-orange-deep press-soft"
+          >
+            Starta
+            <ChevronRight size={14} />
+          </button>
         </div>
       </div>
-    </button>
+    </div>
   );
 };
 
