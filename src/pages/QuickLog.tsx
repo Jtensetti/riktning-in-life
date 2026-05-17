@@ -358,90 +358,139 @@ const QuickLog = () => {
         }
       />
 
-      {/* === FOUR TEMPLATE BUTTONS === */}
-      <section className="grid grid-cols-2 gap-3 mb-7">
-        {TEMPLATES.map((t, i) => {
-          const done = todayCoverage.find(c => c.key === t.key)?.done;
-          return (
-            <ColorCard
-              key={t.key}
-              tone={t.tone}
-              icon={t.icon}
-              iconPosition="bottom-right"
-              size="sm"
-              index={i}
-              onClick={() => setOpenTpl(t.key)}
-              ariaLabel={`Logga ${t.title}`}
-              badge={done ? (
-                <span className="grid place-items-center w-6 h-6 rounded-full bg-white/30">
-                  <Check size={14} strokeWidth={3} />
-                </span>
-              ) : undefined}
-            >
-              <p className="text-[17px] font-extrabold leading-tight">{t.title}</p>
-              <p className="text-[11px] opacity-90 font-bold">{t.blurb}</p>
-            </ColorCard>
-          );
-        })}
-      </section>
+      <div className="lg:grid lg:grid-cols-[1.4fr_1fr] lg:gap-10">
+        <div className="min-w-0">
+          {/* === FOUR TEMPLATE BUTTONS === */}
+          <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-7">
+            {TEMPLATES.map((t, i) => {
+              const done = todayCoverage.find(c => c.key === t.key)?.done;
+              return (
+                <ColorCard
+                  key={t.key}
+                  tone={t.tone}
+                  icon={t.icon}
+                  iconPosition="bottom-right"
+                  size="sm"
+                  index={i}
+                  onClick={() => setOpenTpl(t.key)}
+                  ariaLabel={`Logga ${t.title}`}
+                  badge={done ? (
+                    <span className="grid place-items-center w-6 h-6 rounded-full bg-white/30">
+                      <Check size={14} strokeWidth={3} />
+                    </span>
+                  ) : undefined}
+                >
+                  <p className="text-[17px] font-extrabold leading-tight">{t.title}</p>
+                  <p className="text-[11px] opacity-90 font-bold">{t.blurb}</p>
+                </ColorCard>
+              );
+            })}
+          </section>
 
-      {/* === TABS === */}
-      <div className="flex items-center gap-1 mb-3 bg-surface-alt rounded-full p-1">
-        {([
-          { key: "today" as const, label: "Dagens loggar", count: todayEntries.length },
-          { key: "history" as const, label: "Tidigare", count: entries.length - todayEntries.length },
-        ]).map(t => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`flex-1 rounded-full px-3 py-2 text-xs font-extrabold transition-colors ${
-              tab === t.key ? "bg-foreground text-background" : "text-text-secondary"
-            }`}
-          >
-            {t.label} {t.count > 0 && <span className="opacity-70 tabular-nums">· {t.count}</span>}
-          </button>
-        ))}
-      </div>
-
-      {tab === "today" && (
-        <section className="mb-7">
-          {todayEntries.length === 0 ? (
-            <div className="card-cream p-5 text-center animate-fade-in-up">
-              <p className="text-sm font-extrabold mb-1">Inget loggat idag än</p>
-              <p className="text-xs text-text-secondary">Tryck på en av knapparna ovan för att börja.</p>
-            </div>
-          ) : (
-            <ul className="space-y-2">
-              {todayEntries.map((e, i) => (
-                <EntryRow key={e.id} e={e} i={i} onDelete={() => deleteEntry(e)} />
+          {/* === MOBILE: tabs + lists. Desktop visar samma data i sidopanelen. === */}
+          <div className="lg:hidden">
+            <div className="flex items-center gap-1 mb-3 bg-surface-alt rounded-full p-1">
+              {([
+                { key: "today" as const, label: "Dagens loggar", count: todayEntries.length },
+                { key: "history" as const, label: "Tidigare", count: entries.length - todayEntries.length },
+              ]).map(t => (
+                <button
+                  key={t.key}
+                  onClick={() => setTab(t.key)}
+                  className={`flex-1 rounded-full px-3 py-2 text-xs font-extrabold transition-colors ${
+                    tab === t.key ? "bg-foreground text-background" : "text-text-secondary"
+                  }`}
+                >
+                  {t.label} {t.count > 0 && <span className="opacity-70 tabular-nums">· {t.count}</span>}
+                </button>
               ))}
-            </ul>
-          )}
-        </section>
-      )}
-
-      {tab === "history" && (
-        <section className="mb-7 space-y-4">
-          {grouped.filter(([d]) => d !== today).length === 0 ? (
-            <div className="card-cream p-5 text-center animate-fade-in-up">
-              <History size={20} className="mx-auto mb-2 text-text-secondary" />
-              <p className="text-sm font-extrabold mb-1">Ingen historik än</p>
-              <p className="text-xs text-text-secondary">Loggar från senaste 14 dagar visas här.</p>
             </div>
-          ) : (
-            grouped.filter(([d]) => d !== today).map(([d, list], gi) => (
-              <div key={d} className="animate-fade-in-up" style={{ animationDelay: `var(--stagger-${Math.min(gi, 4)})` }}>
-                <p className="text-xs font-extrabold uppercase tracking-wider text-text-secondary mb-2 capitalize">
-                  {dateLabel(d)} <span className="opacity-60">· {list.length} st</span>
-                </p>
+
+            {tab === "today" && (
+              <section className="mb-7">
+                {todayEntries.length === 0 ? (
+                  <div className="card-cream p-5 text-center animate-fade-in-up">
+                    <p className="text-sm font-extrabold mb-1">Inget loggat idag än</p>
+                    <p className="text-xs text-text-secondary">Tryck på en av knapparna ovan för att börja.</p>
+                  </div>
+                ) : (
+                  <ul className="space-y-2">
+                    {todayEntries.map((e, i) => (
+                      <EntryRow key={e.id} e={e} i={i} onDelete={() => deleteEntry(e)} />
+                    ))}
+                  </ul>
+                )}
+              </section>
+            )}
+
+            {tab === "history" && (
+              <section className="mb-7 space-y-4">
+                {grouped.filter(([d]) => d !== today).length === 0 ? (
+                  <div className="card-cream p-5 text-center animate-fade-in-up">
+                    <History size={20} className="mx-auto mb-2 text-text-secondary" />
+                    <p className="text-sm font-extrabold mb-1">Ingen historik än</p>
+                    <p className="text-xs text-text-secondary">Loggar från senaste 14 dagar visas här.</p>
+                  </div>
+                ) : (
+                  grouped.filter(([d]) => d !== today).map(([d, list], gi) => (
+                    <div key={d} className="animate-fade-in-up" style={{ animationDelay: `var(--stagger-${Math.min(gi, 4)})` }}>
+                      <p className="text-xs font-extrabold uppercase tracking-wider text-text-secondary mb-2 capitalize">
+                        {dateLabel(d)} <span className="opacity-60">· {list.length} st</span>
+                      </p>
+                      <ul className="space-y-2">
+                        {list.map((e, i) => <EntryRow key={e.id} e={e} i={i} onDelete={() => deleteEntry(e)} />)}
+                      </ul>
+                    </div>
+                  ))
+                )}
+              </section>
+            )}
+          </div>
+        </div>
+
+        {/* === DESKTOP: kontextpanel med dagens loggar + historik utan tabs === */}
+        <aside className="hidden lg:block min-w-0">
+          <div className="lg:sticky lg:top-24 space-y-6">
+            <div>
+              <p className="text-xs font-extrabold uppercase tracking-wider text-text-secondary mb-3">
+                Idag <span className="opacity-60">· {todayEntries.length} st</span>
+              </p>
+              {todayEntries.length === 0 ? (
+                <div className="card-cream p-5 text-center">
+                  <p className="text-sm font-extrabold mb-1">Inget loggat idag än</p>
+                  <p className="text-xs text-text-secondary">Välj en mall till vänster.</p>
+                </div>
+              ) : (
                 <ul className="space-y-2">
-                  {list.map((e, i) => <EntryRow key={e.id} e={e} i={i} onDelete={() => deleteEntry(e)} />)}
+                  {todayEntries.map((e, i) => (
+                    <EntryRow key={e.id} e={e} i={i} onDelete={() => deleteEntry(e)} />
+                  ))}
                 </ul>
-              </div>
-            ))
-          )}
-        </section>
-      )}
+              )}
+            </div>
+
+            <div className="max-h-[55vh] overflow-y-auto pr-1 space-y-4">
+              {grouped.filter(([d]) => d !== today).length === 0 ? (
+                <div className="card-cream p-4 text-center">
+                  <History size={18} className="mx-auto mb-1.5 text-text-secondary" />
+                  <p className="text-xs text-text-secondary">Ingen historik än</p>
+                </div>
+              ) : (
+                grouped.filter(([d]) => d !== today).map(([d, list]) => (
+                  <div key={d}>
+                    <p className="text-xs font-extrabold uppercase tracking-wider text-text-secondary mb-2 capitalize">
+                      {dateLabel(d)} <span className="opacity-60">· {list.length} st</span>
+                    </p>
+                    <ul className="space-y-2">
+                      {list.map((e, i) => <EntryRow key={e.id} e={e} i={i} onDelete={() => deleteEntry(e)} />)}
+                    </ul>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </aside>
+      </div>
 
       {/* === TEMPLATE DRAWERS === */}
       <Drawer open={openTpl !== null} onOpenChange={(o) => !o && setOpenTpl(null)}>
