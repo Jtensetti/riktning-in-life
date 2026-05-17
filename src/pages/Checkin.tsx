@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
@@ -289,8 +290,8 @@ const Checkin = () => {
   ][step];
 
   return (
-    <div className="min-h-screen bg-background pb-32">
-      <div className="max-w-md mx-auto px-6 pt-8">
+    <AppShell density="reader">
+      <div>
         <button
           onClick={() => navigate("/")}
           className="flex items-center gap-1 text-text-secondary text-sm font-bold mb-4 press-soft"
@@ -546,7 +547,7 @@ const Checkin = () => {
       </div>
 
       <ActivityPicker open={pickerOpen} onOpenChange={setPickerOpen} onAdd={addActivity} />
-    </div>
+    </AppShell>
   );
 };
 

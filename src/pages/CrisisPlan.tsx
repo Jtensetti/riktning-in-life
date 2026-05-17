@@ -202,7 +202,7 @@ const CrisisPlan = () => {
   }
 
   return (
-    <AppShell wide>
+    <AppShell density="reader">
       <HeroBanner
         tone="var(--orange-start)"
         icon="shield-soft"

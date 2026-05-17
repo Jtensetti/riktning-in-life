@@ -314,7 +314,7 @@ const FormRunner = ({ type, onBack, onDone }: { type: FormType; onBack: () => vo
   };
 
   return (
-    <AppShell>
+    <AppShell density="reader">
       <button onClick={onBack} className="flex items-center gap-1 text-sm font-bold text-text-secondary mb-4">
         <ChevronLeft size={18} /> Tillbaka
       </button>
