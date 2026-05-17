@@ -42,6 +42,9 @@ import { useTodayActivities } from "@/hooks/useTodayActivities";
 import { DayMat } from "@/components/desktop/DayMat";
 import { DirectionMicroInsight } from "@/components/desktop/DirectionMicroInsight";
 import { MissingToday } from "@/components/desktop/MissingToday";
+import { detectRisks, type RiskSignal } from "@/lib/riskSignals";
+import { RiskSignalsCard } from "@/components/RiskSignalsCard";
+import type { Checkin as MetricsCheckin } from "@/lib/metrics";
 
 type Checkin = {
   id: string;
