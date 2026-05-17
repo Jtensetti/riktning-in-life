@@ -30,13 +30,28 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <main className="flex-1 max-w-md w-full mx-auto px-6 pt-10 flex flex-col">
-        <div className="mb-6">
+    <div className="min-h-screen bg-background flex flex-col lg:flex-row">
+      {/* Desktop-only sidopanel — varm illustration får fylla halva skärmen
+       *  istället för att appen ser ut som en mobil-modal mitt på 1575 px. */}
+      <aside
+        aria-hidden
+        className="hidden lg:flex lg:w-1/2 items-center justify-center p-12"
+        style={{ background: "linear-gradient(135deg, hsl(var(--orange-start) / 0.12), hsl(var(--cream-card)))" }}
+      >
+        <div className="max-w-[480px] w-full">
+          <Illustration name="start" className="w-full h-auto" />
+          <p className="mt-8 text-base text-text-secondary leading-relaxed text-center">
+            Logga lite varje dag. Riktning visar mönstren — du behåller riktningen.
+          </p>
+        </div>
+      </aside>
+
+      <main className="flex-1 max-w-md w-full mx-auto px-6 pt-10 lg:pt-24 flex flex-col lg:justify-center">
+        <div className="mb-6 lg:hidden">
           <Illustration name="start" className="w-full h-auto" />
         </div>
-        <h1 className="text-[32px] leading-[38px] text-foreground text-center mb-3">Riktning</h1>
-        <p className="text-base text-text-secondary text-center mb-10">
+        <h1 className="text-[32px] leading-[38px] text-foreground text-center lg:text-left mb-3">Riktning</h1>
+        <p className="text-base text-text-secondary text-center lg:text-left mb-10">
           Små steg åt rätt håll. Inte diagnostisk – ett verktyg för dig och din vård.
         </p>
 
