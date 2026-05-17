@@ -397,6 +397,10 @@ export const detectPatterns = (
   if (still) all.push(still);
   const med = detectMedMiss(input.checkins, input.medLogs);
   if (med) all.push(med);
+  const weather = detectWeatherSensitivity(input.checkins);
+  if (weather) all.push(weather);
+  const trend = detectTrendShift(input.checkins);
+  if (trend) all.push(trend);
   for (const p of detectDelayedLift(input.checkins, input.activities, input.sessions)) {
     all.push(p);
   }
