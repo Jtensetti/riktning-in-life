@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { AlertTriangle, Info, ShieldAlert } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { RiskSignal, RiskSeverity } from "@/lib/riskSignals";

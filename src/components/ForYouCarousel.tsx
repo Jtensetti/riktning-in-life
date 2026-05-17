@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ColorCard, type CardTone } from "./ColorCard";
 import { type Pick, slotLabel } from "@/lib/recommend";
@@ -23,6 +24,7 @@ interface Props {
 
 export const ForYouCarousel = ({ picks }: Props) => {
   const navigate = useNavigate();
+  const [openWhy, setOpenWhy] = useState<string | null>(null);
   if (picks.length === 0) return null;
 
   return (
@@ -37,40 +39,67 @@ export const ForYouCarousel = ({ picks }: Props) => {
         {picks.map((p, i) => {
           const tone = asTone(p.exercise.color);
           const strong = p.fitScore >= 80;
+          const isOpen = openWhy === p.exercise.id;
+          const hasWhy = (p.whyFactors?.length ?? 0) > 0;
           return (
-            <ColorCard
-              key={p.exercise.id}
-              tone={tone}
-              size="lg"
-              index={i}
-              onClick={() => navigate(`/ovningar/${p.exercise.id}`)}
-              ariaLabel={`${slotLabel(p.slot)}: ${p.exercise.title}, ${p.exercise.duration_minutes} minuter`}
-              className="shrink-0 w-[78%] snap-start"
-              eyebrow={[
-                { label: slotLabel(p.slot), variant: "soft" },
-                ...(strong ? [{ label: "Stark match", variant: "strong" as const }] : []),
-              ]}
-              lead={{ value: p.exercise.duration_minutes, unit: "min" }}
-              title={p.exercise.title}
-              reason={
-                p.effectChip ? (
-                  <>
-                    {p.reasonLong}
-                    <span className="block mt-1 text-[11px] font-extrabold uppercase tracking-wider opacity-80">
-                      {p.effectChip}
-                    </span>
-                  </>
-                ) : (
-                  p.reasonLong
-                )
-              }
-              metaLeft={p.reasonShort}
-              showChevron
-            />
+            <div key={p.exercise.id} className="shrink-0 w-[78%] snap-start flex flex-col gap-2">
+              <ColorCard
+                tone={tone}
+                size="lg"
+                index={i}
+                onClick={() => navigate(`/ovningar/${p.exercise.id}`)}
+                ariaLabel={`${slotLabel(p.slot)}: ${p.exercise.title}, ${p.exercise.duration_minutes} minuter`}
+                className=""
+                eyebrow={[
+                  { label: slotLabel(p.slot), variant: "soft" },
+                  ...(strong ? [{ label: "Stark match", variant: "strong" as const }] : []),
+                ]}
+                lead={{ value: p.exercise.duration_minutes, unit: "min" }}
+                title={p.exercise.title}
+                reason={
+                  p.effectChip ? (
+                    <>
+                      {p.reasonLong}
+                      <span className="block mt-1 text-[11px] font-extrabold uppercase tracking-wider opacity-80">
+                        {p.effectChip}
+                      </span>
+                    </>
+                  ) : (
+                    p.reasonLong
+                  )
+                }
+                metaLeft={p.reasonShort}
+                showChevron
+              />
+              {hasWhy && (
+                <div className="px-1">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenWhy(isOpen ? null : p.exercise.id);
+                    }}
+                    aria-expanded={isOpen}
+                    className="text-[11px] font-extrabold uppercase tracking-wider text-text-secondary press-soft underline-offset-2 hover:underline"
+                  >
+                    {isOpen ? "Dölj varför" : "Varför ser jag detta?"}
+                  </button>
+                  {isOpen && (
+                    <ul className="mt-2 space-y-1.5 animate-fade-in-up">
+                      {p.whyFactors!.map((f, idx) => (
+                        <li key={idx} className="text-[12px] leading-snug text-text-secondary flex gap-2">
+                          <span aria-hidden className="text-text-secondary/60">·</span>
+                          <span>{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
           );
         })}
       </div>
     </section>
   );
 };
-
