@@ -58,6 +58,17 @@ const SOS = [
   { name: "Jourhavande medmänniska", phone: "08-702 16 80", role: "Kvällar och nätter" },
 ];
 
+type LiveStatus = {
+  /** Antal dagar sedan senaste check-in (null = aldrig). */
+  daysSinceCheckin: number | null;
+  /** Aktuell tyngd 0–10 från dagens checkin, om gjord. */
+  moodHeaviness: number | null;
+  /** Antal aktivitetsloggar de senaste 24h. */
+  recentActivities: number;
+  /** safety_status från senaste checkinen. */
+  safety: string | null;
+};
+
 const CrisisPlan = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -66,6 +77,7 @@ const CrisisPlan = () => {
   const [mode, setMode] = useState<"read" | "edit">("read");
   const [saving, setSaving] = useState(false);
   const [fetched, setFetched] = useState(false);
+  const [live, setLive] = useState<LiveStatus | null>(null);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
@@ -98,6 +110,42 @@ const CrisisPlan = () => {
         setFetched(true);
       });
   }, [user]);
+
+  // Live-status till desktop-kontextpanelen: hämtas separat så krisplan-fetch
+  // stannar snabb. Allt är read-only och under RLS — användarens egna rader.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const since24h = new Date(Date.now() - 86_400_000).toISOString();
+      const [checkinRes, actsRes] = await Promise.all([
+        supabase
+          .from("daily_checkins")
+          .select("date,mood_heaviness,safety_status")
+          .eq("user_id", user.id)
+          .order("date", { ascending: false })
+          .limit(1),
+        supabase
+          .from("activity_logs")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .gte("created_at", since24h),
+      ]);
+      if (cancelled) return;
+      const last = checkinRes.data?.[0];
+      const days = last
+        ? Math.floor((Date.now() - new Date(last.date).getTime()) / 86_400_000)
+        : null;
+      setLive({
+        daysSinceCheckin: days,
+        moodHeaviness: last?.mood_heaviness ?? null,
+        recentActivities: actsRes.count ?? 0,
+        safety: last?.safety_status ?? null,
+      });
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
 
   const save = async () => {
     if (!user) return;
@@ -215,6 +263,8 @@ const CrisisPlan = () => {
                 <SosRow key={s.phone} sos={s} />
               ))}
             </div>
+
+            {live && <LiveStatusPanel live={live} />}
           </ContextPanel>
         }
       />
@@ -441,4 +491,70 @@ const ContactGroup = ({ title, hint, contacts, onChange }: {
   </section>
 );
 
+/**
+ * LiveStatusPanel — desktop-only sammanfattning under SOS-knapparna.
+ * Visar "läget just nu" så användaren ser sig själv i siffror utan att
+ * lämna planen. Plockar bara från redan-hämtad `LiveStatus`-state.
+ */
+const LiveStatusPanel = ({ live }: { live: LiveStatus }) => {
+  const moodTone =
+    live.moodHeaviness == null ? "neutral"
+    : live.moodHeaviness >= 7 ? "high"
+    : live.moodHeaviness >= 4 ? "mid"
+    : "low";
+  const moodClass =
+    moodTone === "high" ? "text-red-risk"
+    : moodTone === "mid" ? "text-orange-deep"
+    : moodTone === "low" ? "text-green-recovery"
+    : "text-text-secondary";
+  const checkinLabel =
+    live.daysSinceCheckin == null ? "Aldrig"
+    : live.daysSinceCheckin === 0 ? "Idag"
+    : live.daysSinceCheckin === 1 ? "Igår"
+    : `${live.daysSinceCheckin}d sedan`;
+  const safetyClass =
+    live.safety === "in_danger" ? "text-red-risk"
+    : live.safety === "worried" ? "text-orange-deep"
+    : "text-green-recovery";
+  const safetyLabel =
+    live.safety === "in_danger" ? "I fara"
+    : live.safety === "worried" ? "Orolig"
+    : live.safety === "ok" ? "Trygg"
+    : null;
+
+  return (
+    <section className="card-cream p-4">
+      <h3 className="text-xs font-extrabold uppercase tracking-wider text-text-secondary mb-3">
+        Läget just nu
+      </h3>
+      <dl className="space-y-2.5">
+        <div className="flex items-baseline justify-between gap-2">
+          <dt className="text-xs font-bold text-text-secondary">Senaste check-in</dt>
+          <dd className="text-sm font-extrabold tabular-nums">{checkinLabel}</dd>
+        </div>
+        <div className="flex items-baseline justify-between gap-2">
+          <dt className="text-xs font-bold text-text-secondary">Tyngd idag</dt>
+          <dd className={`text-sm font-extrabold tabular-nums ${moodClass}`}>
+            {live.moodHeaviness == null ? "—" : `${live.moodHeaviness}/10`}
+          </dd>
+        </div>
+        {safetyLabel && (
+          <div className="flex items-baseline justify-between gap-2">
+            <dt className="text-xs font-bold text-text-secondary">Säkerhet</dt>
+            <dd className={`text-sm font-extrabold ${safetyClass}`}>{safetyLabel}</dd>
+          </div>
+        )}
+        <div className="flex items-baseline justify-between gap-2">
+          <dt className="text-xs font-bold text-text-secondary">Loggar 24h</dt>
+          <dd className="text-sm font-extrabold tabular-nums">{live.recentActivities}</dd>
+        </div>
+      </dl>
+      <p className="mt-3 text-[11px] text-text-secondary leading-snug">
+        Levande data från dina egna loggar — hjälper dig se varningstecknen tidigt.
+      </p>
+    </section>
+  );
+};
+
 export default CrisisPlan;
+

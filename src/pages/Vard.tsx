@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { WideLayout } from "@/components/desktop/WideLayout";
+import { AssessmentStatusList } from "@/components/desktop/AssessmentStatusList";
+import { severityToneFor, severityBadgeClasses } from "@/lib/severity";
 import { Illustration } from "@/components/Illustrations";
 import { AbstractIcon } from "@/components/AbstractIcon";
 import { ScreenHeader } from "@/components/ui-kit/ScreenHeader";
@@ -147,16 +149,32 @@ const Vard = () => {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-[15px] font-extrabold text-foreground">{f.title}</div>
-                        <div className="text-xs text-text-secondary">
-                          {last
-                            ? `Senast: ${final}${f.toFinal ? "/100" : `/${f.maxRaw}`} · ${f.scoreLabel(last.total_score)}`
-                            : "Aldrig genomförd"}
+                        <div className="text-xs text-text-secondary flex items-center gap-1.5 flex-wrap">
+                          {last ? (
+                            <>
+                              <span>Senast: {final}{f.toFinal ? "/100" : `/${f.maxRaw}`}</span>
+                              {(() => {
+                                const lbl = f.scoreLabel(last.total_score);
+                                const tone = severityToneFor(lbl);
+                                const badge = severityBadgeClasses(tone);
+                                return (
+                                  <span className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-extrabold ${badge.bg} ${badge.text}`}>
+                                    <span className={`w-1 h-1 rounded-full ${badge.dot}`} aria-hidden />
+                                    {lbl}
+                                  </span>
+                                );
+                              })()}
+                            </>
+                          ) : (
+                            "Aldrig genomförd"
+                          )}
                         </div>
                       </div>
                       <ChevronRight size={18} className="text-text-secondary" />
                     </button>
                   );
                 })}
+
               </div>
             </section>
           </>
@@ -168,25 +186,17 @@ const Vard = () => {
              *  ändå under left, så vi sparar plats). */}
             <section className="mb-7 hidden lg:block card-cream p-4">
               <h3 className="text-xs font-extrabold uppercase tracking-wider text-text-secondary mb-3">
-                Vårdstatus
+                Senaste resultat
               </h3>
-              <dl className="space-y-2.5">
+              <AssessmentStatusList
+                forms={forms}
+                types={["phq9", "gad7", "who5"]}
+                onOpen={(t) => { setActiveForm(t); setView("form"); }}
+              />
+              <dl className="mt-4 pt-3 border-t border-border-soft space-y-2">
                 <div className="flex items-baseline justify-between">
                   <dt className="text-xs font-bold text-text-secondary">Aktiva läkemedel</dt>
                   <dd className="text-sm font-extrabold tabular-nums">{meds.filter(m => m.active).length}</dd>
-                </div>
-                <div className="flex items-baseline justify-between">
-                  <dt className="text-xs font-bold text-text-secondary">Senaste skattning</dt>
-                  <dd className="text-sm font-extrabold tabular-nums">
-                    {(() => {
-                      const last = forms[0]?.date;
-                      if (!last) return "Aldrig";
-                      const diff = Math.floor((Date.now() - new Date(last).getTime()) / 86_400_000);
-                      if (diff === 0) return "Idag";
-                      if (diff === 1) return "Igår";
-                      return `${diff} d sedan`;
-                    })()}
-                  </dd>
                 </div>
                 <div className="flex items-baseline justify-between">
                   <dt className="text-xs font-bold text-text-secondary">Skattningar (90 d)</dt>
@@ -195,6 +205,9 @@ const Vard = () => {
                   </dd>
                 </div>
               </dl>
+              <p className="mt-3 text-[11px] text-text-secondary leading-snug">
+                Severity-färgen följer skalornas egna gränser — klicka för att skatta på nytt.
+              </p>
             </section>
 
             <section className="mb-7">
