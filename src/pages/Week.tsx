@@ -478,16 +478,17 @@ const Week = () => {
           activities,
           Object.fromEntries(directionSeries.map((p) => [p.date, p.value])),
         )}
-        className="mb-6"
+        className="mb-6 lg:col-start-2"
       />
 
       {/*
-       * Mobile: vertical stack (unchanged).
-       * Desktop (≥lg): two-column masonry so cards/sections share the wide
-       * canvas without losing reading order. Children opt in to
-       * `lg:break-inside-avoid` only where they're risky to split.
+       * Mobile: vertical stack — items render i source-order.
+       * Desktop (lg+): tva-kolumns-grid. Varje sektion deklarerar kolumn
+       * via `lg:col-start-1` (narrativ - "vad betyder det?") eller
+       * `lg:col-start-2` (bevis - "vad visar datan?"). Mobilen ar inte en
+       * grid sa allt stackar vertikalt i nuvarande ordning.
        */}
-      <div className="lg:[column-count:2] lg:[column-gap:2.5rem] lg:[&>*]:break-inside-avoid">
+      <div className="lg:grid lg:grid-cols-[1.5fr_1fr] lg:gap-x-10 lg:gap-y-0 lg:items-start">
       <button
         onClick={() => navigate("/analys")}
         className="w-full mb-6 ui-card-list flex items-center gap-3 press-soft text-left animate-pop-in"
