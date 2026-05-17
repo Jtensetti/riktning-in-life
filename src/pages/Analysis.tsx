@@ -20,6 +20,8 @@ type ActivityLite = {
   color: string;
   mood_delta: number | null;
   date: string;
+  duration_minutes: number | null;
+  semantic_kind: string | null;
 };
 
 type SessionLite = {
