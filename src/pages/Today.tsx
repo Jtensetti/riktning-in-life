@@ -46,6 +46,8 @@ import { detectRisks, type RiskSignal } from "@/lib/riskSignals";
 import { RiskSignalsCard } from "@/components/RiskSignalsCard";
 import type { Checkin as MetricsCheckin } from "@/lib/metrics";
 import { backfillDailyWeather } from "@/lib/dailyWeather";
+import { computeProgression } from "@/lib/progression";
+import { ProgressionPanel } from "@/components/ProgressionPanel";
 
 type Checkin = {
   id: string;
@@ -264,6 +266,7 @@ const Today = () => {
   // Kontinuitet: kommer ihåg när användaren senast var här. Skrivs vid mount.
   const [lastSeen] = useState<LastSeen>(() => readAndUpdateLastSeen());
   const [riskSignals, setRiskSignals] = useState<RiskSignal[]>([]);
+  const [progressionRows, setProgressionRows] = useState<Array<{ date: string; mood_heaviness: number | null; anxiety: number | null; energy: number | null; function_score: number | null }>>([]);
 
   // Realtime: när loggar förändras (t.ex. på en annan enhet) — bumpa reload.
   const live = useLiveData();
@@ -407,6 +410,21 @@ const Today = () => {
       const checks = (ci.data ?? []) as unknown as MetricsCheckin[];
       const logs = (ml.data ?? []) as Array<{ date: string; taken_status: string; severity: number | null; side_effects_json: unknown }>;
       setRiskSignals(detectRisks({ checkins: checks, medLogs: logs }));
+    })();
+  }, [user, streakReloadKey]);
+
+  // Bredare fönster för progression — 60 dagar räcker för "första 14 vs senaste 14".
+  useEffect(() => {
+    if (!user) return;
+    const since60 = new Date(Date.now() - 60 * 86_400_000).toISOString().split("T")[0];
+    (async () => {
+      const { data } = await supabase
+        .from("daily_checkins")
+        .select("date,mood_heaviness,anxiety,energy,function_score")
+        .eq("user_id", user.id)
+        .gte("date", since60)
+        .order("date");
+      setProgressionRows((data ?? []) as Array<{ date: string; mood_heaviness: number | null; anxiety: number | null; energy: number | null; function_score: number | null }>);
     })();
   }, [user, streakReloadKey]);
 
@@ -558,7 +576,13 @@ const Today = () => {
     [personalEffect, checkin?.anxiety, checkin?.energy, checkin?.mood_heaviness],
   );
 
-  // 7-day insights
+  // Progression — streak + baseline-skift + top-lifter. Kräver bredare dataset.
+  const progressionFacts = useMemo(
+    () => computeProgression(progressionRows, personalEffect),
+    [progressionRows, personalEffect],
+  );
+
+
   const moodTrend = computeTrend(trendData, c => c.mood_heaviness, true);
   const sleepTrend = computeTrend(trendData, c => c.sleep_hours == null ? null : Number(c.sleep_hours), false);
   const funcTrend = computeTrend(trendData, c => c.function_score, false);
@@ -1101,9 +1125,12 @@ const Today = () => {
 
         return (
           <>
-            {/* Mobil: vertikal stack — exakt som tidigare */}
+            {/* Mobil: vertikal stack — exakt som tidigare + progression sist */}
             <div className="lg:hidden">
               {visible.map(renderModule)}
+              {progressionFacts.length >= 2 && (
+                <div className="mb-7"><ProgressionPanel facts={progressionFacts} /></div>
+              )}
             </div>
 
             {/* Desktop: cockpit */}
@@ -1114,6 +1141,7 @@ const Today = () => {
               <div className="min-w-0 space-y-5">
                 {rightIds.map(renderModule)}
                 <RiskSignalsCard signals={riskSignals} />
+                <ProgressionPanel facts={progressionFacts} />
                 <DayMat activities={todayActivities} onAdd={() => setPickerOpen(true)} />
                 <DirectionMicroInsight
                   todayMood={checkin?.mood_heaviness ?? null}

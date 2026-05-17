@@ -31,6 +31,8 @@ export type Pick = {
   fitScore: number;
   /** Optional human chip e.g. "Brukar sänka din oro ~1.3 av 10 (8 ggr)" — fylls i av caller via personalEffect. */
   effectChip?: string;
+  /** Mänskliga rader bakom rekommendationen — "Varför ser jag detta?". 2–4 punkter. */
+  whyFactors?: string[];
 };
 
 export type CheckinSignals = {
@@ -122,6 +124,84 @@ const slotReasonLong = (slot: Slot, ex: Exercise, c: CheckinSignals | null, t: T
     return "Handling kommer före motivation. Inte tvärtom.";
   }
   return "När det känns övermäktigt — börja här. Två minuter.";
+};
+
+/**
+ * Mänskliga faktorer bakom valet — används i "Varför ser jag detta?".
+ * Plockar 2–4 mest relevanta rader, samma villkor som scoreExercise.
+ */
+const explainPick = (
+  ex: Exercise,
+  slot: Slot,
+  c: CheckinSignals | null,
+  t: TimeContext,
+  w: Weather | null,
+  history?: EffectHistory,
+  forecast?: ForecastSignal,
+): string[] => {
+  const out: string[] = [];
+  const anx = c?.anxiety ?? null;
+  const mood = c?.mood_heaviness ?? null;
+  const energy = c?.energy ?? null;
+  const sleep = c?.sleep_hours ?? null;
+
+  // 1) Symptom / signal
+  if (anx != null && anx >= 6 && (ex.category === "Lugna kroppen" || ex.category === "Bryt ältande")) {
+    out.push(`Din oro idag är ${anx}/10 — andnings- och kropps-övningar svarar snabbast.`);
+  } else if (mood != null && mood >= 7 && (ex.category === "Skriv av dig" || ex.category === "Bryt ältande" || ex.category === "Sociala mikrosteg")) {
+    out.push(`Tyngden ligger på ${mood}/10 — den här typen brukar ge en första lättnad.`);
+  } else if (sleep != null && sleep < 5 && ex.category === "Sov bättre") {
+    out.push(`Bara ${sleep} h sömn — vi prioriterar sömnstöd.`);
+  } else if (energy != null && energy <= 3 && (ex.category === "Kom igång" || ex.category === "Mat & humör")) {
+    out.push(`Energi ${energy}/10 — något litet räcker för att starta.`);
+  }
+
+  // 2) Tid på dygnet
+  if (t.partOfDay === "morning" && ex.category === "Kom igång") {
+    out.push("Morgon nu — en mjuk start synkar dygnsrytmen.");
+  } else if ((t.partOfDay === "evening" || t.partOfDay === "night") && ex.category === "Sov bättre") {
+    out.push("Det är kväll — sömnförberedande passar bäst nu.");
+  }
+
+  // 3) Väder
+  const outdoorOk = isOutdoorFriendly(w);
+  const isOutdoor = ex.title.toLowerCase().includes("dagsljus") || ex.title.toLowerCase().includes("promenad") || ex.category === "Rör dig mjukt";
+  if (isOutdoor && outdoorOk && w && (w.kind === "clear" || w.kind === "partly")) {
+    out.push("Solen är uppe just nu — ta vara på dagsljuset.");
+  } else if (isOutdoor && !outdoorOk && w) {
+    // Inverterat — det betyder att övningen INTE valdes pga väder. Men för en pick som ändå hamnar här (annat slot), nämn inte.
+  }
+
+  // 4) Personlig effekt
+  if (history) {
+    const stat =
+      history.byExerciseId?.[ex.id] ??
+      history.byExerciseTitle?.[ex.title] ??
+      history.byCategory?.[ex.category];
+    if (stat && stat.count >= 3) {
+      const metric = stat.metric ?? "mood";
+      const sign = improvementSign(metric, stat.avgDelta);
+      const mag = Math.abs(stat.avgDelta).toFixed(1);
+      if (sign === 1 && Math.abs(stat.avgDelta) >= 0.4) {
+        const what = metric === "anxiety" ? "sänker din oro" : metric === "energy" ? "höjer din energi" : "lyfter ditt mående";
+        out.push(`Brukar ${what} ~${mag} (${stat.count} ggr).`);
+      }
+    }
+  }
+
+  // 5) Forecast
+  if (forecast && forecast.kind === "anxiety" && forecast.partOfDay === "morning"
+    && (ex.category === "Lugna kroppen" || ex.category === "Bryt ältande")) {
+    out.push("Mönster: din oro brukar toppa i morgon-fönstret.");
+  }
+
+  // 6) Slot-funktion som fallback
+  if (out.length === 0) {
+    const slotText = slot === "calm" ? "lugnande" : slot === "lift" ? "lyftande" : "minsta möjliga";
+    out.push(`Vald som dagens ${slotText} pass.`);
+  }
+
+  return out.slice(0, 4);
 };
 
 const scoreExercise = (
@@ -289,6 +369,7 @@ export const recommendForToday = (
       reasonShort: slotReasonShort(slot, best.ex, c, t, w),
       reasonLong: slotReasonLong(slot, best.ex, c, t, w),
       fitScore: best.score,
+      whyFactors: explainPick(best.ex, slot, c, t, w, history, forecast),
     };
   };
 
