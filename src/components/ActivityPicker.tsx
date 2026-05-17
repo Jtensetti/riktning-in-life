@@ -4,8 +4,10 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { AbstractIcon, type IconName } from "./AbstractIcon";
+import { ActivityTile } from "./desktop/ActivityTile";
 import { useRecentActivities } from "@/hooks/useRecentActivities";
-import { Search, Plus, Minus, Check, Star } from "lucide-react";
+import { recommendForNow } from "@/lib/pickerRecommend";
+import { Search, Plus, Minus, Check, Star, Layers } from "lucide-react";
 
 export type CatalogItem = {
   slug: string;
@@ -47,19 +49,8 @@ export type ActivityDraft = {
   location?: Location | null;
 };
 
-const colorBg = (color: string): string => {
-  switch (color) {
-    case "orange": return "bg-orange-start text-white";
-    case "blue": return "bg-blue-calm text-white";
-    case "yellow": return "bg-yellow-journal text-foreground";
-    case "purple": return "bg-purple-sleep text-white";
-    case "pink": return "bg-pink-move text-white";
-    case "green": return "bg-green-recovery text-white";
-    // Default: lugn blåton i stället för cream/lila — undviker
-    // att aktiviteter utan explicit färg ärver något grått eller lila.
-    default: return "bg-blue-calm/15 text-foreground";
-  }
-};
+// Färger används nu via ActivityTile + ikon-bakgrund i detaljvyn — den
+// tidigare colorBg-helpern är borta tillsammans med inline-PickerCard.
 
 const moodFaces: { value: number; label: string }[] = [
   { value: -2, label: "Sämre" },
@@ -70,55 +61,6 @@ const moodFaces: { value: number; label: string }[] = [
 ];
 
 const durationPresets = [15, 30, 60, 90];
-
-/**
- * PickerCard — minimal variant.
- *  - 88px h, radius 24, padding 18
- *  - INGEN ikon (titeln säger redan vad det är)
- *  - title 16/20/800, line-clamp-2 → ingen ellipsis på "Långpromenad"
- *  - star 22px, opacity 0.4 inactive, full opacity active
- */
-const PickerCard = ({
-  item,
-  isFav,
-  onPick,
-  onToggleFav,
-  delayMs,
-}: {
-  item: CatalogItem;
-  isFav: boolean;
-  onPick: () => void;
-  onToggleFav: (e: React.MouseEvent) => void;
-  delayMs?: number;
-}) => (
-  <div
-    className={`relative shadow-card animate-fade-in-up rounded-3xl min-h-[88px] lg:min-h-[132px] ${colorBg(item.color)}`}
-    style={{
-      animationDelay: delayMs ? `${delayMs}ms` : undefined,
-    }}
-  >
-    <button
-      onClick={onPick}
-      className="w-full h-full text-left press-soft flex items-center justify-start lg:items-end lg:justify-start min-h-[88px] lg:min-h-[132px] px-[18px] py-4 pr-11 lg:p-4 lg:pr-10"
-    >
-      <span className="font-extrabold text-[16px] leading-[20px] lg:text-[15px] lg:leading-[18px]">
-        {item.label}
-      </span>
-    </button>
-    <button
-      onClick={onToggleFav}
-      aria-label={isFav ? "Ta bort favorit" : "Spara som favorit"}
-      className="absolute top-2 right-2 grid place-items-center press-soft"
-      style={{
-        width: 32,
-        height: 32,
-        opacity: isFav ? 1 : 0.4,
-      }}
-    >
-      <Star size={22} className={isFav ? "fill-current" : ""} strokeWidth={2.2} />
-    </button>
-  </div>
-);
 
 interface Props {
   open: boolean;
@@ -139,7 +81,12 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
   const [sleepQuality, setSleepQuality] = useState<SleepQuality | null>(null);
   const [location, setLocation] = useState<Location | null>(null);
   const [customLabel, setCustomLabel] = useState("");
-  const recentSlugs = useRecentActivities(4);
+  // Multi-select: när på, läggs valda i en Set och vi visar en sticky bar
+  // med "Spara N aktiviteter". Detaljformuläret hoppas över helt — varje
+  // aktivitet sparas med default-tid och mood_delta = 0.
+  const [multi, setMulti] = useState(false);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const recentSlugs = useRecentActivities(6);
 
   useEffect(() => {
     if (!open) return;
@@ -187,6 +134,8 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
       setWithWho(null);
       setSleepQuality(null);
       setLocation(null);
+      setMulti(false);
+      setPicked(new Set());
     }
   }, [open]);
 
@@ -219,7 +168,35 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
     return recentSlugs.map((s) => bySlug.get(s)).filter((c): c is CatalogItem => !!c);
   }, [catalog, recentSlugs]);
 
+  /** "Rekommenderat just nu" — tid-på-dygnet + senaste loggar. */
+  const recommendedItems = useMemo(() => {
+    return recommendForNow({ catalog, recentSlugs, limit: 6 }).filter(
+      (c) => !recentSlugs.includes(c.slug),
+    );
+  }, [catalog, recentSlugs]);
+
+  const draftFromItem = (item: CatalogItem, opts?: { mood?: number }): ActivityDraft => ({
+    slug: item.slug,
+    label: item.label,
+    category: item.category,
+    icon: item.icon,
+    color: item.color,
+    duration_minutes: item.default_minutes,
+    mood_delta: opts?.mood ?? 0,
+    semantic_kind: item.semantic_kind ?? null,
+  });
+
   const pick = (item: CatalogItem) => {
+    if (multi) {
+      // Toggle i multi-select-läge — ingen detaljvy.
+      setPicked((prev) => {
+        const next = new Set(prev);
+        if (next.has(item.slug)) next.delete(item.slug);
+        else next.add(item.slug);
+        return next;
+      });
+      return;
+    }
     setSelected(item);
     setDuration(item.default_minutes);
     setMood(1);
@@ -245,6 +222,17 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
       sleep_quality: selected.semantic_kind === "somn" ? sleepQuality : null,
       location: selected.semantic_kind === "aterhamtning" ? location : null,
     });
+    onOpenChange(false);
+  };
+
+  /** Spara alla valda aktiviteter i multi-select. Varje får default-tid. */
+  const confirmMulti = () => {
+    if (!picked.size) return;
+    const bySlug = new Map(catalog.map((c) => [c.slug, c]));
+    for (const slug of picked) {
+      const item = bySlug.get(slug);
+      if (item) onAdd(draftFromItem(item));
+    }
     onOpenChange(false);
   };
 
@@ -320,17 +308,46 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
                   {c}
                 </button>
               ))}
+              {/* Multi-select-toggle — sist i raden så den inte stör kategorierna. */}
+              <button
+                onClick={() => { setMulti((m) => !m); setPicked(new Set()); }}
+                className={`shrink-0 rounded-full px-4 py-2 text-xs font-extrabold press-soft border-2 inline-flex items-center gap-1 ${
+                  multi ? "bg-foreground text-background border-foreground" : "bg-surface text-foreground border-border-soft"
+                }`}
+                aria-pressed={multi}
+              >
+                <Layers size={12} /> Välj flera
+              </button>
             </div>
+
+            {recommendedItems.length > 0 && !activeCat && !q.trim() && (
+              <div className="mb-5">
+                <p className="text-meta text-text-secondary mb-2">Rekommenderat just nu</p>
+                <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                  {recommendedItems.map((item) => (
+                    <ActivityTile
+                      key={`rec-${item.slug}`}
+                      item={item}
+                      isFav={favorites.has(item.slug)}
+                      selected={picked.has(item.slug)}
+                      onPick={() => pick(item)}
+                      onToggleFav={(e) => toggleFavorite(item.slug, e)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
 
             {recentItems.length > 0 && !activeCat && !q.trim() && (
               <div className="mb-5">
                 <p className="text-meta text-text-secondary mb-2">Senast använda</p>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                   {recentItems.map((item) => (
-                    <PickerCard
+                    <ActivityTile
                       key={`recent-${item.slug}`}
                       item={item}
                       isFav={favorites.has(item.slug)}
+                      selected={picked.has(item.slug)}
                       onPick={() => pick(item)}
                       onToggleFav={(e) => toggleFavorite(item.slug, e)}
                     />
@@ -344,12 +361,13 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
                 <p className="text-meta text-text-secondary mb-2 inline-flex items-center gap-1">
                   <Star size={12} className="fill-current" /> Dina favoriter
                 </p>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                   {favoriteItems.map((item) => (
-                    <PickerCard
+                    <ActivityTile
                       key={`fav-${item.slug}`}
                       item={item}
                       isFav
+                      selected={picked.has(item.slug)}
                       onPick={() => pick(item)}
                       onToggleFav={(e) => toggleFavorite(item.slug, e)}
                     />
@@ -358,19 +376,20 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
               </div>
             )}
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 pb-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3 pb-4">
               {filtered.map((item, i) => (
-                <PickerCard
+                <ActivityTile
                   key={item.slug}
                   item={item}
                   isFav={favorites.has(item.slug)}
+                  selected={picked.has(item.slug)}
                   onPick={() => pick(item)}
                   onToggleFav={(e) => toggleFavorite(item.slug, e)}
                   delayMs={Math.min(i, 8) * 25}
                 />
               ))}
               {filtered.length === 0 && q.trim() && (
-                <div className="col-span-2 lg:col-span-4 card-cream p-4">
+                <div className="col-span-2 lg:col-span-4 xl:col-span-5 card-cream p-4">
                   <p className="text-sm font-extrabold mb-2">Inget i listan?</p>
                   <p className="text-xs text-text-secondary mb-3">Lägg till "{q}" som en egen aktivitet.</p>
                   <Button
@@ -382,6 +401,27 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
                 </div>
               )}
             </div>
+
+            {multi && picked.size > 0 && (
+              <div className="sticky bottom-0 -mx-6 px-6 py-3 bg-background/95 backdrop-blur border-t border-border-soft flex items-center gap-3">
+                <p className="text-sm font-extrabold flex-1 min-w-0">
+                  {picked.size} {picked.size === 1 ? "aktivitet vald" : "aktiviteter valda"}
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => setPicked(new Set())}
+                  className="rounded-full h-11 font-extrabold border-2 border-border-soft press-soft"
+                >
+                  Rensa
+                </Button>
+                <Button
+                  onClick={confirmMulti}
+                  className="rounded-full h-11 bg-orange-start hover:bg-orange-deep text-white font-extrabold press-soft"
+                >
+                  <Check size={16} className="mr-1" /> Spara {picked.size}
+                </Button>
+              </div>
+            )}
 
             {!q.trim() && (
               <div className="card-cream p-4 mb-4">

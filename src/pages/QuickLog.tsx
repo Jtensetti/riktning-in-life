@@ -2,10 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useTodayActivities } from "@/hooks/useTodayActivities";
 import { AppShell } from "@/components/AppShell";
 import { AbstractIcon, type IconName } from "@/components/AbstractIcon";
 import { ScreenHeader } from "@/components/ui-kit/ScreenHeader";
 import { ColorCard } from "@/components/ColorCard";
+import { DayMat } from "@/components/desktop/DayMat";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Check, ChevronLeft, ChevronRight, Clock, History, Plus, Minus, Trash2 } from "lucide-react";
@@ -67,6 +69,7 @@ type MoodEdit = { id: string; heaviness: number; anxiety: number; energy: number
 
 const QuickLog = () => {
   const { user, loading } = useAuth();
+  const { data: todayActivities } = useTodayActivities();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [openTpl, setOpenTpl] = useState<TemplateKey | null>(null);
@@ -451,6 +454,14 @@ const QuickLog = () => {
         {/* === DESKTOP: kontextpanel med dagens loggar + historik utan tabs === */}
         <aside className="hidden lg:block min-w-0">
           <div className="lg:sticky lg:top-24 space-y-6">
+            {todayActivities.length > 0 && (
+              <DayMat
+                activities={todayActivities}
+                title="Dagens aktivitetsmatta"
+                onAdd={() => navigate("/snabblogg?picker=1")}
+              />
+            )}
+
             <div>
               <p className="text-xs font-extrabold uppercase tracking-wider text-text-secondary mb-3">
                 Idag <span className="opacity-60">· {todayEntries.length} st</span>
