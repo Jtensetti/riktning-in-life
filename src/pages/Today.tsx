@@ -410,6 +410,14 @@ const Today = () => {
     })();
   }, [user, streakReloadKey]);
 
+  // Backfill av Open-Meteo arkivdata in i `daily_weather` — högst en gång per
+  // dygn per enhet (stämpel i lib/dailyWeather.ts). Vi behöver bara lat/lon,
+  // som vi får från `useWeather`. Best-effort — UI:t blockeras aldrig.
+  useEffect(() => {
+    if (!user || !weather) return;
+    backfillDailyWeather(user.id, weather.lat, weather.lon, 30).catch(() => { /* tyst */ });
+  }, [user, weather?.lat, weather?.lon]);
+
   const handleQuickAdd = async (a: ActivityDraft) => {
     if (!user) return;
     if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.(10);
