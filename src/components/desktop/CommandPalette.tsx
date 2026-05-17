@@ -27,19 +27,21 @@ export const CommandPalette = () => {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const meta = e.metaKey || e.ctrlKey;
-      if (!meta) return;
       const t = e.target as HTMLElement | null;
-      const inField = t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable);
-      if (e.key.toLowerCase() === "k") {
+      const inField = !!t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable);
+      const meta = e.metaKey || e.ctrlKey;
+      if (meta && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setOpen((o) => !o);
-      } else if (!inField && e.key.toLowerCase() === "n") {
+      } else if (meta && !inField && e.key.toLowerCase() === "n") {
         e.preventDefault();
         navigate("/checkin");
-      } else if (!inField && e.key.toLowerCase() === "l") {
+      } else if (meta && !inField && e.key.toLowerCase() === "l") {
         e.preventDefault();
         navigate("/snabblogg");
+      } else if (!inField && !meta && e.key === "?") {
+        e.preventDefault();
+        setOpen(true);
       }
     };
     window.addEventListener("keydown", onKey);
