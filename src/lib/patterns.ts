@@ -309,8 +309,9 @@ const detectWeatherSensitivity = (rows: Checkin[]): Pattern | null => {
   for (const c of rows) {
     const b = burdenOfRow(c);
     if (b == null) continue;
-    const kind = (c.weather_kind ?? "").toLowerCase();
-    const temp = c.weather_temp_c == null ? null : Number(c.weather_temp_c);
+    const w = c as unknown as { weather_kind?: string | null; weather_temp_c?: number | string | null };
+    const kind = (w.weather_kind ?? "").toLowerCase();
+    const temp = w.weather_temp_c == null ? null : Number(w.weather_temp_c);
     const isHeavy =
       kind.includes("rain") || kind.includes("snow") || kind.includes("storm") ||
       kind.includes("regn") || kind.includes("mulet") || kind.includes("cloud") ||
