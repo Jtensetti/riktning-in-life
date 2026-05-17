@@ -116,6 +116,7 @@ const Vard = () => {
       <WideLayout
         left={
           <>
+            <RiskSignalsCard signals={riskSignals} />
             <section className="mb-7">
               <button
                 onClick={() => navigate("/krisplan")}
