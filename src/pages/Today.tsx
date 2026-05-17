@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,7 +14,8 @@ import { useUserSettings } from "@/hooks/useUserSettings";
 import { getTimeContext, type TimeContext } from "@/lib/timeContext";
 import { useWeather, isOutdoorFriendly, weatherLabel, hasAskedWeatherPermission, isWeatherPermissionGranted, isWeatherPermissionDismissed, dismissWeatherPermission, type Weather } from "@/lib/weather";
 import { ForYouCarousel } from "@/components/ForYouCarousel";
-import { recommendForToday, type Exercise as RecExercise, type Pick, type EffectHistory, type ForecastSignal } from "@/lib/recommend";
+import { recommendForToday, type Exercise as RecExercise, type Pick, type ForecastSignal } from "@/lib/recommend";
+import { buildPersonalEffect, pickEffectHistoryFor, bestStatFor, formatEffectChip } from "@/lib/personalEffect";
 import { Moon } from "lucide-react";
 import { StreakRing } from "@/components/StreakRing";
 import { QuickLogPills } from "@/components/QuickLogPills";
