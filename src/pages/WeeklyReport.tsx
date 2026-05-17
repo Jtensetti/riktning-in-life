@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, FileDown, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, FileDown, Mail, Plus, Sparkles, Trash2 } from "lucide-react";
 import jsPDF from "jspdf";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { WeeklyAIInsight } from "@/components/WeeklyAIInsight";
+import { RiskSignalsCard } from "@/components/RiskSignalsCard";
+import { detectRisks, type RiskSignal } from "@/lib/riskSignals";
 import { burdenScore, functionScore, recoveryScore, stabilityScore, splitWeeks, type Checkin, type WeeklyFormScore } from "@/lib/metrics";
 import { formatDelta, improvementSign } from "@/lib/valence";
 import { htmlToPreviewText } from "@/lib/htmlText";
@@ -32,6 +34,30 @@ import {
   PDF_PAGE,
 } from "@/lib/pdfWidgets";
 import { patchUserSettings, SETTINGS_HYDRATED_EVENT } from "@/lib/userSettingsSync";
+
+// ───────────────────────────────────────────────────────────────
+// Fas D — tidsspann för vårdrapport ("sedan senaste besök" m.fl.)
+// ───────────────────────────────────────────────────────────────
+type ReportRange = "7d" | "14d" | "30d" | "since_visit";
+
+const LAST_VISIT_KEY = "riktning_last_visit_date";
+
+const readLastVisit = (): string => {
+  try {
+    return localStorage.getItem(LAST_VISIT_KEY) || "";
+  } catch {
+    return "";
+  }
+};
+
+type DoctorSummary = {
+  headline: string;
+  whats_changed: string;
+  whats_working: string;
+  whats_worrying: string;
+  recommended_focus: string;
+  flags: string[];
+};
 
 // Frågor till läkaren synkas via user_settings.weekly_questions så att
 // listan följer användaren mellan mobil och desktop. Lokal cache läses
