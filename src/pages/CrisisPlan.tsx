@@ -132,7 +132,7 @@ const CrisisPlan = () => {
   }
 
   return (
-    <AppShell>
+    <AppShell wide>
       <HeroBanner
         tone="var(--orange-start)"
         icon="shield-soft"
@@ -165,52 +165,86 @@ const CrisisPlan = () => {
         )}
       </header>
 
-      {/* Akutknappar — alltid synliga */}
-      <section className="mb-7">
-        <h2 className="text-sm font-extrabold uppercase tracking-wider text-text-secondary mb-3">
-          Akut
-        </h2>
-        <div className="space-y-2">
-          {SOS.map((s, i) => (
-            <a
-              key={s.phone}
-              href={`tel:${s.phone.replace(/\s/g, "")}`}
-              className="flex items-center gap-3 rounded-3xl bg-red-bg border-2 border-red-risk/20 p-4 press-soft animate-fade-in-up"
-              style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
-            >
-              <div className="w-11 h-11 rounded-2xl bg-red-risk text-white grid place-items-center shrink-0">
-                <AbstractIcon name="phone-soft" size={18} color="hsl(var(--surface))" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-extrabold truncate">{s.name}</p>
-                <p className="text-xs text-text-secondary truncate">{s.role}</p>
-              </div>
-              <span className="text-sm font-extrabold text-red-risk shrink-0">{s.phone}</span>
-            </a>
-          ))}
-        </div>
-        <p className="text-[11px] text-text-secondary mt-2 px-1">
-          Kontrollera då och då att telefonnummer och kontakter stämmer.
-        </p>
-      </section>
+      <div className="lg:grid lg:grid-cols-[1.5fr_1fr] lg:gap-10">
+        <div className="min-w-0">
+          {/* Akutknappar — på mobil överst i flödet, på desktop i höger kontextpanel. */}
+          <section className="mb-7 lg:hidden">
+            <h2 className="text-sm font-extrabold uppercase tracking-wider text-text-secondary mb-3">
+              Akut
+            </h2>
+            <div className="space-y-2">
+              {SOS.map((s, i) => (
+                <a
+                  key={s.phone}
+                  href={`tel:${s.phone.replace(/\s/g, "")}`}
+                  className="flex items-center gap-3 rounded-3xl bg-red-bg border-2 border-red-risk/20 p-4 press-soft animate-fade-in-up"
+                  style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
+                >
+                  <div className="w-11 h-11 rounded-2xl bg-red-risk text-white grid place-items-center shrink-0">
+                    <AbstractIcon name="phone-soft" size={18} color="hsl(var(--surface))" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-extrabold truncate">{s.name}</p>
+                    <p className="text-xs text-text-secondary truncate">{s.role}</p>
+                  </div>
+                  <span className="text-sm font-extrabold text-red-risk shrink-0">{s.phone}</span>
+                </a>
+              ))}
+            </div>
+            <p className="text-[11px] text-text-secondary mt-2 px-1">
+              Kontrollera då och då att telefonnummer och kontakter stämmer.
+            </p>
+          </section>
 
-      {mode === "read" ? (
-        <ReadView plan={plan} />
-      ) : (
-        <EditView plan={plan} setPlan={setPlan} />
-      )}
+          {mode === "read" ? (
+            <ReadView plan={plan} />
+          ) : (
+            <EditView plan={plan} setPlan={setPlan} />
+          )}
 
-      {mode === "edit" && (
-        <div className="sticky bottom-24 -mx-2 mt-6">
-          <Button
-            onClick={save}
-            disabled={saving}
-            className="w-full h-14 rounded-full bg-foreground hover:bg-foreground/90 text-background font-extrabold text-[17px] shadow-soft press-soft"
-          >
-            {saving ? "Sparar..." : exists ? "Spara ändringar" : "Spara min krisplan"}
-          </Button>
+          {mode === "edit" && (
+            <div className="sticky bottom-24 -mx-2 mt-6">
+              <Button
+                onClick={save}
+                disabled={saving}
+                className="w-full h-14 rounded-full bg-foreground hover:bg-foreground/90 text-background font-extrabold text-[17px] shadow-soft press-soft"
+              >
+                {saving ? "Sparar..." : exists ? "Spara ändringar" : "Spara min krisplan"}
+              </Button>
+            </div>
+          )}
         </div>
-      )}
+
+        {/* Desktop-only: sticky akut-kontextpanel så hjälpnumren alltid syns. */}
+        <aside className="hidden lg:block min-w-0">
+          <div className="lg:sticky lg:top-24 space-y-4">
+            <h2 className="text-sm font-extrabold uppercase tracking-wider text-text-secondary">
+              Akut — alltid en knapptryckning bort
+            </h2>
+            <div className="space-y-2">
+              {SOS.map((s) => (
+                <a
+                  key={s.phone}
+                  href={`tel:${s.phone.replace(/\s/g, "")}`}
+                  className="flex items-center gap-3 rounded-3xl bg-red-bg border-2 border-red-risk/20 p-4 press-soft"
+                >
+                  <div className="w-11 h-11 rounded-2xl bg-red-risk text-white grid place-items-center shrink-0">
+                    <AbstractIcon name="phone-soft" size={18} color="hsl(var(--surface))" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-extrabold truncate">{s.name}</p>
+                    <p className="text-xs text-text-secondary truncate">{s.role}</p>
+                  </div>
+                  <span className="text-sm font-extrabold text-red-risk shrink-0">{s.phone}</span>
+                </a>
+              ))}
+            </div>
+            <p className="text-[11px] text-text-secondary px-1">
+              Stannar uppe längs hela sidan — håll fokus på planen.
+            </p>
+          </div>
+        </aside>
+      </div>
     </AppShell>
   );
 };
