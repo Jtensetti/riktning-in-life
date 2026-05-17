@@ -70,6 +70,9 @@ const Checkin = () => {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [step, setStep] = useState(0);
   const [deepAnswer, setDeepAnswer] = useState<string>("");
+  const [stableSuggestions, setStableSuggestions] = useState<StableSuggestion[]>([]);
+  const [appliedStable, setAppliedStable] = useState(false);
+  const [stableDismissed, setStableDismissed] = useState(false);
 
   // Välj en adaptiv "djupfråga" baserat på vad som varierar mest för dig.
   // Stabil per session — räknas en gång på mount.
