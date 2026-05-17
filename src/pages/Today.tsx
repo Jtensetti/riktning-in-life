@@ -45,6 +45,7 @@ import { MissingToday } from "@/components/desktop/MissingToday";
 import { detectRisks, type RiskSignal } from "@/lib/riskSignals";
 import { RiskSignalsCard } from "@/components/RiskSignalsCard";
 import type { Checkin as MetricsCheckin } from "@/lib/metrics";
+import { backfillDailyWeather } from "@/lib/dailyWeather";
 
 type Checkin = {
   id: string;
