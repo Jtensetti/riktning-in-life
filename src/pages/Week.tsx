@@ -48,6 +48,10 @@ import { WeekDirectionChart, type DirectionPoint } from "@/components/charts/Wee
 import { WeekMat, buildWeekMatDays } from "@/components/desktop/WeekMat";
 import { TodayStepCard } from "@/components/TodayStepCard";
 import { buildPersonalEffect } from "@/lib/personalEffect";
+import { computeProgression } from "@/lib/progression";
+import { detectRisks } from "@/lib/riskSignals";
+import { buildPlaybook } from "@/lib/weeklyPlaybook";
+import { WeeklyPlaybookCard } from "@/components/WeeklyPlaybookCard";
 import {
   loadActionPreferences, saveActionPreferences, resolvePreferredTime, resolvePreferredLength, lengthRange,
   type ActionPreferences, type PreferredTime, type PreferredLength,
