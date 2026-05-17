@@ -53,6 +53,7 @@ export const RiskSignalsCard = ({
   showCrisisLink = true,
   limit = 4,
 }: RiskSignalsCardProps) => {
+  const [openWhy, setOpenWhy] = useState<string | null>(null);
   if (signals.length === 0) return null;
   const shown = signals.slice(0, limit);
   const hasUrgent = shown.some((s) => s.severity === "alert" || s.severity === "warn");
@@ -69,9 +70,11 @@ export const RiskSignalsCard = ({
         {shown.map((s, i) => {
           const tone = toneFor(s.severity);
           const Icon = tone.Icon;
+          const key = `${s.kind}-${i}`;
+          const isOpen = openWhy === key;
           return (
             <article
-              key={`${s.kind}-${i}`}
+              key={key}
               className={`rounded-3xl border-2 p-4 shadow-soft animate-pop-in ${tone.wrap}`}
               style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
             >
@@ -93,10 +96,20 @@ export const RiskSignalsCard = ({
                       {labelFor(s.severity)}
                     </span>
                   </div>
-                  <p className="text-xs text-text-secondary leading-snug mb-1.5">
-                    {s.evidence}
-                  </p>
-                  <p className="text-xs leading-snug">{s.suggestion}</p>
+                  <p className="text-xs leading-snug mb-1.5">{s.suggestion}</p>
+                  <button
+                    type="button"
+                    onClick={() => setOpenWhy(isOpen ? null : key)}
+                    aria-expanded={isOpen}
+                    className="text-[11px] font-extrabold uppercase tracking-wider text-text-secondary press-soft underline-offset-2 hover:underline"
+                  >
+                    {isOpen ? "Dölj varför" : "Varför ser jag detta?"}
+                  </button>
+                  {isOpen && (
+                    <p className="mt-2 text-[12px] text-text-secondary leading-snug animate-fade-in-up">
+                      {s.evidence}
+                    </p>
+                  )}
                 </div>
               </div>
             </article>
