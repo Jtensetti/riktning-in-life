@@ -169,6 +169,25 @@
     border: 1px solid hsl(var(--border-soft));
   }
 
+  /* Desktop hover-lift on cards. Mobil orörd (hover finns inte på touch). */
+  @media (min-width: 1024px) {
+    .ui-card-action,
+    .ui-card-insight,
+    .ui-card-list,
+    .ui-card-clinical,
+    .ui-card-hero {
+      transition: transform 180ms ease, box-shadow 180ms ease;
+    }
+    .ui-card-action:hover,
+    .ui-card-insight:hover,
+    .ui-card-list:hover,
+    .ui-card-clinical:hover,
+    .ui-card-hero:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px -12px hsl(var(--foreground) / 0.18);
+    }
+  }
+
   /* === Legacy classes (kept until full migration) === */
   .card-soft {
     @apply rounded-3xl bg-surface;
