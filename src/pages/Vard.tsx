@@ -163,6 +163,40 @@ const Vard = () => {
         }
         right={
           <>
+            {/* Desktop-only kontextpanel — visar status så höger kolumn känns smartare,
+             *  inte bara en lista. På mobil läggs den inte ut alls (right kollapsar
+             *  ändå under left, så vi sparar plats). */}
+            <section className="mb-7 hidden lg:block card-cream p-4">
+              <h3 className="text-xs font-extrabold uppercase tracking-wider text-text-secondary mb-3">
+                Vårdstatus
+              </h3>
+              <dl className="space-y-2.5">
+                <div className="flex items-baseline justify-between">
+                  <dt className="text-xs font-bold text-text-secondary">Aktiva läkemedel</dt>
+                  <dd className="text-sm font-extrabold tabular-nums">{meds.filter(m => m.active).length}</dd>
+                </div>
+                <div className="flex items-baseline justify-between">
+                  <dt className="text-xs font-bold text-text-secondary">Senaste skattning</dt>
+                  <dd className="text-sm font-extrabold tabular-nums">
+                    {(() => {
+                      const last = forms[0]?.date;
+                      if (!last) return "Aldrig";
+                      const diff = Math.floor((Date.now() - new Date(last).getTime()) / 86_400_000);
+                      if (diff === 0) return "Idag";
+                      if (diff === 1) return "Igår";
+                      return `${diff} d sedan`;
+                    })()}
+                  </dd>
+                </div>
+                <div className="flex items-baseline justify-between">
+                  <dt className="text-xs font-bold text-text-secondary">Skattningar (90 d)</dt>
+                  <dd className="text-sm font-extrabold tabular-nums">
+                    {forms.filter(f => (Date.now() - new Date(f.date).getTime()) / 86_400_000 <= 90).length}
+                  </dd>
+                </div>
+              </dl>
+            </section>
+
             <section className="mb-7">
               <h2 className="text-lg font-extrabold mb-3">Läkemedel</h2>
               <button
