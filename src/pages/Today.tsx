@@ -1125,9 +1125,12 @@ const Today = () => {
 
         return (
           <>
-            {/* Mobil: vertikal stack — exakt som tidigare */}
+            {/* Mobil: vertikal stack — exakt som tidigare + progression sist */}
             <div className="lg:hidden">
               {visible.map(renderModule)}
+              {progressionFacts.length >= 2 && (
+                <div className="mb-7"><ProgressionPanel facts={progressionFacts} /></div>
+              )}
             </div>
 
             {/* Desktop: cockpit */}
@@ -1138,6 +1141,7 @@ const Today = () => {
               <div className="min-w-0 space-y-5">
                 {rightIds.map(renderModule)}
                 <RiskSignalsCard signals={riskSignals} />
+                <ProgressionPanel facts={progressionFacts} />
                 <DayMat activities={todayActivities} onAdd={() => setPickerOpen(true)} />
                 <DirectionMicroInsight
                   todayMood={checkin?.mood_heaviness ?? null}
