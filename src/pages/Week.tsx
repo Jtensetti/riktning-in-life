@@ -317,8 +317,9 @@ const Week = () => {
       sessions: sessionsForPatterns,
       medLogs: medLogsAll,
       thresholds,
+      dailyWeather,
     });
-  }, [checkins, activitiesAll, sessionsAll, medLogsAll, thresholds]);
+  }, [checkins, activitiesAll, sessionsAll, medLogsAll, thresholds, dailyWeather]);
 
   /** Per-dag Riktning (0–100, högre = bättre) för senaste 7 dagar.
    *  Riktning = 100 − burden för dagens checkin. Saknas dagen → null. */
