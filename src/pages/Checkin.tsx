@@ -169,6 +169,8 @@ const Checkin = () => {
     });
     setAppliedStable(true);
   };
+
+  const addActivity = async (a: ActivityDraft) => {
     setActivities((prev) => [...prev, a]);
     if (!user) return;
     await supabase.from("activity_logs").insert({
