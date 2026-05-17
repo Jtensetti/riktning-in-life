@@ -81,6 +81,23 @@ const CrisisPlan = () => {
   const [saving, setSaving] = useState(false);
   const [fetched, setFetched] = useState(false);
   const [live, setLive] = useState<LiveStatus | null>(null);
+  const [riskSignals, setRiskSignals] = useState<RiskSignal[]>([]);
+
+  // Risksignaler — visas högst upp på krisplanen så de mest akuta varningarna
+  // är direkt synliga när användaren öppnar planen.
+  useEffect(() => {
+    if (!user) return;
+    const since14 = new Date(Date.now() - 14 * 86_400_000).toISOString().split("T")[0];
+    (async () => {
+      const [ci, ml] = await Promise.all([
+        supabase.from("daily_checkins").select("*").eq("user_id", user.id).gte("date", since14).order("date"),
+        supabase.from("medication_logs").select("date,taken_status,severity,side_effects_json").eq("user_id", user.id).gte("date", since14).order("date"),
+      ]);
+      const checks = (ci.data ?? []) as unknown as MetricsCheckin[];
+      const logs = (ml.data ?? []) as Array<{ date: string; taken_status: string; severity: number | null; side_effects_json: unknown }>;
+      setRiskSignals(detectRisks({ checkins: checks, medLogs: logs }));
+    })();
+  }, [user]);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
