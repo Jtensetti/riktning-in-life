@@ -383,6 +383,32 @@ const Today = () => {
     })();
   }, [user, streakReloadKey]);
 
+  // Risksignaler — deterministisk regelmotor på senaste 14 d. Egen fetch
+  // eftersom Todays bas-query bara plockar smalt urval av kolumner.
+  useEffect(() => {
+    if (!user) return;
+    const since14 = new Date(Date.now() - 14 * 86_400_000).toISOString().split("T")[0];
+    (async () => {
+      const [ci, ml] = await Promise.all([
+        supabase
+          .from("daily_checkins")
+          .select("*")
+          .eq("user_id", user.id)
+          .gte("date", since14)
+          .order("date"),
+        supabase
+          .from("medication_logs")
+          .select("date,taken_status,severity,side_effects_json")
+          .eq("user_id", user.id)
+          .gte("date", since14)
+          .order("date"),
+      ]);
+      const checks = (ci.data ?? []) as unknown as MetricsCheckin[];
+      const logs = (ml.data ?? []) as Array<{ date: string; taken_status: string; severity: number | null; side_effects_json: unknown }>;
+      setRiskSignals(detectRisks({ checkins: checks, medLogs: logs }));
+    })();
+  }, [user, streakReloadKey]);
+
   const handleQuickAdd = async (a: ActivityDraft) => {
     if (!user) return;
     if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.(10);
