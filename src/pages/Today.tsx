@@ -576,7 +576,13 @@ const Today = () => {
     [personalEffect, checkin?.anxiety, checkin?.energy, checkin?.mood_heaviness],
   );
 
-  // 7-day insights
+  // Progression — streak + baseline-skift + top-lifter. Kräver bredare dataset.
+  const progressionFacts = useMemo(
+    () => computeProgression(progressionRows, personalEffect),
+    [progressionRows, personalEffect],
+  );
+
+
   const moodTrend = computeTrend(trendData, c => c.mood_heaviness, true);
   const sleepTrend = computeTrend(trendData, c => c.sleep_hours == null ? null : Number(c.sleep_hours), false);
   const funcTrend = computeTrend(trendData, c => c.function_score, false);
