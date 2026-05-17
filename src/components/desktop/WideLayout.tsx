@@ -18,12 +18,13 @@ export interface WideLayoutProps {
   left: ReactNode;
   right: ReactNode;
   /** Override the default 1.4/1 split. */
-  split?: "balanced" | "primary-heavy" | "even";
+  split?: "balanced" | "primary-heavy" | "aside" | "even";
 }
 
 const SPLIT_TO_GRID: Record<NonNullable<WideLayoutProps["split"]>, string> = {
   balanced: "lg:grid-cols-[1.4fr_1fr]",
   "primary-heavy": "lg:grid-cols-[1.7fr_1fr]",
+  aside: "lg:grid-cols-[1.5fr_1fr]",
   even: "lg:grid-cols-2",
 };
 
