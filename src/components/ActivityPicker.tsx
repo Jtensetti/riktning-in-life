@@ -81,7 +81,12 @@ export const ActivityPicker = ({ open, onOpenChange, onAdd }: Props) => {
   const [sleepQuality, setSleepQuality] = useState<SleepQuality | null>(null);
   const [location, setLocation] = useState<Location | null>(null);
   const [customLabel, setCustomLabel] = useState("");
-  const recentSlugs = useRecentActivities(4);
+  // Multi-select: när på, läggs valda i en Set och vi visar en sticky bar
+  // med "Spara N aktiviteter". Detaljformuläret hoppas över helt — varje
+  // aktivitet sparas med default-tid och mood_delta = 0.
+  const [multi, setMulti] = useState(false);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const recentSlugs = useRecentActivities(6);
 
   useEffect(() => {
     if (!open) return;
