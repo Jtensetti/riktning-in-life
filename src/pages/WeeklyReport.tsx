@@ -107,7 +107,7 @@ const WeeklyReport = () => {
     checkins: Checkin[];
     forms: { type: string; total_score: number; date: string }[];
     meds: { name: string; dose: string | null; active: boolean; date_started: string | null }[];
-    medLogs: { taken_status: string; side_effects_json: unknown; date: string }[];
+    medLogs: { taken_status: string; side_effects_json: unknown; severity: number | null; date: string }[];
     journals: { date: string; template_type: string; title: string | null; free_text: string | null }[];
     activities: { date: string; label: string; category: string; duration_minutes: number | null; mood_delta: number | null }[];
   } | null>(null);
@@ -115,6 +115,15 @@ const WeeklyReport = () => {
   const [questions, setQuestions] = useState<string[]>(readCachedQuestions);
   const [draft, setDraft] = useState("");
   const [includeJournal, setIncludeJournal] = useState(true);
+
+  // Fas D — tidsspann + AI-sammanfattning till läkaren
+  const [range, setRange] = useState<ReportRange>("7d");
+  const [lastVisit, setLastVisit] = useState<string>(readLastVisit);
+  const [aiSummary, setAiSummary] = useState<DoctorSummary | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [doctorEmail, setDoctorEmail] = useState<string>(
+    () => localStorage.getItem("riktning_doctor_email") || "",
+  );
 
   // Lyssna på serverhydrering — på en ny enhet vill vi att frågorna dyker upp
   // så fort hydrateUserSettings har skrivit ner cachen.
