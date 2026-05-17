@@ -303,22 +303,42 @@ const burdenOfRow = (c: Checkin): number | null => {
   return avg(parts);
 };
 
-const detectWeatherSensitivity = (rows: Checkin[]): Pattern | null => {
+type DailyWeatherLite = {
+  date: string;
+  temp_avg_c: number | null;
+  precip_mm: number | null;
+  weather_code: number | null;
+};
+
+const detectWeatherSensitivity = (
+  rows: Checkin[],
+  dailyWeather: DailyWeatherLite[] = [],
+): Pattern | null => {
+  const wxByDate = new Map<string, DailyWeatherLite>();
+  for (const w of dailyWeather) wxByDate.set(w.date, w);
+
   const heavyWeather: number[] = [];
   const lightWeather: number[] = [];
   for (const c of rows) {
     const b = burdenOfRow(c);
     if (b == null) continue;
-    const w = c as unknown as { weather_kind?: string | null; weather_temp_c?: number | string | null };
-    const kind = (w.weather_kind ?? "").toLowerCase();
-    const temp = w.weather_temp_c == null ? null : Number(w.weather_temp_c);
+
+    // Prefer authoritative daily_weather data when available; fall back to
+    // checkin-attached fields (geolocation snapshot vid morgon-incheckning).
+    const wx = wxByDate.get(c.date);
+    const inline = c as unknown as { weather_kind?: string | null; weather_temp_c?: number | string | null };
+    const kind = (wx ? weatherCodeKind(wx.weather_code) : (inline.weather_kind ?? "")).toLowerCase();
+    const temp = wx?.temp_avg_c ?? (inline.weather_temp_c == null ? null : Number(inline.weather_temp_c));
+    const precip = wx?.precip_mm ?? null;
+
     const isHeavy =
-      kind.includes("rain") || kind.includes("snow") || kind.includes("storm") ||
+      kind.includes("rain") || kind.includes("snow") || kind.includes("storm") || kind.includes("fog") ||
       kind.includes("regn") || kind.includes("mulet") || kind.includes("cloud") ||
-      (temp != null && temp <= 2);
+      (temp != null && temp <= 2) ||
+      (precip != null && precip >= 5);
     const isLight =
       kind.includes("sun") || kind.includes("clear") || kind.includes("sol") ||
-      (temp != null && temp >= 12);
+      (temp != null && temp >= 12 && (precip == null || precip < 1));
     if (isHeavy) heavyWeather.push(b);
     else if (isLight) lightWeather.push(b);
   }
