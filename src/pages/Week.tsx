@@ -226,6 +226,8 @@ const Week = () => {
       setActivitiesAll((actsAllRes.data ?? []) as any[]);
       setSessionsAll((sessAllRes.data ?? []) as any[]);
       setMedLogsAll((medLogsRes.data ?? []) as any[]);
+      // Dagligt väder från Open-Meteo-backfillen (tomt om backfill inte hunnit).
+      loadDailyWeather(user.id, 30).then(setDailyWeather);
 
       // Spår D: uppdatera personlig baslinje när vi har ≥14 dagar.
       refreshBaseline((checkinsRes.data ?? []) as Checkin[]);
