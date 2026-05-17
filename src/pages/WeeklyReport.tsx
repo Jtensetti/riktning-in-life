@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, FileDown, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, FileDown, Mail, Plus, Sparkles, Trash2 } from "lucide-react";
 import jsPDF from "jspdf";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { WeeklyAIInsight } from "@/components/WeeklyAIInsight";
+import { RiskSignalsCard } from "@/components/RiskSignalsCard";
+import { detectRisks, type RiskSignal } from "@/lib/riskSignals";
 import { burdenScore, functionScore, recoveryScore, stabilityScore, splitWeeks, type Checkin, type WeeklyFormScore } from "@/lib/metrics";
 import { formatDelta, improvementSign } from "@/lib/valence";
 import { htmlToPreviewText } from "@/lib/htmlText";
@@ -32,6 +34,30 @@ import {
   PDF_PAGE,
 } from "@/lib/pdfWidgets";
 import { patchUserSettings, SETTINGS_HYDRATED_EVENT } from "@/lib/userSettingsSync";
+
+// ───────────────────────────────────────────────────────────────
+// Fas D — tidsspann för vårdrapport ("sedan senaste besök" m.fl.)
+// ───────────────────────────────────────────────────────────────
+type ReportRange = "7d" | "14d" | "30d" | "since_visit";
+
+const LAST_VISIT_KEY = "riktning_last_visit_date";
+
+const readLastVisit = (): string => {
+  try {
+    return localStorage.getItem(LAST_VISIT_KEY) || "";
+  } catch {
+    return "";
+  }
+};
+
+type DoctorSummary = {
+  headline: string;
+  whats_changed: string;
+  whats_working: string;
+  whats_worrying: string;
+  recommended_focus: string;
+  flags: string[];
+};
 
 // Frågor till läkaren synkas via user_settings.weekly_questions så att
 // listan följer användaren mellan mobil och desktop. Lokal cache läses
@@ -81,7 +107,7 @@ const WeeklyReport = () => {
     checkins: Checkin[];
     forms: { type: string; total_score: number; date: string }[];
     meds: { name: string; dose: string | null; active: boolean; date_started: string | null }[];
-    medLogs: { taken_status: string; side_effects_json: unknown; date: string }[];
+    medLogs: { taken_status: string; side_effects_json: unknown; severity: number | null; date: string }[];
     journals: { date: string; template_type: string; title: string | null; free_text: string | null }[];
     activities: { date: string; label: string; category: string; duration_minutes: number | null; mood_delta: number | null }[];
   } | null>(null);
@@ -90,10 +116,22 @@ const WeeklyReport = () => {
   const [draft, setDraft] = useState("");
   const [includeJournal, setIncludeJournal] = useState(true);
 
+  // Fas D — tidsspann + AI-sammanfattning till läkaren
+  const [range, setRange] = useState<ReportRange>("7d");
+  const [lastVisit, setLastVisit] = useState<string>(readLastVisit);
+  const [aiSummary, setAiSummary] = useState<DoctorSummary | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [doctorEmail, setDoctorEmail] = useState<string>(
+    () => localStorage.getItem("riktning_doctor_email") || "",
+  );
+
   // Lyssna på serverhydrering — på en ny enhet vill vi att frågorna dyker upp
   // så fort hydrateUserSettings har skrivit ner cachen.
   useEffect(() => {
-    const onHydrated = () => setQuestions(readCachedQuestions());
+    const onHydrated = () => {
+      setQuestions(readCachedQuestions());
+      setDoctorEmail(localStorage.getItem("riktning_doctor_email") || "");
+    };
     window.addEventListener(SETTINGS_HYDRATED_EVENT, onHydrated);
     return () => window.removeEventListener(SETTINGS_HYDRATED_EVENT, onHydrated);
   }, []);
@@ -122,7 +160,7 @@ const WeeklyReport = () => {
         checkins: Checkin[];
         forms: { type: string; total_score: number; date: string }[];
         medications: { name: string; dose: string | null; active: boolean; date_started: string | null }[];
-        medication_logs: { taken_status: string; side_effects_json: unknown; date: string }[];
+        medication_logs: { taken_status: string; side_effects_json: unknown; severity?: number | null; date: string }[];
         journals: { date: string; template_type: string; title: string | null; free_text: string | null }[];
         activities: { date: string; label: string; category: string; duration_minutes: number | null; mood_delta: number | null }[];
       };
@@ -130,7 +168,7 @@ const WeeklyReport = () => {
         checkins: p.checkins ?? [],
         forms: p.forms ?? [],
         meds: p.medications ?? [],
-        medLogs: p.medication_logs ?? [],
+        medLogs: (p.medication_logs ?? []).map((l) => ({ ...l, severity: l.severity ?? null })),
         journals: p.journals ?? [],
         activities: p.activities ?? [],
       });
@@ -242,6 +280,91 @@ const WeeklyReport = () => {
     };
   }, [data]);
 
+  // Fas D — risksignaler (deterministisk regelmotor, ingen AI)
+  const riskSignals: RiskSignal[] = useMemo(() => {
+    if (!data) return [];
+    return detectRisks({ checkins: data.checkins, medLogs: data.medLogs });
+  }, [data]);
+
+  // Fas D — räkna ut tidsspann (start/end) utifrån valt range
+  const period = useMemo(() => {
+    const end = new Date().toISOString().split("T")[0];
+    let start = isoDaysAgo(6);
+    if (range === "14d") start = isoDaysAgo(13);
+    else if (range === "30d") start = isoDaysAgo(29);
+    else if (range === "since_visit" && lastVisit) start = lastVisit;
+    return { start, end };
+  }, [range, lastVisit]);
+
+  const rangeLabel: Record<ReportRange, string> = {
+    "7d": "7 dagar",
+    "14d": "14 dagar",
+    "30d": "30 dagar",
+    since_visit: lastVisit ? `Sedan ${lastVisit}` : "Sedan senaste besök",
+  };
+
+  const persistLastVisit = (iso: string) => {
+    setLastVisit(iso);
+    try { localStorage.setItem(LAST_VISIT_KEY, iso); } catch { /* quota */ }
+  };
+
+  const runDoctorSummary = async () => {
+    if (range === "since_visit" && !lastVisit) {
+      toast.error("Välj datum för senaste besök först.");
+      return;
+    }
+    setAiLoading(true);
+    setAiSummary(null);
+    try {
+      const { data: payload, error } = await supabase.functions.invoke("doctor-summary", {
+        body: { start: period.start, end: period.end },
+      });
+      if (error) throw error;
+      const summary = (payload as { summary?: DoctorSummary } | null)?.summary;
+      if (!summary) throw new Error("ai_no_summary");
+      setAiSummary(summary);
+      toast.success("Sammanfattning klar");
+    } catch (e) {
+      console.error("doctor-summary failed", e);
+      toast.error("Kunde inte generera sammanfattning just nu.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const mailDoctor = () => {
+    if (!doctorEmail) {
+      toast.error("Lägg in läkarens e-post i Vård-fliken först.");
+      return;
+    }
+    const subject = `Vårdrapport ${period.start} – ${period.end}`;
+    const bodyLines: string[] = [
+      `Hej,`,
+      ``,
+      `Här kommer en sammanfattning av mina senaste ${rangeLabel[range].toLowerCase()}.`,
+      ``,
+    ];
+    if (aiSummary) {
+      bodyLines.push(aiSummary.headline);
+      bodyLines.push("");
+      bodyLines.push(`Vad har förändrats: ${aiSummary.whats_changed}`);
+      bodyLines.push(`Vad fungerar: ${aiSummary.whats_working}`);
+      bodyLines.push(`Vad jag oroar mig för: ${aiSummary.whats_worrying}`);
+      bodyLines.push(`Fokus framåt: ${aiSummary.recommended_focus}`);
+      if (aiSummary.flags.length) {
+        bodyLines.push("");
+        bodyLines.push(`Att hålla ett öga på: ${aiSummary.flags.join(", ")}`);
+      }
+    } else {
+      bodyLines.push("PDF med detaljer bifogas separat.");
+    }
+    bodyLines.push("", "Vänliga hälsningar");
+    const href = `mailto:${encodeURIComponent(doctorEmail)}?subject=${encodeURIComponent(
+      subject,
+    )}&body=${encodeURIComponent(bodyLines.join("\n"))}`;
+    window.location.href = href;
+  };
+
   const generatePdf = () => {
     if (!data || !summary) return;
     const doc = new jsPDF({ unit: PDF_PAGE.unit, format: PDF_PAGE.format });
@@ -255,8 +378,8 @@ const WeeklyReport = () => {
     let y = drawReportHeader(
       doc,
       {
-        title: "Klinisk veckorapport",
-        subtitle: `Period ${isoDaysAgo(6)} – ${today} · 7 dagar`,
+        title: "Klinisk vårdrapport",
+        subtitle: `Period ${period.start} – ${period.end} · ${rangeLabel[range]}`,
         meta: `Genererad ${new Date().toLocaleDateString("sv-SE")}`,
         metrics: [
           { label: "Riktning", value: fmtScore(summary.direction) },
@@ -288,6 +411,34 @@ const WeeklyReport = () => {
       setPdfText(doc, PDF_COLORS.ink);
       if (opts.gap) y += opts.gap;
     };
+
+    // ----- AI-sammanfattning till vården (Fas D) -----
+    if (aiSummary) {
+      ensureSpace(140);
+      y = drawSectionHeader(doc, "Sammanfattning för behandlare", y, margin);
+      writeLine(aiSummary.headline, { bold: true, size: 11, gap: 2 });
+      writeLine(`Vad har förändrats: ${aiSummary.whats_changed}`);
+      writeLine(`Vad fungerar: ${aiSummary.whats_working}`);
+      writeLine(`Vad oroar: ${aiSummary.whats_worrying}`);
+      writeLine(`Fokus framåt: ${aiSummary.recommended_focus}`);
+      if (aiSummary.flags.length) {
+        writeLine(`Nyckelord: ${aiSummary.flags.join(", ")}`, { muted: true, size: 9 });
+      }
+      writeLine("AI-genererad sammanfattning. Patienten har godkänt innehållet före delning.", {
+        muted: true, size: 8, gap: 4,
+      });
+    }
+
+    // ----- Risksignaler (Fas D / Fas B) -----
+    if (riskSignals.length > 0) {
+      ensureSpace(80);
+      y = drawSectionHeader(doc, "Risksignaler senaste 14 dagarna", y, margin);
+      for (const s of riskSignals) {
+        const tag = s.severity === "alert" ? "[VIKTIGT]" : s.severity === "warn" ? "[Att se över]" : "[Info]";
+        writeLine(`${tag} ${s.headline}`, { bold: true });
+        writeLine(s.evidence, { muted: true, size: 9, gap: 2 });
+      }
+    }
 
     // ----- Score-kort i rad -----
     ensureSpace(110);
@@ -556,9 +707,10 @@ const WeeklyReport = () => {
       </button>
 
       <header className="mb-5">
-        <h1 className="text-[28px] leading-[34px] mb-1">Veckorapport till läkaren</h1>
+        <h1 className="text-[28px] leading-[34px] mb-1">Vårdrapport till läkaren</h1>
         <p className="text-sm text-text-secondary">
-          Sammanställer senaste 7 dagar: sömn, rörelse, journal, medicin — plus tomma anteckningsfält för vården.
+          Välj tidsspann, låt en kort sammanfattning skrivas åt dig och dela rapporten — i mailen
+          eller som PDF. Du bestämmer alltid själv vad som skickas.
         </p>
       </header>
 
@@ -569,6 +721,109 @@ const WeeklyReport = () => {
           threshold={7}
         />
       )}
+
+      {/* Fas D — tidsspann, risksignaler och AI-sammanfattning till läkaren */}
+      <section className="card-cream p-4 mb-5">
+        <div className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-2">
+          Period
+        </div>
+        <div className="flex flex-wrap gap-2 mb-3">
+          {(["7d", "14d", "30d", "since_visit"] as ReportRange[]).map((r) => (
+            <button
+              key={r}
+              onClick={() => { setRange(r); setAiSummary(null); }}
+              className={`rounded-full px-4 h-9 text-sm font-extrabold border-2 transition-colors ${
+                range === r
+                  ? "bg-blue-calm text-white border-blue-calm"
+                  : "bg-surface border-border-soft text-text-secondary hover:border-blue-calm"
+              }`}
+            >
+              {rangeLabel[r]}
+            </button>
+          ))}
+        </div>
+        {range === "since_visit" && (
+          <label className="block mb-3">
+            <span className="text-xs text-text-secondary block mb-1">Datum för senaste besök</span>
+            <Input
+              type="date"
+              value={lastVisit}
+              max={new Date().toISOString().split("T")[0]}
+              onChange={(e) => persistLastVisit(e.target.value)}
+              className="rounded-2xl"
+            />
+          </label>
+        )}
+        <p className="text-xs text-text-secondary">
+          {period.start} → {period.end}. Påverkar PDF och AI-sammanfattningen nedan.
+        </p>
+      </section>
+
+      {riskSignals.length > 0 && (
+        <RiskSignalsCard
+          signals={riskSignals}
+          title="Risksignaler från perioden"
+          showCrisisLink={false}
+        />
+      )}
+
+      <section className="card-cream p-4 mb-5">
+        <div className="flex items-baseline justify-between mb-2">
+          <div className="text-xs font-extrabold uppercase tracking-wide text-text-secondary">
+            Sammanfattning för behandlare
+          </div>
+          <span className="text-[10px] text-text-secondary uppercase tracking-wider">AI</span>
+        </div>
+        {!aiSummary && !aiLoading && (
+          <p className="text-sm text-text-secondary mb-3">
+            Generera en kort sammanfattning som beskriver vad som har förändrats, vad som
+            fungerar och vad behandlaren bör titta på. Inga diagnoser — bara dina siffror i klartext.
+          </p>
+        )}
+        {aiLoading && (
+          <div className="h-24 rounded-2xl bg-surface-alt animate-pulse mb-3" />
+        )}
+        {aiSummary && (
+          <div className="space-y-2 mb-3 text-sm leading-relaxed">
+            <p className="font-extrabold">{aiSummary.headline}</p>
+            <p><span className="font-extrabold">Vad har förändrats:</span> {aiSummary.whats_changed}</p>
+            <p><span className="font-extrabold">Vad fungerar:</span> {aiSummary.whats_working}</p>
+            <p><span className="font-extrabold">Vad oroar:</span> {aiSummary.whats_worrying}</p>
+            <p><span className="font-extrabold">Fokus framåt:</span> {aiSummary.recommended_focus}</p>
+            {aiSummary.flags.length > 0 && (
+              <p className="text-xs text-text-secondary">
+                Nyckelord: {aiSummary.flags.join(", ")}
+              </p>
+            )}
+          </div>
+        )}
+        <div className="flex flex-wrap gap-2">
+          <Button
+            onClick={runDoctorSummary}
+            disabled={aiLoading}
+            variant="secondary"
+            size="sm"
+            className="rounded-full font-extrabold"
+          >
+            <Sparkles size={14} /> {aiSummary ? "Generera om" : "Skapa sammanfattning"}
+          </Button>
+          <Button
+            onClick={mailDoctor}
+            variant="secondary"
+            size="sm"
+            className="rounded-full font-extrabold"
+            disabled={!doctorEmail}
+            title={doctorEmail ? `Skickar till ${doctorEmail}` : "Lägg in läkarens e-post i Vård-fliken"}
+          >
+            <Mail size={14} /> Maila läkaren
+          </Button>
+        </div>
+        {!doctorEmail && (
+          <p className="text-xs text-text-secondary mt-2">
+            Tips: lägg in läkarens e-post under Vård → Kontaktuppgifter så fylls mottagaren i automatiskt.
+          </p>
+        )}
+      </section>
 
       <div className="lg:grid lg:grid-cols-[1.5fr_1fr] lg:gap-10">
         <div className="space-y-0">
