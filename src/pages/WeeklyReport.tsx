@@ -718,6 +718,109 @@ const WeeklyReport = () => {
         />
       )}
 
+      {/* Fas D — tidsspann, risksignaler och AI-sammanfattning till läkaren */}
+      <section className="card-cream p-4 mb-5">
+        <div className="text-xs font-extrabold uppercase tracking-wide text-text-secondary mb-2">
+          Period
+        </div>
+        <div className="flex flex-wrap gap-2 mb-3">
+          {(["7d", "14d", "30d", "since_visit"] as ReportRange[]).map((r) => (
+            <button
+              key={r}
+              onClick={() => { setRange(r); setAiSummary(null); }}
+              className={`rounded-full px-4 h-9 text-sm font-extrabold border-2 transition-colors ${
+                range === r
+                  ? "bg-blue-calm text-white border-blue-calm"
+                  : "bg-surface border-border-soft text-text-secondary hover:border-blue-calm"
+              }`}
+            >
+              {rangeLabel[r]}
+            </button>
+          ))}
+        </div>
+        {range === "since_visit" && (
+          <label className="block mb-3">
+            <span className="text-xs text-text-secondary block mb-1">Datum för senaste besök</span>
+            <Input
+              type="date"
+              value={lastVisit}
+              max={new Date().toISOString().split("T")[0]}
+              onChange={(e) => persistLastVisit(e.target.value)}
+              className="rounded-2xl"
+            />
+          </label>
+        )}
+        <p className="text-xs text-text-secondary">
+          {period.start} → {period.end}. Påverkar PDF och AI-sammanfattningen nedan.
+        </p>
+      </section>
+
+      {riskSignals.length > 0 && (
+        <RiskSignalsCard
+          signals={riskSignals}
+          title="Risksignaler från perioden"
+          showCrisisLink={false}
+        />
+      )}
+
+      <section className="card-cream p-4 mb-5">
+        <div className="flex items-baseline justify-between mb-2">
+          <div className="text-xs font-extrabold uppercase tracking-wide text-text-secondary">
+            Sammanfattning för behandlare
+          </div>
+          <span className="text-[10px] text-text-secondary uppercase tracking-wider">AI</span>
+        </div>
+        {!aiSummary && !aiLoading && (
+          <p className="text-sm text-text-secondary mb-3">
+            Generera en kort sammanfattning som beskriver vad som har förändrats, vad som
+            fungerar och vad behandlaren bör titta på. Inga diagnoser — bara dina siffror i klartext.
+          </p>
+        )}
+        {aiLoading && (
+          <div className="h-24 rounded-2xl bg-surface-alt animate-pulse mb-3" />
+        )}
+        {aiSummary && (
+          <div className="space-y-2 mb-3 text-sm leading-relaxed">
+            <p className="font-extrabold">{aiSummary.headline}</p>
+            <p><span className="font-extrabold">Vad har förändrats:</span> {aiSummary.whats_changed}</p>
+            <p><span className="font-extrabold">Vad fungerar:</span> {aiSummary.whats_working}</p>
+            <p><span className="font-extrabold">Vad oroar:</span> {aiSummary.whats_worrying}</p>
+            <p><span className="font-extrabold">Fokus framåt:</span> {aiSummary.recommended_focus}</p>
+            {aiSummary.flags.length > 0 && (
+              <p className="text-xs text-text-secondary">
+                Nyckelord: {aiSummary.flags.join(", ")}
+              </p>
+            )}
+          </div>
+        )}
+        <div className="flex flex-wrap gap-2">
+          <Button
+            onClick={runDoctorSummary}
+            disabled={aiLoading}
+            variant="secondary"
+            size="sm"
+            className="rounded-full font-extrabold"
+          >
+            <Sparkles size={14} /> {aiSummary ? "Generera om" : "Skapa sammanfattning"}
+          </Button>
+          <Button
+            onClick={mailDoctor}
+            variant="secondary"
+            size="sm"
+            className="rounded-full font-extrabold"
+            disabled={!doctorEmail}
+            title={doctorEmail ? `Skickar till ${doctorEmail}` : "Lägg in läkarens e-post i Vård-fliken"}
+          >
+            <Mail size={14} /> Maila läkaren
+          </Button>
+        </div>
+        {!doctorEmail && (
+          <p className="text-xs text-text-secondary mt-2">
+            Tips: lägg in läkarens e-post under Vård → Kontaktuppgifter så fylls mottagaren i automatiskt.
+          </p>
+        )}
+      </section>
+
       <div className="lg:grid lg:grid-cols-[1.5fr_1fr] lg:gap-10">
         <div className="space-y-0">
           {/* AI-veckosammanfattning visas också här som mjuk preamble — göms tyst utan AI. */}
