@@ -10,7 +10,7 @@ import { ColorCard } from "@/components/ColorCard";
 import { DayMat } from "@/components/desktop/DayMat";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { Check, ChevronLeft, ChevronRight, Clock, History, Plus, Minus, Trash2 } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, CircleDot, Clock, History, Plus, Minus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 // === Types ===
@@ -771,14 +771,15 @@ const MovementForm = ({ onSaved, userId }: { onSaved: () => void; userId: string
         <p className="text-xs font-extrabold uppercase tracking-wider text-text-secondary mb-2">Hur kändes det?</p>
         <div className="grid grid-cols-5 gap-1">
           {[
-            { v: -2, e: "😔" }, { v: -1, e: "🙁" }, { v: 0, e: "😐" }, { v: 1, e: "🙂" }, { v: 2, e: "😊" },
+            { v: -2, label: "Tungt" }, { v: -1, label: "Lite tungt" }, { v: 0, label: "Neutralt" },
+            { v: 1, label: "Lite lätt" }, { v: 2, label: "Lätt" },
           ].map(x => (
             <button key={x.v}
               onClick={() => setDelta(x.v)}
-              className={`aspect-square rounded-2xl text-2xl press-soft ${
-                delta === x.v ? toneBg("pink") : "bg-surface-alt"
+              className={`py-3 px-1 rounded-2xl text-[11px] font-extrabold press-soft leading-tight ${
+                delta === x.v ? toneBg("pink") : "bg-surface-alt text-foreground"
               }`}
-            >{x.e}</button>
+            >{x.label}</button>
           ))}
         </div>
       </div>
@@ -938,9 +939,9 @@ const MedicationForm = ({
         <p className="text-xs font-extrabold uppercase tracking-wider text-text-secondary mb-2">Status</p>
         <div className="grid grid-cols-3 gap-2">
           {([
-            { k: "yes" as const, label: "Tagen", emoji: "✅" },
-            { k: "partial" as const, label: "Delvis", emoji: "🟡" },
-            { k: "skipped" as const, label: "Hoppade", emoji: "⛔" },
+            { k: "yes" as const, label: "Tagen", Icon: Check },
+            { k: "partial" as const, label: "Delvis", Icon: CircleDot },
+            { k: "skipped" as const, label: "Hoppade", Icon: X },
           ]).map(s => (
             <button key={s.k}
               onClick={() => setStatus(s.k)}
@@ -948,7 +949,7 @@ const MedicationForm = ({
                 status === s.k ? toneBg("blue") : "bg-surface-alt text-foreground"
               }`}
             >
-              <span className="text-xl leading-none">{s.emoji}</span>
+              <s.Icon size={20} strokeWidth={2.5} />
               {s.label}
             </button>
           ))}

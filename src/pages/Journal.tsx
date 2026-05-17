@@ -403,7 +403,7 @@ const Journal = () => {
                     onClick={toggleReport}
                     className={`pill text-[11px] press-soft ${e.include_in_report ? "bg-blue-calm text-white" : "bg-surface-alt text-text-secondary"}`}
                   >
-                    {e.include_in_report ? "✓ Inkluderas i rapport" : "Inkludera i rapport"}
+                    {e.include_in_report ? "Inkluderas i rapport" : "Inkludera i rapport"}
                   </button>
                 </div>
               </li>
