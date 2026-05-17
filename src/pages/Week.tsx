@@ -20,6 +20,7 @@ import { buildDayHighlights, buildLiftSummary } from "@/lib/dayInsights";
 import { DayHighlightCards } from "@/components/DayHighlightCards";
 import { detectPatterns } from "@/lib/patterns";
 import { PatternsSection } from "@/components/PatternsSection";
+import { loadDailyWeather, type DailyWeatherRow } from "@/lib/dailyWeather";
 import { WeeklyAIInsight } from "@/components/WeeklyAIInsight";
 import { ChartCard } from "@/components/charts/ChartCard";
 // Bara WeekDirectionChart syns ovan kollapsen — resten lazy-laddas när
