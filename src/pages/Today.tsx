@@ -975,7 +975,7 @@ const Today = () => {
         <h3 className="text-xl mb-3">Senaste aktivitet</h3>
         <ul className="relative pl-5 space-y-2">
           <span className="absolute left-1.5 top-2 bottom-2 w-px border-l-2 border-dashed border-[#D7D0C9]" aria-hidden />
-          {recent.map((s, i) => {
+          {recent.slice(0, 5).map((s, i) => {
             const ex = s.exercises;
             if (!ex) return null;
             const blobColor = (() => {
@@ -1101,7 +1101,7 @@ const Today = () => {
        * från decideTodayLayout() bevaras inom respektive kolumn.
        */}
       {(() => {
-        const RIGHT_IDS = new Set<ModuleId>(["primary", "forYou", "forecast", "eveningPrediction", "todayRoutine", "latestActivity"]);
+        const RIGHT_IDS = new Set<ModuleId>(["primary", "forYou", "forecast", "eveningPrediction", "todayRoutine", "latestActivity", "weekDirection"]);
         const visible = decision.modules.filter((id) => id !== "reportShortcut" && id !== "learn");
         const leftIds = visible.filter((id) => !RIGHT_IDS.has(id));
         const rightIds = visible.filter((id) => RIGHT_IDS.has(id));
@@ -1135,7 +1135,7 @@ const Today = () => {
             </div>
 
             {/* Desktop: cockpit */}
-            <div className="hidden lg:grid lg:grid-cols-[1.4fr_1fr] lg:gap-10">
+            <div className="hidden lg:grid lg:grid-cols-[1fr_1fr] lg:gap-10">
               <div className="min-w-0 space-y-0">
                 {leftIds.map(renderModule)}
               </div>

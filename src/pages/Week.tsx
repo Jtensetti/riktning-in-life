@@ -553,7 +553,7 @@ const Week = () => {
        * `lg:col-start-2` (bevis - "vad visar datan?"). Mobilen ar inte en
        * grid sa allt stackar vertikalt i nuvarande ordning.
        */}
-      <div className="lg:grid lg:grid-cols-[1.5fr_1fr] lg:gap-x-10 lg:gap-y-0 lg:items-start">
+      <div className="lg:grid lg:grid-cols-[1.3fr_1fr] lg:gap-x-10 lg:gap-y-0 lg:items-start">
       <button
         onClick={() => navigate("/analys")}
         className="w-full mb-6 ui-card-list flex items-center gap-3 press-soft text-left animate-pop-in lg:col-start-2"
@@ -1050,7 +1050,7 @@ const Week = () => {
       )}
 
       {insights.length > 2 && (
-        <section className="mb-7 lg:col-start-1">
+        <section className="mb-7 lg:col-start-2">
           <h2 className="text-xl mb-3">Fler mönster</h2>
           <div className="space-y-2">
             {insights.slice(2).map((s, i) => (
@@ -1064,7 +1064,7 @@ const Week = () => {
       )}
 
       {(liftSummary.lifters.length > 0 || liftSummary.drainers.length > 0 || topActivities.length > 0) && (
-        <section className="mb-2 lg:col-start-1">
+        <section className="mb-2 lg:col-start-2">
           <h2 className="text-xl mb-1 flex items-center gap-2">
             <AbstractIcon name="heart-care" size={18} color="hsl(var(--pink-move))" />
             Vad lyfte dig?
@@ -1129,7 +1129,7 @@ const Week = () => {
       {/* Klinisk veckorapport — lugn länkrad längst ner, inte CTA */}
       <button
         onClick={() => navigate("/rapport/vecka")}
-        className="w-full card-quiet flex items-center justify-between gap-3 press-soft mb-2 lg:col-start-1"
+        className="w-full card-quiet flex items-center justify-between gap-3 press-soft mb-2 lg:col-start-2"
       >
         <div className="text-left">
           <p className="text-[11px] font-extrabold uppercase tracking-wider text-blue-calm mb-1">För vården</p>
