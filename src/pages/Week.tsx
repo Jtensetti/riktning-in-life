@@ -46,6 +46,7 @@ const ChartFallback = ({ height = 128 }: { height?: number }) => (
 import { WeekDirectionChart, type DirectionPoint } from "@/components/charts/WeekDirectionChart";
 import { WeekMat, buildWeekMatDays } from "@/components/desktop/WeekMat";
 import { TodayStepCard } from "@/components/TodayStepCard";
+import { buildPersonalEffect } from "@/lib/personalEffect";
 import {
   loadActionPreferences, saveActionPreferences, resolvePreferredTime, resolvePreferredLength, lengthRange,
   type ActionPreferences, type PreferredTime, type PreferredLength,
@@ -553,6 +554,7 @@ const Week = () => {
           todayCheckin={todayCheckin}
           recentSessions={recentSessionsForRec}
           loggedToday={loggedToday}
+          personalEffect={personalEffect}
         />
       </section>
 
