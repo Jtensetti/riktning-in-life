@@ -167,89 +167,77 @@ const CrisisPlan = () => {
         )}
       </header>
 
-      <div className="lg:grid lg:grid-cols-[1.5fr_1fr] lg:gap-10">
-        <div className="min-w-0">
-          {/* Akutknappar — på mobil överst i flödet, på desktop i höger kontextpanel. */}
-          <section className="mb-7 lg:hidden">
-            <h2 className="text-sm font-extrabold uppercase tracking-wider text-text-secondary mb-3">
-              Akut
-            </h2>
-            <div className="space-y-2">
-              {SOS.map((s, i) => (
-                <a
-                  key={s.phone}
-                  href={`tel:${s.phone.replace(/\s/g, "")}`}
-                  className="flex items-center gap-3 rounded-3xl bg-red-bg border-2 border-red-risk/20 p-4 press-soft animate-fade-in-up"
-                  style={{ animationDelay: `var(--stagger-${Math.min(i, 4)})` }}
+      <WideLayout
+        split="aside"
+        left={
+          <>
+            {/* Akutknappar — på mobil överst i flödet, på desktop i höger kontextpanel. */}
+            <section className="mb-7 lg:hidden">
+              <h2 className="text-sm font-extrabold uppercase tracking-wider text-text-secondary mb-3">
+                Akut
+              </h2>
+              <div className="space-y-2">
+                {SOS.map((s, i) => (
+                  <SosRow key={s.phone} sos={s} stagger={i} />
+                ))}
+              </div>
+              <p className="text-[11px] text-text-secondary mt-2 px-1">
+                Kontrollera då och då att telefonnummer och kontakter stämmer.
+              </p>
+            </section>
+
+            {mode === "read" ? (
+              <ReadView plan={plan} />
+            ) : (
+              <EditView plan={plan} setPlan={setPlan} />
+            )}
+
+            {mode === "edit" && (
+              <div className="sticky bottom-24 -mx-2 mt-6">
+                <Button
+                  onClick={save}
+                  disabled={saving}
+                  className="w-full h-14 rounded-full bg-foreground hover:bg-foreground/90 text-background font-extrabold text-[17px] shadow-soft press-soft"
                 >
-                  <div className="w-11 h-11 rounded-2xl bg-red-risk text-white grid place-items-center shrink-0">
-                    <AbstractIcon name="phone-soft" size={18} color="hsl(var(--surface))" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-extrabold truncate">{s.name}</p>
-                    <p className="text-xs text-text-secondary truncate">{s.role}</p>
-                  </div>
-                  <span className="text-sm font-extrabold text-red-risk shrink-0">{s.phone}</span>
-                </a>
-              ))}
-            </div>
-            <p className="text-[11px] text-text-secondary mt-2 px-1">
-              Kontrollera då och då att telefonnummer och kontakter stämmer.
-            </p>
-          </section>
-
-          {mode === "read" ? (
-            <ReadView plan={plan} />
-          ) : (
-            <EditView plan={plan} setPlan={setPlan} />
-          )}
-
-          {mode === "edit" && (
-            <div className="sticky bottom-24 -mx-2 mt-6">
-              <Button
-                onClick={save}
-                disabled={saving}
-                className="w-full h-14 rounded-full bg-foreground hover:bg-foreground/90 text-background font-extrabold text-[17px] shadow-soft press-soft"
-              >
-                {saving ? "Sparar..." : exists ? "Spara ändringar" : "Spara min krisplan"}
-              </Button>
-            </div>
-          )}
-        </div>
-
-        {/* Desktop-only: sticky akut-kontextpanel så hjälpnumren alltid syns. */}
-        <aside className="hidden lg:block min-w-0">
-          <div className="lg:sticky lg:top-24 space-y-4">
-            <h2 className="text-sm font-extrabold uppercase tracking-wider text-text-secondary">
-              Akut — alltid en knapptryckning bort
-            </h2>
+                  {saving ? "Sparar..." : exists ? "Spara ändringar" : "Spara min krisplan"}
+                </Button>
+              </div>
+            )}
+          </>
+        }
+        right={
+          <ContextPanel
+            title="Akut — alltid en knapptryckning bort"
+            footnote="Stannar uppe längs hela sidan — håll fokus på planen."
+          >
             <div className="space-y-2">
               {SOS.map((s) => (
-                <a
-                  key={s.phone}
-                  href={`tel:${s.phone.replace(/\s/g, "")}`}
-                  className="flex items-center gap-3 rounded-3xl bg-red-bg border-2 border-red-risk/20 p-4 press-soft"
-                >
-                  <div className="w-11 h-11 rounded-2xl bg-red-risk text-white grid place-items-center shrink-0">
-                    <AbstractIcon name="phone-soft" size={18} color="hsl(var(--surface))" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-extrabold truncate">{s.name}</p>
-                    <p className="text-xs text-text-secondary truncate">{s.role}</p>
-                  </div>
-                  <span className="text-sm font-extrabold text-red-risk shrink-0">{s.phone}</span>
-                </a>
+                <SosRow key={s.phone} sos={s} />
               ))}
             </div>
-            <p className="text-[11px] text-text-secondary px-1">
-              Stannar uppe längs hela sidan — håll fokus på planen.
-            </p>
-          </div>
-        </aside>
-      </div>
+          </ContextPanel>
+        }
+      />
     </AppShell>
   );
 };
+
+const SosRow = ({ sos, stagger }: { sos: typeof SOS[number]; stagger?: number }) => (
+  <a
+    href={`tel:${sos.phone.replace(/\s/g, "")}`}
+    className={`flex items-center gap-3 rounded-3xl bg-red-bg border-2 border-red-risk/20 p-4 press-soft ${stagger !== undefined ? "animate-fade-in-up" : ""}`}
+    style={stagger !== undefined ? { animationDelay: `var(--stagger-${Math.min(stagger, 4)})` } : undefined}
+  >
+    <div className="w-11 h-11 rounded-2xl bg-red-risk text-white grid place-items-center shrink-0">
+      <AbstractIcon name="phone-soft" size={18} color="hsl(var(--surface))" />
+    </div>
+    <div className="flex-1 min-w-0">
+      <p className="text-sm font-extrabold truncate">{sos.name}</p>
+      <p className="text-xs text-text-secondary truncate">{sos.role}</p>
+    </div>
+    <span className="text-sm font-extrabold text-red-risk shrink-0">{sos.phone}</span>
+  </a>
+);
 
 const ReadView = ({ plan }: { plan: Plan }) => {
   const sections: { title: string; items: string[]; color: string; icon: "warning-soft" | "heart-care" | "moon-soft" | "house-soft" | "blob-smile" }[] = [
