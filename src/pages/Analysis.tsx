@@ -125,6 +125,10 @@ const Analysis = () => {
         )}
       </InsightCard>
 
+      {/* Veckomatta — 7-dagars matris med Riktning/Sömn/Rörelse/Loggar/Check-in.
+       *  Ger en datanära jämförelsevy precis under den mänskliga slutsatsen. */}
+      <WeekMat days={buildWeekMatDays(checkins, activities)} className="mb-8" />
+
       <div className="lg:grid lg:grid-cols-[1.5fr_1fr] lg:gap-10">
         <section className="mb-8 lg:mb-0">
           <h2 className="text-h2 mb-4">Vad förändras</h2>
