@@ -37,10 +37,11 @@ export const ForYouCarousel = ({ picks }: Props) => {
       </div>
       {/*
        * Mobil: horisontell snap-carousel.
-       * Desktop (≥lg): rent 3-kol grid — inget klipps, ingen scroll,
-       * hover-states läsbara med pekare.
+       * Desktop (≥lg): vertikal stack i höger 1.4fr/1fr-kolumnen
+       *   (~480px) — annars klipps korten. Tre kort som staplas är
+       *   lika skannbara som tre i rad och fyller inte hela skärmen.
        */}
-      <div className="overflow-x-auto scrollbar-hide snap-x snap-mandatory flex gap-3 px-6 pb-3 -mb-3 lg:overflow-visible lg:grid lg:grid-cols-3 lg:gap-4 lg:px-0 lg:pb-0 lg:mb-0">
+      <div className="overflow-x-auto scrollbar-hide snap-x snap-mandatory flex gap-3 px-6 pb-3 -mb-3 lg:overflow-visible lg:grid lg:grid-cols-1 lg:gap-4 lg:px-0 lg:pb-0 lg:mb-0">
         {picks.map((p, i) => {
           const tone = asTone(p.exercise.color);
           const strong = p.fitScore >= 80;
