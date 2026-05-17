@@ -263,6 +263,8 @@ const CrisisPlan = () => {
                 <SosRow key={s.phone} sos={s} />
               ))}
             </div>
+
+            {live && <LiveStatusPanel live={live} />}
           </ContextPanel>
         }
       />
