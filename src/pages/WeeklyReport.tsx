@@ -157,7 +157,7 @@ const WeeklyReport = () => {
         checkins: Checkin[];
         forms: { type: string; total_score: number; date: string }[];
         medications: { name: string; dose: string | null; active: boolean; date_started: string | null }[];
-        medication_logs: { taken_status: string; side_effects_json: unknown; date: string }[];
+        medication_logs: { taken_status: string; side_effects_json: unknown; severity?: number | null; date: string }[];
         journals: { date: string; template_type: string; title: string | null; free_text: string | null }[];
         activities: { date: string; label: string; category: string; duration_minutes: number | null; mood_delta: number | null }[];
       };
@@ -165,7 +165,7 @@ const WeeklyReport = () => {
         checkins: p.checkins ?? [],
         forms: p.forms ?? [],
         meds: p.medications ?? [],
-        medLogs: p.medication_logs ?? [],
+        medLogs: (p.medication_logs ?? []).map((l) => ({ ...l, severity: l.severity ?? null })),
         journals: p.journals ?? [],
         activities: p.activities ?? [],
       });
