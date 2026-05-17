@@ -45,7 +45,7 @@ const DrawerContent = React.forwardRef<
         "inset-x-0 bottom-0 mt-24 h-auto rounded-t-[10px]",
         // Desktop (≥lg): centrerad modal, max 720px bred, max 85vh hög.
         "lg:inset-auto lg:top-1/2 lg:left-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2",
-        "lg:mt-0 lg:w-[min(720px,calc(100vw-4rem))] lg:max-h-[85vh] lg:rounded-3xl lg:shadow-2xl",
+        "lg:mt-0 lg:w-[min(520px,calc(100vw-4rem))] lg:max-h-[85vh] lg:rounded-3xl lg:shadow-2xl",
         className,
       )}
       {...props}

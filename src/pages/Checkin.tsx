@@ -26,7 +26,8 @@ const colorBg = (color: string): string => {
   }
 };
 
-const moodEmoji = (d: number) => (d >= 2 ? "😊" : d === 1 ? "🙂" : d === 0 ? "😐" : d === -1 ? "🙁" : "😔");
+const moodLabel = (d: number) =>
+  d >= 2 ? "lätt" : d === 1 ? "lite lätt" : d === 0 ? "neutralt" : d === -1 ? "lite tungt" : "tungt";
 
 const todayISO = () => new Date().toISOString().split("T")[0];
 
@@ -344,7 +345,7 @@ const Checkin = () => {
         {appliedStable && step === 0 && (
           <div className="card-quiet p-3 mb-4 animate-fade-in-up">
             <p className="text-xs text-text-secondary">
-              ✓ Förfyllt med dina senaste värden. Dra reglagen om något känns annorlunda idag.
+              Förfyllt med dina senaste värden. Dra reglagen om något känns annorlunda idag.
             </p>
           </div>
         )}
@@ -449,7 +450,7 @@ const Checkin = () => {
                     >
                       <AbstractIcon name={a.icon as IconName} size={16} color="currentColor" />
                       <span className="text-xs font-extrabold">{a.label}</span>
-                      <span className="text-[10px] opacity-90 font-bold">· {a.duration_minutes}m {moodEmoji(a.mood_delta)}</span>
+                      <span className="text-[10px] opacity-90 font-bold">· {a.duration_minutes}m · {moodLabel(a.mood_delta)}</span>
                       <button
                         onClick={() => removeActivity(i)}
                         className="ml-1 w-6 h-6 rounded-full bg-white/25 grid place-items-center press-soft"

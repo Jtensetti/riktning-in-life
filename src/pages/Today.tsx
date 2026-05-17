@@ -813,7 +813,7 @@ const Today = () => {
         )}
         {activitiesToday > 0 && (
           <p className="mt-3 text-xs font-bold opacity-80 text-center">
-            ✓ Du har redan loggat {activitiesToday} {activitiesToday === 1 ? "sak" : "saker"} idag.
+            Du har redan loggat {activitiesToday} {activitiesToday === 1 ? "sak" : "saker"} idag.
           </p>
         )}
       </section>

@@ -227,7 +227,7 @@ export const WeekMat = ({ days, title = "Veckomatta", subtitle = "Senaste 7 daga
           render={(d) => (
             <div className={`h-7 lg:h-8 rounded-lg grid place-items-center ${d.checkinDone ? "bg-green-recovery/20" : "bg-surface-alt"}`}>
               <span className={`text-[11px] lg:text-xs font-extrabold ${d.checkinDone ? "text-green-recovery" : "text-text-secondary"}`}>
-                {d.checkinDone ? "✓" : "—"}
+                {d.checkinDone ? "Ja" : "—"}
               </span>
             </div>
           )}
