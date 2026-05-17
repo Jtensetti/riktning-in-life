@@ -32,7 +32,7 @@ interface Props {
  *
  * Uppdateras automatiskt när props ändras (ny check-in, ny logg).
  */
-export const TodayStepCard = ({ exercises, todayCheckin, recentSessions, loggedToday, index = 0 }: Props) => {
+export const TodayStepCard = ({ exercises, todayCheckin, recentSessions, loggedToday, personalEffect, index = 0 }: Props) => {
   const navigate = useNavigate();
   const [dismissed, setDismissed] = useState<string[]>([]);
 
@@ -43,17 +43,31 @@ export const TodayStepCard = ({ exercises, todayCheckin, recentSessions, loggedT
     } catch { /* ignore */ }
   }, []);
 
+  const effectHistory = useMemo(
+    () =>
+      personalEffect
+        ? pickEffectHistoryFor(personalEffect, {
+            anxiety: todayCheckin?.anxiety ?? null,
+            energy: todayCheckin?.energy ?? null,
+            mood_heaviness: todayCheckin?.mood_heaviness ?? null,
+          })
+        : undefined,
+    [personalEffect, todayCheckin?.anxiety, todayCheckin?.energy, todayCheckin?.mood_heaviness],
+  );
+
   const pick = useMemo(() => {
     if (exercises.length === 0) return null;
     const t = getTimeContext();
-    const picks = recommendForToday(exercises, todayCheckin, t, null, recentSessions);
+    const picks = recommendForToday(exercises, todayCheckin, t, null, recentSessions, effectHistory);
     const filtered = picks.filter((p) => !dismissed.includes(p.exercise.id));
     return filtered.find((p) => p.slot === "land") ?? filtered[0] ?? null;
-  }, [exercises, todayCheckin, recentSessions, dismissed]);
+  }, [exercises, todayCheckin, recentSessions, dismissed, effectHistory]);
 
   if (!pick) return null;
 
   const ex = pick.exercise;
+  const chip = personalEffect ? bestStatFor(personalEffect, ex) : null;
+  const chipText = chip ? formatEffectChip(chip) : null;
 
   const handleDismiss = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -96,6 +110,11 @@ export const TodayStepCard = ({ exercises, todayCheckin, recentSessions, loggedT
             Varför just nu
           </p>
           <p className="text-sm opacity-95 leading-snug">{pick.reasonLong}</p>
+          {chipText && (
+            <p className="mt-1 text-[11px] font-extrabold uppercase tracking-wider opacity-80">
+              {chipText}
+            </p>
+          )}
         </div>
         <div className="flex items-center justify-between gap-2">
           <button
