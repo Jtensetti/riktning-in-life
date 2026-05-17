@@ -262,6 +262,7 @@ const Today = () => {
   const [savingEveningGoal, setSavingEveningGoal] = useState(false);
   // Kontinuitet: kommer ihåg när användaren senast var här. Skrivs vid mount.
   const [lastSeen] = useState<LastSeen>(() => readAndUpdateLastSeen());
+  const [riskSignals, setRiskSignals] = useState<RiskSignal[]>([]);
 
   // Realtime: när loggar förändras (t.ex. på en annan enhet) — bumpa reload.
   const live = useLiveData();
