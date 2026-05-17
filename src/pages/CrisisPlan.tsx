@@ -12,6 +12,9 @@ import { WideLayout } from "@/components/desktop/WideLayout";
 import { ContextPanel } from "@/components/desktop/ContextPanel";
 import { ChevronLeft, Pencil, Check } from "lucide-react";
 import { toast } from "sonner";
+import { detectRisks, type RiskSignal } from "@/lib/riskSignals";
+import { RiskSignalsCard } from "@/components/RiskSignalsCard";
+import type { Checkin as MetricsCheckin } from "@/lib/metrics";
 
 type Contact = { name: string; phone: string; role?: string };
 
